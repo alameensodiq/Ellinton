@@ -33,13 +33,20 @@ const Login = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const { isLoading, error, isAuthenticated, requiresPasscodeSetup } =
+  const { isLoading, error, isAuthenticated, requiresPasscodeSetup, user } =
     useAppSelector((state) => state.auth);
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (requiresPasscodeSetup) {
+      if (user?.is_phone_verified && !user?.is_email_verified) {
+        router.replace("/(auth)/email-identity");
+      } else if (user?.is_email_verified && !user.bvn_verified) {
+        router.replace("/(auth)/profile-update");
+      } else if (user?.bvn_verified && user.facial_verification_status) {
+        router.replace("/(auth)/facial-verification");
+      } else if (requiresPasscodeSetup) {
         router.replace("/(auth)/create-passcode");
+      
       } else {
         router.replace("/(root)/(tabs)");
       }
@@ -52,7 +59,7 @@ const Login = () => {
 
     await dispatch(
       loginUser({
-        email,
+        email: email.trim().toLowerCase(),
         passcode: pin,
       })
     );

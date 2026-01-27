@@ -1,5 +1,5 @@
 // const BASE_URL = "http://3.220.216.48:3005/api/v2";
-const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+const BASE_URL = "https://7e0da0c1de2c.ngrok-free.app/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;

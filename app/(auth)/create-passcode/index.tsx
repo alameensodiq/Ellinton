@@ -15,14 +15,13 @@ import Button from "@/app/components/Button";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import CustomText from "@/app/components/CustomText";
 import Header from "@/app/components/header-back";
-import { registerUser } from "@/app/lib/thunks/authThunks";
+import { setupPasscode } from "@/app/lib/thunks/authThunks";
 
 const CreatePasscodeScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isLoading } = useAppSelector((state) => state.auth);
 
-  const { phone, email, referralCode } = useLocalSearchParams();
 
   const [passcode, setPasscode] = useState("");
   const [confirmPasscode, setConfirmPasscode] = useState("");
@@ -44,20 +43,16 @@ const CreatePasscodeScreen = () => {
 
     try {
       const result = await dispatch(
-        registerUser({
-          email: email as string,
-          phone: phone as string,
+        setupPasscode({
           passcode,
-          referral_code: referralCode as string,
         })
       ).unwrap();
 
       router.push({
-        pathname: "/(auth)/otp",
-        params: { userId: result.userId },
+        pathname: "/(root)/(tabs)", 
       });
     } catch (err: any) {
-      setError(err || "Registration failed");
+      setError(err || "Setup failed");
     }
   };
 
