@@ -1,5 +1,5 @@
 // const BASE_URL = "http://3.220.216.48:3005/api/v2";
-const BASE_URL = "https://7e0da0c1de2c.ngrok-free.app/api/v2";
+const BASE_URL = "https://api.ellingtonbank.com/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
@@ -68,6 +68,19 @@ const BILLS_PAY_ENDPOINT = `${BASE_URL}/bills/pay-bill`;
 const BILLS_PROVIDERS_ENDPOINT = `${BASE_URL}/bills/get-providers`;
 const BILLS_PACKAGES_ENDPOINT = `${BASE_URL}/bills/get-packages`;
 
+// virtual cards
+const VIRTUAL_CARD_REQUEST_ENDPOINT = `${BASE_URL}/virtual-cards/request`;
+const VIRTUAL_CARDS_FETCH_ALL_ENDPOINT = `${BASE_URL}/virtual-cards/customer/all`;
+const VIRTUAL_CARD_FETCH_ONE_ENDPOINT = (id: string) =>
+  `${BASE_URL}/virtual-cards/customer/card/${id}`;
+const VIRTUAL_CARD_FUND_ENDPOINT = `${BASE_URL}/virtual-cards/fund`;
+const VIRTUAL_CARD_WITHDRAW_ENDPOINT = `${BASE_URL}/virtual-cards/withdraw`;
+const VIRTUAL_CARD_FREEZE_ENDPOINT = (id: string) =>
+  `${BASE_URL}/virtual-cards/customer/card/${id}/freeze`;
+const VIRTUAL_CARD_UNFREEZE_ENDPOINT = (id: string) =>
+  `${BASE_URL}/virtual-cards/customer/card/${id}/unfreeze`;
+
+
 export {
   BASE_URL,
   REGISTER_USERS_ENDPOINT,
@@ -112,4 +125,11 @@ export {
   BILLS_PACKAGES_ENDPOINT,
   BILLS_PAY_ENDPOINT,
   BILLS_PROVIDERS_ENDPOINT,
+  VIRTUAL_CARD_REQUEST_ENDPOINT,
+  VIRTUAL_CARDS_FETCH_ALL_ENDPOINT,
+  VIRTUAL_CARD_FETCH_ONE_ENDPOINT,
+  VIRTUAL_CARD_FUND_ENDPOINT,
+  VIRTUAL_CARD_WITHDRAW_ENDPOINT,
+  VIRTUAL_CARD_FREEZE_ENDPOINT,
+  VIRTUAL_CARD_UNFREEZE_ENDPOINT,
 };

@@ -15,10 +15,10 @@ const kyc = () => {
       //navigate to kyc level 2
       router.push("/kyc/next-of-kin");
     } else if (user?.kyc_level === 2) {
-      //navigate to kyc level 3
-      return 
+      // router.push("/kyc/utility-bills");
+      return;
     }
-  }
+  };
   return (
     <SafeAreaView className="bg-primary-100 flex-1 px-2">
       <Header title="KYC Level" />

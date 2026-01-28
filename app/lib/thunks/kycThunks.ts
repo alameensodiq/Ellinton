@@ -157,9 +157,17 @@ export const verifyNin = createAsyncThunk(
         );
       }
 
-      const data = (await response.json()) as VerifyNinResponse;
-      console.log(data);
-      return data;
+      const responseData =
+        (await response.json()) as ApiResponse<VerifyNinResponse>;
+      const innerData = responseData.data;
+      if (!responseData.success || !innerData) {
+        return rejectWithValue(
+          responseData.message || "Invalid response: Missing verification data"
+        );
+      }
+
+      console.log(innerData);
+      return innerData;
     } catch (error: any) {
       return rejectWithValue(
         error.data?.message || error.message || "NIN verification error"

@@ -10,9 +10,9 @@ import { svgIcons } from "@/app/assets/icons/icons";
 import { useRouter } from "expo-router";
 
 export const currencies = [
-  { value: "NGN", label: "NGN", flag: "🇳🇬", selected: true },
-  { value: "USD", label: "USD", flag: "🇺🇸", selected: false },
-  { value: "GBP", label: "GBP", flag: "🇬🇧", selected: false },
+  { value: "NGN", label: "NGN", flag: "🇳🇬" },
+  { value: "USD", label: "USD", flag: "🇺🇸" },
+  { value: "GBP", label: "GBP", flag: "🇬🇧" },
 ];
 
 export const brands = [
@@ -28,32 +28,34 @@ export const brands = [
     icon: svgIcons.visa,
     selected: false,
   },
-  {
-    value: "verve",
-    label: "Verve",
-    icon: svgIcons.verve,
-    selected: false,
-  },
+  // {
+  //   value: "verve",
+  //   label: "Verve",
+  //   icon: svgIcons.verve,
+  //   selected: false,
+  // },
 ];
 
 export default function VirtualCardCreateStep1() {
-  const [selectedCurrency, setSelectedCurrency] = useState("NGN");
+  // 🔒 USD locked as default
+  const [selectedCurrency] = useState<"USD">("USD");
+
   const [selectedBrand, setSelectedBrand] = useState("mastercard");
-  const [amount, setAmount] = useState("200");
-  const router = useRouter()
+  const [amount, setAmount] = useState("5");
+  const router = useRouter();
 
- const handleContinue = () => {
-   const selectedBrandObj = brands.find((b) => b.value === selectedBrand);
+  const handleContinue = () => {
+    const selectedBrandObj = brands.find((b) => b.value === selectedBrand);
 
-   router.push({
-     pathname: "/(root)/cards/virtual-card/step2",
-     params: {
-       currency: selectedCurrency,
-       amount: amount,
-       icon: selectedBrandObj?.value || "mastercard",
-     },
-   });
- };
+    router.push({
+      pathname: "/(root)/cards/virtual-card/step2",
+      params: {
+        currency: selectedCurrency,
+        amount,
+        icon: selectedBrandObj?.value || "mastercard",
+      },
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
@@ -78,16 +80,25 @@ export default function VirtualCardCreateStep1() {
             {/* Currency Selector */}
             <View className="mb-6">
               <CustomText size="lg">Select currency</CustomText>
-              <View className="flex-row justify-between ">
-                {currencies.map((currency) => (
-                  <SelectableButton
-                    key={currency.value}
-                    item={{ ...currency, icon: currency.flag }}
-                    selected={selectedCurrency === currency.value}
-                    onPress={setSelectedCurrency}
-                  />
-                ))}
+              <View className="flex-row justify-between">
+                {currencies.map((currency) => {
+                  const isUSD = currency.value === "USD";
+
+                  return (
+                    <SelectableButton
+                      key={currency.value}
+                      item={{ ...currency, icon: currency.flag }}
+                      selected={isUSD}
+                      onPress={() => {}}
+                      disabled={!isUSD}
+                    />
+                  );
+                })}
               </View>
+
+              <CustomText secondary size="sm" className="mt-2">
+                💡 More currencies coming soon
+              </CustomText>
             </View>
 
             {/* Brand Selector */}
@@ -121,9 +132,10 @@ export default function VirtualCardCreateStep1() {
                 value={amount}
                 onChange={setAmount}
                 placeholder="0"
+                sign="$"
               />
               <CustomText secondary size="sm" className="mt-3">
-                ❔ Enter an amount above ₦100
+                ❔ Enter an amount above $5
               </CustomText>
             </View>
           </ScrollView>

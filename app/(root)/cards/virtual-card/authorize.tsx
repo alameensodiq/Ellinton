@@ -5,49 +5,129 @@ import {
   StatusBar,
   TouchableOpacity,
   Vibration,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import Header from "@/app/components/header-back";
-import OtpInput from "@/app/components/inputs/OtpInput"; 
+import OtpInput from "@/app/components/inputs/OtpInput";
 import Numpad from "@/app/components/inputs/Numpad";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, AppDispatch } from "@/app/lib/store";
+import {
+  requestVirtualCard,
+  RequestVirtualCardPayload,
+} from "@/app/lib/thunks/virtualCardsThunks";
+import { unwrapResult } from "@reduxjs/toolkit";
 
 export default function AuthorizePayment() {
   const params = useLocalSearchParams();
+  const {
+    currency = "USD",
+    amount = "0",
+    icon = "mastercard",
+    color = "gold",
+  } = params;
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+  const { user } = useSelector((state: RootState) => state.auth);
+
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const billingStreet = user?.address_1 || "";
+  const billingCity = user?.state || "";
+  const billingState = user?.state || "";
+  const billingCountry = user?.country_code || "";
+  const billingPostalCode = user?.country_code || "";
+
+  const apiTypeMap: Record<string, "VISA" | "MASTERCARD"> = {
+    visa: "VISA",
+    mastercard: "MASTERCARD",
+  };
+
+  const apiColorMap: Record<
+    string,
+    "Gold" | "Silver" | "Platinum" | "Titanium" | "Classic" | "White"
+  > = {
+    gold: "Gold",
+    silver: "Silver",
+    platinum: "Platinum",
+    titanium: "Titanium",
+    classic: "Classic",
+    white: "White",
+  };
 
   const handleNumberPress = (num: string) => {
-    if (passcode.length < 4) {
+    if (passcode.length < 4 && !loading) {
       setPasscode((prev) => {
         const next = prev + num;
         setError(false);
+        setErrorMessage("");
         return next;
       });
     }
   };
 
   const handleDelete = () => {
-    setPasscode((prev) => prev.slice(0, -1));
-    setError(false);
+    if (!loading) {
+      setPasscode((prev) => prev.slice(0, -1));
+      setError(false);
+      setErrorMessage("");
+    }
   };
 
   useEffect(() => {
     if (passcode.length === 4) {
-      const t = setTimeout(() => {
-        if (passcode === "1234") {
+      const processRequest = async () => {
+        setLoading(true);
+
+        if (passcode !== "1234") {
+          setError(true);
+          setErrorMessage("Incorrect passcode. Please try again.");
+          Vibration.vibrate(400);
+          setPasscode("");
+          setLoading(false);
+          return;
+        }
+
+        const payload: RequestVirtualCardPayload = {
+          amount: Number(amount),
+          type: apiTypeMap[icon as string] || "MASTERCARD",
+          color: apiColorMap[color as string] || "Gold",
+          billingStreet,
+          billingCity,
+          billingState,
+          billingCountry,
+          billingPostalCode,
+          transactionPin: passcode,
+        };
+
+        try {
+          const actionResult = await dispatch(requestVirtualCard(payload));
+          unwrapResult(actionResult);
+
           router.push({
             pathname: "/(root)/cards/virtual-card/success",
             params: params,
           });
-        } else {
+        } catch (error: any) {
+          console.log(error)
           setError(true);
-          Vibration.vibrate(400);
+          setErrorMessage(
+            error?.message || error||
+              "Failed to request virtual card. Please try again."
+          );
           setPasscode("");
+        } finally {
+          setLoading(false);
         }
-      }, 300);
+      };
+
+      const t = setTimeout(processRequest, 300);
 
       return () => clearTimeout(t);
     }
@@ -69,6 +149,7 @@ export default function AuthorizePayment() {
             onChange={(value) => {
               setPasscode(value.slice(0, 4));
               setError(false);
+              setErrorMessage("");
             }}
             error={error}
             autoFocus={false}
@@ -77,9 +158,7 @@ export default function AuthorizePayment() {
           />
 
           {error && (
-            <Text className="text-red-500 text-sm mt-4">
-              Incorrect passcode. Please try again.
-            </Text>
+            <Text className="text-red-500 text-sm mt-4">{errorMessage}</Text>
           )}
         </View>
 

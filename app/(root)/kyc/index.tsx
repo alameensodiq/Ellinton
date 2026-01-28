@@ -38,7 +38,8 @@ const NINIdentityScreen = () => {
 
     try {
       const result = await dispatch(verifyNin({ nin })).unwrap();
-      if (!result.nin_verified) {
+
+      if (result.nin_verified) {
         router.push({ pathname: "/(root)/kyc/next-of-kin", params: { nin } });
       } else {
         setNinError(
@@ -51,13 +52,13 @@ const NINIdentityScreen = () => {
           ? err
           : err?.message || err?.data?.message || err;
       setNinError(errorMessage || "NIN verification failed. Please try again.");
-      console.error("NIN verification error:", err); 
-        router.push({ pathname: "/(root)/kyc/next-of-kin", params: { nin } });
-
+      console.error("NIN verification error:", err);
+      // DO NOT navigate here!
     } finally {
       setIsLoading(false);
     }
   };
+
 
   return (
     <>

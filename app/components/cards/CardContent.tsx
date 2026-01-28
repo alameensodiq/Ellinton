@@ -9,7 +9,7 @@ import { useRouter } from "expo-router";
 
 interface CardContentProps {
   buttonTitle: string;
-  buttonRoute: string;
+  buttonRoute: string ;
   sectionTitle: string;
 }
 

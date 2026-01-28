@@ -42,7 +42,7 @@ const Login = () => {
         router.replace("/(auth)/email-identity");
       } else if (user?.is_email_verified && !user.bvn_verified) {
         router.replace("/(auth)/profile-update");
-      } else if (user?.bvn_verified && user.facial_verification_status) {
+      } else if (user?.bvn_verified && !user.facial_verification_status) {
         router.replace("/(auth)/facial-verification");
       } else if (requiresPasscodeSetup) {
         router.replace("/(auth)/create-passcode");

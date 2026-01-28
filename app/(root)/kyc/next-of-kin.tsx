@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -36,7 +36,7 @@ const NextOfKinScreen = () => {
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
 
-  const [country, setCountry] = useState("NG"); 
+  const [country, setCountry] = useState("NG");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
 
@@ -61,21 +61,14 @@ const NextOfKinScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
 
-  const countryOptions: DropdownOption[] = [
-    { value: "NG", label: "Nigeria" },
-  ];
+  const countryOptions: DropdownOption[] = [{ value: "NG", label: "Nigeria" }];
 
-  const stateOptions: DropdownOption[] = [
-    { value: "LA", label: "Lagos" },
-    { value: "AB", label: "Abuja" },
-    { value: "KA", label: "Kano" },
-  ];
+  const [stateOptions, setStateOptions] = useState<DropdownOption[]>([]);
+  const [cityOptions, setCityOptions] = useState<DropdownOption[]>([]);
 
-  const cityOptions: DropdownOption[] = [
-    { value: "IK", label: "Ikeja" }, 
-    { value: "AB", label: "Abuja" },
-    { value: "PH", label: "Port Harcourt" },
-  ];
+  const [loadingStates, setLoadingStates] = useState(true);
+  const [loadingCities, setLoadingCities] = useState(false);
+  const [fetchError, setFetchError] = useState("");
 
   // New: Relationship options
   const relationshipOptions: DropdownOption[] = [
@@ -100,11 +93,74 @@ const NextOfKinScreen = () => {
 
   const validatePhone = (v: string) => v.length >= 10;
 
-  
   const validateEmail = (v: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(v);
   };
+
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        setLoadingStates(true);
+        const response = await fetch(
+          "https://nga-states-lga.onrender.com/fetch"
+        );
+        if (!response.ok) throw new Error("Failed to fetch states");
+        const states: string[] = await response.json();
+
+        const formattedStates = states.map((s) => ({
+          value: s,
+          label: s,
+        }));
+
+        setStateOptions(formattedStates);
+      } catch (err) {
+        setFetchError("Failed to load states. Please try again.");
+        console.error(err);
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+
+    fetchStates();
+  }, []);
+
+  useEffect(() => {
+    if (!state) {
+      setCityOptions([]);
+      setCity("");
+      return;
+    }
+
+    const fetchCities = async () => {
+      try {
+        setLoadingCities(true);
+        const response = await fetch(
+          `https://nga-states-lga.onrender.com/?state=${encodeURIComponent(
+            state
+          )}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch cities");
+        const cities: string[] = await response.json();
+
+        const formattedCities = cities.map((city) => ({
+          value: city.toLowerCase().replace(/\s+/g, " "),
+          label: city,
+        }));
+
+        setCityOptions(formattedCities);
+        setCity("");
+      } catch (err) {
+        setFetchError("Failed to load cities.");
+        console.error(err);
+        setCityOptions([]);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+
+    fetchCities();
+  }, [state]);
 
   const handleContinue = async () => {
     setFirstNameError("");
@@ -236,6 +292,10 @@ const NextOfKinScreen = () => {
                   Next of kin
                 </Text>
 
+                {fetchError ? (
+                  <Text className="text-red-500 mb-4">{fetchError}</Text>
+                ) : null}
+
                 <View className="space-y-6">
                   <TextInputField
                     label="First Name"
@@ -300,6 +360,7 @@ const NextOfKinScreen = () => {
                     ]}
                     selectedCountry={selectedCountry}
                     onSelectCountry={setSelectedCountry}
+                    disabled
                   />
 
                   <Dropdown
@@ -315,21 +376,31 @@ const NextOfKinScreen = () => {
                     <View className="flex-1">
                       <Dropdown
                         label="State*"
-                        placeholder="Select State"
+                        placeholder={
+                          loadingStates ? "Loading states..." : "Select State"
+                        }
                         options={stateOptions}
                         selectedValue={state}
                         onSelect={setState}
                         error={stateError}
+                        disabled={loadingStates}
                       />
                     </View>
                     <View className="flex-1">
                       <Dropdown
                         label="City*"
-                        placeholder="Select City"
+                        placeholder={
+                          loadingCities
+                            ? "Loading cities..."
+                            : !state
+                            ? "Select State first"
+                            : "Select City"
+                        }
                         options={cityOptions}
                         selectedValue={city}
                         onSelect={setCity}
                         error={cityError}
+                        disabled={!state || loadingCities}
                       />
                     </View>
                   </View>
@@ -357,6 +428,7 @@ const NextOfKinScreen = () => {
                   variant="primary"
                   onPress={handleContinue}
                   className="w-full mt-4"
+                  disabled={isLoading || loadingStates || loadingCities}
                 />
               </View>
             </ScrollView>

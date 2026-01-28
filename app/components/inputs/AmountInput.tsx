@@ -5,12 +5,14 @@ interface AmountInputProps {
   value: string;
   onChange: (text: string) => void;
   placeholder?: string;
+  sign?: string;
 }
 
 export default function AmountInput({
   value,
   onChange,
   placeholder = "0",
+  sign = "₦",
 }: AmountInputProps) {
   const formatNumber = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, "");
@@ -31,7 +33,7 @@ export default function AmountInput({
       }`}
     >
       <View className="w-10 items-center justify-center border-r border-[#6a6a3a]">
-        <Text className="text-white font-semibold text-lg">₦</Text>
+        <Text className="text-white font-semibold text-lg">{sign}</Text>
       </View>
 
       <TextInput

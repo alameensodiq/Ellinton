@@ -10,7 +10,8 @@ interface SelectableButtonProps<T = string> {
   };
   selected: boolean;
   onPress: (value: T) => void;
-  className?: string; 
+  className?: string;
+  disabled?: boolean; 
 }
 
 const SelectableButton = <T extends string>({
@@ -18,13 +19,18 @@ const SelectableButton = <T extends string>({
   selected,
   onPress,
   className = "",
+  disabled = false, 
 }: SelectableButtonProps<T>) => {
   return (
     <Pressable
-      className={`p-3 px-6  rounded-lg flex-row items-center bg-primary-400  ${
-        selected ? "border-2 border-primary-300" : ""
-      } ${className}`}
-      onPress={() => onPress(item.value)}
+      className={`p-3 px-6 rounded-lg flex-row items-center 
+        ${
+          selected
+            ? "border-2 border-primary-300 bg-primary-400"
+            : "bg-primary-400"
+        } 
+        ${disabled ? "opacity-50" : ""} ${className}`}
+      onPress={() => !disabled && onPress(item.value)}
     >
       {item.icon && (
         <View className="pr-3">

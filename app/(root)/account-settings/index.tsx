@@ -215,29 +215,30 @@ const AccountSettings = () => {
       </View>
 
       {/* 🔹 REFERRAL CODE + COPY + TOAST */}
-      <View className="mb-6">
-        <Text className="text-white text-sm mb-3">Referral Code</Text>
-        <View className="flex-row items-center justify-between bg-primary-400 rounded-xl p-4 border-2 border-primary-100">
-          <Text className="text-white text-base">
-            {user?.referral_code || "RJUEGEKNDM"}
-          </Text>
+      {user?.referral_code && (
+        <View className="mb-6">
+          <Text className="text-white text-sm mb-3">Referral Code</Text>
+          <View className="flex-row items-center justify-between bg-primary-400 rounded-xl p-4 border-2 border-primary-100">
+            <Text className="text-white text-base">
+              {user?.referral_code || "RJUEGEKNDM"}
+            </Text>
+            <View className="flex-row items-center">
+              {copied && (
+                <Animated.Text
+                  style={{ opacity: fadeAnim }}
+                  className="text-green-300 text-xs mr-2"
+                >
+                  Copied!
+                </Animated.Text>
+              )}
 
-          <View className="flex-row items-center">
-            {copied && (
-              <Animated.Text
-                style={{ opacity: fadeAnim }}
-                className="text-green-300 text-xs mr-2"
-              >
-                Copied!
-              </Animated.Text>
-            )}
-
-            <Pressable onPress={handleCopyReferral}>
-              <Ionicons name="copy-outline" size={20} color="#fff" />
-            </Pressable>
+              <Pressable onPress={handleCopyReferral}>
+                <Ionicons name="copy-outline" size={20} color="#fff" />
+              </Pressable>
+            </View>
           </View>
         </View>
-      </View>
+      )}
 
       <Button
         title="Save changes"
@@ -298,7 +299,7 @@ const AccountSettings = () => {
             <CustomText>Change Passcode</CustomText>
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </Pressable>
-         
+
           <Pressable
             className="flex-row items-center justify-between py-4 border-b border-primary-300 last:border-b-0"
             onPress={handleChangeTransactionPin}
