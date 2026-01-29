@@ -1,8 +1,3 @@
-// app/(root)/(tabs)/cards.tsx
-// ✅ Full file
-// ✅ "More" bottom sheet opens ONLY after authorize + pin
-// ✅ If already authorized (selectedCard exists) it opens immediately
-
 import React, { useState, useEffect } from "react";
 import {
   ScrollView,
@@ -35,6 +30,7 @@ import {
   VirtualCardListItem,
 } from "@/app/lib/thunks/virtualCardsThunks";
 import { RootState, AppDispatch } from "@/app/lib/store";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 
 const EMPTY_ARR: any[] = [];
 
@@ -45,6 +41,7 @@ const selectVirtualCards = (state: RootState) => {
   const cards = state.virtualCards?.cards;
   return Array.isArray(cards) ? cards : EMPTY_ARR;
 };
+const user = useAppSelector((state) => state.auth.user);
 
 const selectVirtualLoading = (state: RootState) =>
   state.virtualCards?.isLoading ?? false;
@@ -199,8 +196,8 @@ export default function Card() {
         setShowBlockSheet(true);
         break;
 
-      // case "pin":
-      //   setShowPinSheet(true);
+        // case "pin":
+        //   setShowPinSheet(true);
         break;
 
       case "more":
@@ -305,7 +302,9 @@ export default function Card() {
             ) : (
               <CardContent
                 buttonTitle="Request virtual card"
-                buttonRoute="/(root)/cards/virtual-card"
+                buttonRoute={
+                  user?.kyc_level === 3 ? "/(root)/cards/virtual-card" : ""
+                }
                 sectionTitle="Why a Virtual Card?"
               />
             )
@@ -335,7 +334,9 @@ export default function Card() {
             ) : (
               <CardContent
                 buttonTitle="Request physical card"
-                buttonRoute="/(root)/cards/physical-card"
+                buttonRoute={
+                  user?.kyc_level === 3 ? "/(root)/cards/physical-card" : ""
+                }
                 sectionTitle="Track your physical card"
               />
             )
