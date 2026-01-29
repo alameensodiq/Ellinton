@@ -12,8 +12,8 @@ interface Props {
 const items: ServiceItem[] = [
   { id: "fund", label: "Fund card" },
   { id: "withdrawal", label: "Withdrawal" },
-  { id: "block", label: "Block" },
-  { id: "pin", label: "Change PIN" },
+  // { id: "block", label: "Block" },
+  // { id: "pin", label: "Change PIN" },
   { id: "more", label: "More info" },
 ];
 

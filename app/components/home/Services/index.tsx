@@ -14,6 +14,7 @@ export default function ServicesSection() {
   const router = useRouter();
 
   const handleItemPress = (item: ServiceItem) => {
+    
     if (item.id === "1") router.push("/(root)/airtime");
     if (item.id === "2") router.push("/(root)/utility");
     if (item.id === "3") router.push("/(root)/data");
@@ -22,6 +23,7 @@ export default function ServicesSection() {
     if (item.id === "6") router.push("/(root)/travel-&-hotel-payment");
     if (item.id === "7") router.push("/(root)/internet");
     // if (item.id === "8") router.push("/(root)/other-bills");
+    // if (item.id === "9") router.push("/(root)/loans");
   };
 
 
@@ -34,7 +36,7 @@ export default function ServicesSection() {
       />
       <OtherServicesSection
         items={otherServices}
-        // onItemPress={handleItemPress}
+        onItemPress={handleItemPress}
       />
       <WealthManagementSection
         items={wealthManagement}

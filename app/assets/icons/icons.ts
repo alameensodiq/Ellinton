@@ -25,7 +25,8 @@ import chip from "./chip.svg"
 import FixedSavings from "./fixed-savings.svg"
 import BasicSavings from  "./basic-savings.svg"
 import TargetSavings from  "./target-savings.svg"
-import GroupSavings from  "./group-savings.svg"
+import GroupSavings from "./group-savings.svg"
+import loans from "./loans.svg"
 
 
 
@@ -70,5 +71,5 @@ export const svgIcons = {
   basic_savings: BasicSavings,
   target_savings: TargetSavings,
   group_savings: GroupSavings,
-  
+  loans: loans,
 };

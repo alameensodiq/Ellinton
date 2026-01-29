@@ -1,5 +1,7 @@
 // const BASE_URL = "http://3.220.216.48:3005/api/v2";
+// const BASE_URL = "https://unvenial-uncomplaining-von.ngrok-free.dev/api/v2";
 const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
@@ -80,6 +82,16 @@ const VIRTUAL_CARD_FREEZE_ENDPOINT = (id: string) =>
 const VIRTUAL_CARD_UNFREEZE_ENDPOINT = (id: string) =>
   `${BASE_URL}/virtual-cards/customer/card/${id}/unfreeze`;
 
+// loans
+const LOAN_PRODUCTS_ENDPOINT = `${BASE_URL}/loans/products`;
+const LOAN_COMMERCIAL_BANKS_ENDPOINT = `${BASE_URL}/loans/commercial-banks`;
+const LOAN_CREDIT_CHECK_ENDPOINT = `${BASE_URL}/loans/credit-check`;
+const LOAN_CALCULATE_ENDPOINT = `${BASE_URL}/loans/calculate`;
+const LOAN_APPLY_ENDPOINT = `${BASE_URL}/loans/apply`;
+const FETCH_USER_LOANS_ENDPOINT = `${BASE_URL}/loans`;
+const FETCH_SINGLE_LOAN_ENDPOINT = (id: string) =>
+  `${BASE_URL}/loans/${id}`;
+
 
 export {
   BASE_URL,
@@ -132,4 +144,12 @@ export {
   VIRTUAL_CARD_WITHDRAW_ENDPOINT,
   VIRTUAL_CARD_FREEZE_ENDPOINT,
   VIRTUAL_CARD_UNFREEZE_ENDPOINT,
+  LOAN_PRODUCTS_ENDPOINT,
+  LOAN_COMMERCIAL_BANKS_ENDPOINT,
+  LOAN_CREDIT_CHECK_ENDPOINT,
+  LOAN_CALCULATE_ENDPOINT,
+  LOAN_APPLY_ENDPOINT,
+  FETCH_USER_LOANS_ENDPOINT,
+  FETCH_SINGLE_LOAN_ENDPOINT,
+
 };

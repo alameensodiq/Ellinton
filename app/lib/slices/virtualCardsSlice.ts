@@ -7,12 +7,17 @@ import {
   withdrawVirtualCard,
   freezeVirtualCard,
   unfreezeVirtualCard,
-  VirtualCard,
+  VirtualCardListItem,
+  VirtualCardDetails,
 } from "../thunks/virtualCardsThunks";
 
+/* =========================
+   STATE
+========================= */
+
 interface VirtualCardsState {
-  cards: VirtualCard[] | null;
-  selectedCard: VirtualCard | null;
+  cards: VirtualCardListItem[] | null; // from /customer/all
+  selectedCard: VirtualCardDetails | null; // from /customer/card/{id}
   isLoading: boolean;
   error: string | null;
 }
@@ -23,6 +28,10 @@ const initialState: VirtualCardsState = {
   isLoading: false,
   error: null,
 };
+
+/* =========================
+   SLICE
+========================= */
 
 const virtualCardsSlice = createSlice({
   name: "virtualCards",
@@ -36,56 +45,82 @@ const virtualCardsSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    /** ---------------------------
-     * DATA HANDLERS (addCase FIRST)
-     * --------------------------- */
+    /* -------------------------
+       DATA HANDLERS (FIRST)
+    -------------------------- */
+
     builder
+      // Fetch all cards
       .addCase(
         fetchVirtualCards.fulfilled,
-        (state, action: PayloadAction<VirtualCard[]>) => {
+        (state, action: PayloadAction<VirtualCardListItem[]>) => {
           state.cards = action.payload;
         }
       )
+
+      // Fetch single card details
       .addCase(
         fetchVirtualCard.fulfilled,
-        (state, action: PayloadAction<VirtualCard>) => {
+        (state, action: PayloadAction<VirtualCardDetails>) => {
           state.selectedCard = action.payload;
         }
       )
+
+      // Request new card → refresh list optimistically
       .addCase(
         requestVirtualCard.fulfilled,
-        (state, action: PayloadAction<VirtualCard>) => {
-          state.cards = state.cards
-            ? [action.payload, ...state.cards]
-            : [action.payload];
+        (state, action: PayloadAction<VirtualCardDetails>) => {
+          if (state.cards) {
+            state.cards.unshift({
+              id: action.payload.id,
+              identifier: action.payload.id,
+              card_pan: action.payload.masked_pan,
+              card_type: action.payload.issuer,
+              status: "Active",
+              has_debited_fee: false,
+              has_debited_vat: false,
+              customer_id: 0,
+              created_at: action.payload.created_at,
+              updated_at: action.payload.updated_at,
+            });
+          }
         }
       )
+
+      // Fund card → updates selected card
       .addCase(
         fundVirtualCard.fulfilled,
-        (state, action: PayloadAction<VirtualCard>) => {
+        (state, action: PayloadAction<VirtualCardDetails>) => {
           state.selectedCard = action.payload;
         }
       )
+
+      // Withdraw card → updates selected card
       .addCase(
         withdrawVirtualCard.fulfilled,
-        (state, action: PayloadAction<VirtualCard>) => {
+        (state, action: PayloadAction<VirtualCardDetails>) => {
           state.selectedCard = action.payload;
         }
       )
+
+      // Freeze card
       .addCase(freezeVirtualCard.fulfilled, (state) => {
         if (state.selectedCard) {
-          state.selectedCard.status = "Frozen";
+          state.selectedCard.status = "DISABLED";
         }
       })
+
+      // Unfreeze card
       .addCase(unfreezeVirtualCard.fulfilled, (state) => {
         if (state.selectedCard) {
-          state.selectedCard.status = "Active";
+          state.selectedCard.status = "ACTIVE";
         }
       });
 
-    /** ---------------------------
-     * GLOBAL MATCHERS (AFTER)
-     * --------------------------- */
+    /* -------------------------
+       GLOBAL MATCHERS (AFTER)
+    -------------------------- */
+
     builder
       .addMatcher(
         isAnyOf(
@@ -133,6 +168,10 @@ const virtualCardsSlice = createSlice({
       );
   },
 });
+
+/* =========================
+   EXPORTS
+========================= */
 
 export const { clearVirtualCardError, clearSelectedVirtualCard } =
   virtualCardsSlice.actions;

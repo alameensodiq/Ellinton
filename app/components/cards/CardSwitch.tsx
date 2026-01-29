@@ -9,8 +9,9 @@ interface CardSwitchProps {
 
 const CardSwitch: React.FC<CardSwitchProps> = ({ value, onChange }) => {
   return (
-    <View className="mb-6 flex-row justify-between items-center px-1  -mt-2">
+    <View className="mb-6 flex-row justify-between items-center px-1 -mt-2">
       <CustomText size="sm">Show card details</CustomText>
+
       <View className="rounded-2xl border border-primary-200 bg-transparent justify-center h-8">
         <Switch
           value={value}

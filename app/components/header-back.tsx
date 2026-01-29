@@ -9,6 +9,9 @@ interface HeaderProps {
   showBack?: boolean;
   showClose?: boolean;
   showCancel?: boolean;
+
+  rightIconName?: keyof typeof Ionicons.glyphMap;
+  onRightPress?: () => void;
 }
 
 export default function Header({
@@ -16,10 +19,12 @@ export default function Header({
   showBack = true,
   showClose = false,
   showCancel = false,
+  rightIconName,
+  onRightPress,
 }: HeaderProps) {
   const router = useRouter();
 
-  const handlePress = () => {
+  const handleLeftPress = () => {
     router.back();
   };
 
@@ -27,20 +32,29 @@ export default function Header({
     showCancel || showClose ? "close" : showBack ? "chevron-back" : null;
 
   return (
-    <View className="flex-row items-center justify-between px- py-4">
+    <View className="flex-row items-center justify-between px-4 py-4">
+      {/* Left icon */}
       {leftIconName ? (
-        <TouchableOpacity onPress={handlePress} className="p-2">
+        <TouchableOpacity onPress={handleLeftPress} className="p-2">
           <Ionicons name={leftIconName} size={24} color="white" />
         </TouchableOpacity>
       ) : (
         <View className="w-10" />
       )}
 
+      {/* Title */}
       <CustomText weight="medium" size="lg">
         {title}
       </CustomText>
 
-      <View className="w-10" />
+      {/* Right icon (optional) */}
+      {rightIconName ? (
+        <TouchableOpacity onPress={onRightPress} className="p-2">
+          <Ionicons name={rightIconName} size={24} color="white" />
+        </TouchableOpacity>
+      ) : (
+        <View className="w-10" />
+      )}
     </View>
   );
 }

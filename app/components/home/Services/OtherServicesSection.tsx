@@ -5,16 +5,21 @@ import CustomText from "../../CustomText";
 
 interface Props {
   items: ServiceItem[];
+  onItemPress?: (item: ServiceItem) => void;
 }
 
-const OtherServicesSection: React.FC<Props> = ({ items }) => {
+const OtherServicesSection: React.FC<Props> = ({ items, onItemPress }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const handlePress = (id: string) => {
-    setActiveId(id);
+  const handlePress = (item: ServiceItem) => {
+    setActiveId(item.id);
+console.log("Pressed:", item.id, item.label); // 👈 DEBUG
+
+    // trigger navigation
+    onItemPress?.(item);
 
     setTimeout(() => {
-      setActiveId((prev) => (prev === id ? null : prev));
+      setActiveId((prev) => (prev === item.id ? null : prev));
     }, 1000);
   };
 
@@ -32,7 +37,7 @@ const OtherServicesSection: React.FC<Props> = ({ items }) => {
             style={{ width: "30%", aspectRatio: 1 }}
           >
             <Pressable
-              onPress={() => handlePress(item.id)}
+              onPress={() => handlePress(item)}
               className="bg-primary-300 rounded-2xl p-4 items-center justify-center h-full"
             >
               <Image

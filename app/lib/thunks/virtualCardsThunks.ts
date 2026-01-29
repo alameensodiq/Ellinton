@@ -10,20 +10,8 @@ import {
 } from "../api";
 
 /* =========================
-   TYPES
+   API RESPONSE WRAPPER
 ========================= */
-
-export interface VirtualCard {
-  id: string;
-  card_pan: string;
-  masked_pan: string;
-  expiry_date: string;
-  cvv: string;
-  balance: number;
-  currency: string;
-  status: "Active" | "Frozen" | "Blocked";
-  created_at: string;
-}
 
 interface ApiResponse<T = any> {
   status: string;
@@ -31,6 +19,55 @@ interface ApiResponse<T = any> {
   data?: T;
   message?: string;
 }
+
+/* =========================
+   TYPES (MATCH BACKEND)
+========================= */
+
+/** Returned from: GET /customer/all */
+export interface VirtualCardListItem {
+  id: string;
+  identifier: string;
+  card_pan: string;
+  card_type: "MASTERCARD" | "VISA";
+  status: "Active" | "Frozen" | "Blocked";
+  has_debited_fee: boolean;
+  has_debited_vat: boolean;
+  customer_id: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Returned from: POST /customer/card/{id} */
+export interface VirtualCardDetails {
+  id: string;
+  name: string;
+  message:string,
+  card_number: string;
+  masked_pan: string;
+  expiry: string;
+  cvv: string;
+  status: "ACTIVE" | "DISABLED" | "BLOCKED";
+  type: "VIRTUAL";
+  issuer: "MASTERCARD" | "VISA";
+  currency: string;
+  balance: number;
+  balance_updated_at: string;
+  auto_approve: boolean;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+/* =========================
+   PAYLOADS
+========================= */
 
 export interface RequestVirtualCardPayload {
   amount?: number;
@@ -41,35 +78,34 @@ export interface RequestVirtualCardPayload {
   billingCountry: string;
   billingPostalCode: string;
   color: string;
-  transactionPin:string;
+  transactionPin: string;
 }
 
 export interface FundVirtualCardPayload {
-  cardId: string;
+  cardId: string| number;
   amount: number;
+  transactionPin: string;
 }
 
 export interface WithdrawVirtualCardPayload {
-  cardId: string;
+  cardId: string| number;
   amount: number;
+  transactionPin:string
 }
 
 /* =========================
-   THUNKS (MATCH PHYSICAL CARD ERROR HANDLING)
+   REQUEST VIRTUAL CARD
 ========================= */
 
-// -------------------------
-// REQUEST VIRTUAL CARD
-// -------------------------
 export const requestVirtualCard = createAsyncThunk<
-  VirtualCard,
+  VirtualCardDetails,
   RequestVirtualCardPayload
 >("virtualCards/request", async (payload, { getState, rejectWithValue }) => {
   try {
     const state = getState() as any;
     const token = state.auth.token;
 
-    const response = await fetch(VIRTUAL_CARD_REQUEST_ENDPOINT, {
+    const res = await fetch(VIRTUAL_CARD_REQUEST_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,123 +114,117 @@ export const requestVirtualCard = createAsyncThunk<
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return rejectWithValue(
-        errorData?.data?.message ||
-          errorData?.message ||
-          `Virtual card request failed (${response.status})`
-      );
-    }
+    const data = (await res.json()) as ApiResponse<VirtualCardDetails>;
 
-    const data = (await response.json()) as ApiResponse<VirtualCard>;
-
-    if (!data.success || !data.data) {
-      return rejectWithValue(data.message || "Virtual card request failed");
+    if (!res.ok || !data.success || !data.data) {
+      return rejectWithValue(data?.message || "Virtual card request failed");
     }
 
     return data.data;
-  } catch (error: any) {
-    return rejectWithValue(
-      error.data?.message || error.message || "Virtual card request error"
-    );
+  } catch (err: any) {
+    return rejectWithValue(err.message || "Virtual card request error");
   }
 });
 
-// -------------------------
-// FETCH ALL VIRTUAL CARDS
-// -------------------------
-export const fetchVirtualCards = createAsyncThunk<VirtualCard[], void>(
+/* =========================
+   FETCH ALL VIRTUAL CARDS
+========================= */
+
+export const fetchVirtualCards = createAsyncThunk<VirtualCardListItem[], void>(
   "virtualCards/fetchAll",
   async (_, { getState, rejectWithValue }) => {
     try {
       const state = getState() as any;
       const token = state.auth.token;
+      console.log(
+        "Starting fetchVirtualCards with endpoint:",
+        VIRTUAL_CARDS_FETCH_ALL_ENDPOINT
+      );
+      console.log("Token present?", !!token);
 
-      const response = await fetch(VIRTUAL_CARDS_FETCH_ALL_ENDPOINT, {
+      const res = await fetch(VIRTUAL_CARDS_FETCH_ALL_ENDPOINT, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        return rejectWithValue(
-          errorData?.data?.message ||
-            errorData?.message ||
-            `Fetch virtual cards failed (${response.status})`
+      console.log("Fetch response status:", res.status);
+
+      const data = (await res.json()) as ApiResponse<VirtualCardListItem[]>;
+      console.log("Full API data for fetchAll:", data);
+
+      if (!res.ok || !data.success || !data.data) {
+        console.log(
+          "Rejecting fetchAll:",
+          data?.message || "Fetch cards failed"
         );
-      }
-
-      const data = (await response.json()) as ApiResponse<VirtualCard[]>;
-
-      if (!data.success || !data.data) {
-        return rejectWithValue(data.message || "Fetch virtual cards failed");
+        return rejectWithValue(data?.message || "Fetch cards failed");
       }
 
       return data.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.data?.message || error.message || "Fetch virtual cards error"
-      );
+    } catch (err: any) {
+      console.error("FetchAll error:", err.message);
+      return rejectWithValue(err.message || "Fetch cards error");
     }
   }
 );
 
-// -------------------------
-// FETCH SINGLE VIRTUAL CARD
-// -------------------------
-export const fetchVirtualCard = createAsyncThunk<VirtualCard, string>(
-  "virtualCards/fetchOne",
-  async (id, { getState, rejectWithValue }) => {
-    try {
-      const state = getState() as any;
-      const token = state.auth.token;
+/* =========================
+   FETCH SINGLE CARD (IMPORTANT FIX)
+   POST /customer/card/{id}
+========================= */
 
-      const response = await fetch(VIRTUAL_CARD_FETCH_ONE_ENDPOINT(id), {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        return rejectWithValue(
-          errorData?.data?.message ||
-            errorData?.message ||
-            `Fetch virtual card failed (${response.status})`
-        );
-      }
+type FetchVirtualCardPayload = {
+  id: string;
+  transactionPin: string;
+};
 
-      const data = (await response.json()) as ApiResponse<VirtualCard>;
+export const fetchVirtualCard = createAsyncThunk<
+  VirtualCardDetails,
+  FetchVirtualCardPayload
+>("virtualCards/fetchOne", async ({ id, transactionPin }, { getState, rejectWithValue }) => {
+  try {
+    const state = getState() as any;
+    const token = state.auth.token;
 
-      if (!data.success || !data.data) {
-        return rejectWithValue(data.message || "Fetch virtual card failed");
-      }
+    const res = await fetch(VIRTUAL_CARD_FETCH_ONE_ENDPOINT(id), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ transactionPin }), // ✅ pin in request body
+    });
 
-      return data.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.data?.message || error.message || "Fetch virtual card error"
-      );
+    const data = (await res.json()) as ApiResponse<VirtualCardDetails>;
+
+    if (!res.ok || !data.success || !data.data) {
+      return rejectWithValue(data?.message || "Fetch card failed");
     }
-  }
-);
 
-// -------------------------
-// FUND VIRTUAL CARD
-// -------------------------
+    console.log("[fetchVirtualCard OK]", data.data);
+    return data.data;
+  } catch (err: any) {
+    return rejectWithValue(err.message || "Fetch card error");
+  }
+});
+
+
+/* =========================
+   FUND VIRTUAL CARD
+========================= */
+
 export const fundVirtualCard = createAsyncThunk<
-  VirtualCard,
+  VirtualCardDetails,
   FundVirtualCardPayload
 >("virtualCards/fund", async (payload, { getState, rejectWithValue }) => {
   try {
     const state = getState() as any;
     const token = state.auth.token;
 
-    const response = await fetch(VIRTUAL_CARD_FUND_ENDPOINT, {
+    const res = await fetch(VIRTUAL_CARD_FUND_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -203,41 +233,33 @@ export const fundVirtualCard = createAsyncThunk<
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return rejectWithValue(
-        errorData?.data?.message ||
-          errorData?.message ||
-          `Fund virtual card failed (${response.status})`
-      );
+    const data = (await res.json()) as ApiResponse<VirtualCardDetails>;
+console.log(data);
+
+    if (!res.ok || !data.success || !data.data) {
+      return rejectWithValue(data?.data?.message || "Fund card failed");
     }
-
-    const data = (await response.json()) as ApiResponse<VirtualCard>;
-
-    if (!data.success || !data.data) {
-      return rejectWithValue(data.message || "Fund virtual card failed");
-    }
-
+console.log(data.data)
     return data.data;
-  } catch (error: any) {
-    return rejectWithValue(
-      error.data?.message || error.message || "Fund virtual card error"
-    );
+  } catch (err: any) {
+    console.log(err)
+    return rejectWithValue(err.message || "Fund card error");
   }
 });
 
-// -------------------------
-// WITHDRAW VIRTUAL CARD
-// -------------------------
+/* =========================
+   WITHDRAW VIRTUAL CARD
+========================= */
+
 export const withdrawVirtualCard = createAsyncThunk<
-  VirtualCard,
+  VirtualCardDetails,
   WithdrawVirtualCardPayload
 >("virtualCards/withdraw", async (payload, { getState, rejectWithValue }) => {
   try {
     const state = getState() as any;
     const token = state.auth.token;
 
-    const response = await fetch(VIRTUAL_CARD_WITHDRAW_ENDPOINT, {
+    const res = await fetch(VIRTUAL_CARD_WITHDRAW_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -246,32 +268,23 @@ export const withdrawVirtualCard = createAsyncThunk<
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return rejectWithValue(
-        errorData?.data?.message ||
-          errorData?.message ||
-          `Withdraw virtual card failed (${response.status})`
-      );
-    }
+    const data = (await res.json()) as ApiResponse<VirtualCardDetails>;
+    console.log(data)
 
-    const data = (await response.json()) as ApiResponse<VirtualCard>;
-
-    if (!data.success || !data.data) {
-      return rejectWithValue(data.message || "Withdraw virtual card failed");
+    if (!res.ok || !data.success || !data.data) {
+      return rejectWithValue(data?.data?.message || "Withdraw failed");
     }
 
     return data.data;
-  } catch (error: any) {
-    return rejectWithValue(
-      error.data?.message || error.message || "Withdraw virtual card error"
-    );
+  } catch (err: any) {
+    return rejectWithValue(err.message || "Withdraw error");
   }
 });
 
-// -------------------------
-// FREEZE VIRTUAL CARD
-// -------------------------
+/* =========================
+   FREEZE CARD
+========================= */
+
 export const freezeVirtualCard = createAsyncThunk<boolean, string>(
   "virtualCards/freeze",
   async (id, { getState, rejectWithValue }) => {
@@ -279,40 +292,34 @@ export const freezeVirtualCard = createAsyncThunk<boolean, string>(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(VIRTUAL_CARD_FREEZE_ENDPOINT(id), {
+      const url = VIRTUAL_CARD_FREEZE_ENDPOINT(id);
+      console.log("Freeze URL:", url);
+
+      const res = await fetch(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        return rejectWithValue(
-          errorData?.data?.message ||
-            errorData?.message ||
-            `Freeze virtual card failed (${response.status})`
-        );
-      }
-
-      const data = (await response.json()) as ApiResponse;
-
-      if (!data.success) {
-        return rejectWithValue(data.message || "Freeze virtual card failed");
+      if (!res.ok) {
+        const text = await res.text();
+        return rejectWithValue(text || "Freeze failed");
       }
 
       return true;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.data?.message || error.message || "Freeze virtual card error"
-      );
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Freeze error");
     }
   }
 );
 
-// -------------------------
-// UNFREEZE VIRTUAL CARD
-// -------------------------
+
+/* =========================
+   UNFREEZE CARD
+========================= */
+
 export const unfreezeVirtualCard = createAsyncThunk<boolean, string>(
   "virtualCards/unfreeze",
   async (id, { getState, rejectWithValue }) => {
@@ -320,33 +327,27 @@ export const unfreezeVirtualCard = createAsyncThunk<boolean, string>(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(VIRTUAL_CARD_UNFREEZE_ENDPOINT(id), {
+      const url = VIRTUAL_CARD_UNFREEZE_ENDPOINT(id);
+      console.log("Unfreeze URL:", url);
+
+      const res = await fetch(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
+          Accept: "application/json",
         },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        return rejectWithValue(
-          errorData?.data?.message ||
-            errorData?.message ||
-            `Unfreeze virtual card failed (${response.status})`
-        );
-      }
-
-      const data = (await response.json()) as ApiResponse;
-
-      if (!data.success) {
-        return rejectWithValue(data.message || "Unfreeze virtual card failed");
+      if (!res.ok) {
+        const text = await res.text();
+        return rejectWithValue(text || "Unfreeze failed");
       }
 
       return true;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.data?.message || error.message || "Unfreeze virtual card error"
-      );
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Unfreeze error");
     }
   }
 );
+
+

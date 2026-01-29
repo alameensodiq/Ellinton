@@ -15,7 +15,7 @@ const kyc = () => {
       //navigate to kyc level 2
       router.push("/kyc/next-of-kin");
     } else if (user?.kyc_level === 2) {
-      // router.push("/kyc/utility-bills");
+      router.push("/kyc/utility-bills");
       return;
     }
   };

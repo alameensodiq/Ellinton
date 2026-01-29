@@ -38,15 +38,12 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      if (user?.is_phone_verified && !user?.is_email_verified) {
-        router.replace("/(auth)/email-identity");
-      } else if (user?.is_email_verified && !user.bvn_verified) {
+      if (user?.status === "otp_verified") {
         router.replace("/(auth)/profile-update");
-      } else if (user?.bvn_verified && !user.facial_verification_status) {
+      } else if (user?.status === "bvn_verified") {
         router.replace("/(auth)/facial-verification");
       } else if (requiresPasscodeSetup) {
         router.replace("/(auth)/create-passcode");
-      
       } else {
         router.replace("/(root)/(tabs)");
       }

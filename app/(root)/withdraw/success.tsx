@@ -16,7 +16,9 @@ const Success = () => {
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-6">
       <View className="flex-row justify-start items-center pt-4 pb-6">
-        <TouchableOpacity onPress={() => router.replace("/(root)/(tabs)/cards")}>
+        <TouchableOpacity
+          onPress={() => router.replace("/(root)/(tabs)/cards")}
+        >
           <Ionicons name="close" size={30} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -30,7 +32,7 @@ const Success = () => {
         </Text>
 
         <Text className="text-accent-100 text-center text-base leading-relaxed mt-4">
-          Your payment was successful
+          Your withdrawal was successful
         </Text>
       </View>
 
