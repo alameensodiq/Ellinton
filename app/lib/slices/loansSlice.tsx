@@ -7,39 +7,34 @@ import {
   applyForLoan,
   fetchUserLoans,
   fetchLoanById,
+  sendLoanDisbursementWebhook,
   Loan,
   LoanProduct,
 } from "../thunks/loansThunks";
 
-/* =========================
-   STATE
-========================= */
-
 interface LoansState {
-  products: LoanProduct[]; // ✅ array, not null
-  banks: any[]; // ✅ array, not null
-  loans: Loan[]; // ✅ array, not null
+  products: LoanProduct[];
+  banks: any[];
+  loans: Loan[];
   selectedLoan: Loan | null;
   calculation: any | null;
   creditCheck: any | null;
+  disbursementWebhook: any | null;
   isLoading: boolean;
   error: string | null;
 }
 
 const initialState: LoansState = {
-  products: [], // ✅ empty array
-  banks: [], // ✅ empty array
-  loans: [], // ✅ empty array
+  products: [],
+  banks: [],
+  loans: [],
   selectedLoan: null,
   calculation: null,
   creditCheck: null,
+  disbursementWebhook: null,
   isLoading: false,
   error: null,
 };
-
-/* =========================
-   SLICE
-========================= */
 
 const loansSlice = createSlice({
   name: "loans",
@@ -50,6 +45,9 @@ const loansSlice = createSlice({
     },
     clearSelectedLoan: (state) => {
       state.selectedLoan = null;
+    },
+    clearDisbursementWebhook: (state) => {
+      state.disbursementWebhook = null;
     },
   },
   extraReducers: (builder) => {
@@ -69,6 +67,7 @@ const loansSlice = createSlice({
       .addCase(
         fetchUserLoans.fulfilled,
         (state, action: PayloadAction<Loan[]>) => {
+          // ✅ now correct because thunk returns the array
           state.loans = action.payload;
         }
       )
@@ -84,8 +83,11 @@ const loansSlice = createSlice({
       .addCase(runCreditCheck.fulfilled, (state, action) => {
         state.creditCheck = action.payload;
       })
+      .addCase(sendLoanDisbursementWebhook.fulfilled, (state, action) => {
+        state.disbursementWebhook = action.payload;
+      })
       .addCase(applyForLoan.fulfilled, (state, action: PayloadAction<Loan>) => {
-        state.loans.unshift(action.payload); // ✅ always safe now
+        state.loans.unshift(action.payload);
       });
 
     builder
@@ -97,7 +99,8 @@ const loansSlice = createSlice({
           fetchLoanById.pending,
           calculateLoan.pending,
           runCreditCheck.pending,
-          applyForLoan.pending
+          applyForLoan.pending,
+          sendLoanDisbursementWebhook.pending
         ),
         (state) => {
           state.isLoading = true;
@@ -112,7 +115,8 @@ const loansSlice = createSlice({
           fetchLoanById.fulfilled,
           calculateLoan.fulfilled,
           runCreditCheck.fulfilled,
-          applyForLoan.fulfilled
+          applyForLoan.fulfilled,
+          sendLoanDisbursementWebhook.fulfilled
         ),
         (state) => {
           state.isLoading = false;
@@ -126,7 +130,8 @@ const loansSlice = createSlice({
           fetchLoanById.rejected,
           calculateLoan.rejected,
           runCreditCheck.rejected,
-          applyForLoan.rejected
+          applyForLoan.rejected,
+          sendLoanDisbursementWebhook.rejected
         ),
         (state, action) => {
           state.isLoading = false;
@@ -136,5 +141,7 @@ const loansSlice = createSlice({
   },
 });
 
-export const { clearLoanError, clearSelectedLoan } = loansSlice.actions;
+export const { clearLoanError, clearSelectedLoan, clearDisbursementWebhook } =
+  loansSlice.actions;
+
 export default loansSlice.reducer;

@@ -4,13 +4,28 @@ import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useDispatch } from "react-redux";
+import { clearError, logout } from "@/app/lib/slices/authSlice";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 
 const RegistrationSuccessScreen = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
+  const user = useAppSelector((state) => state.auth.user);
+
+  const goToLogin = async () => {
+    if (user) {
+      dispatch(clearError());
+      dispatch(logout());
+    }
+
+    router.replace("/(auth)/login");
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-6">
       <View className="flex-row justify-start items-center pt-4 pb-6">
-        <TouchableOpacity onPress={() => router.replace("/(auth)/login")}>
+        <TouchableOpacity onPress={goToLogin}>
           <Ionicons name="close" size={30} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -28,14 +43,7 @@ const RegistrationSuccessScreen = () => {
       </View>
 
       <View className="pb-6">
-        <Button
-          title="Login now"
-          variant="primary"
-          onPress={() => {
-            console.log("Button onPress fired!");
-            router.replace("/(auth)/login");
-          }}
-        />
+        <Button title="Login now" variant="primary" onPress={goToLogin} />
       </View>
     </SafeAreaView>
   );

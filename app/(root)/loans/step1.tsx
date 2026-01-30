@@ -1,5 +1,7 @@
+// app/(root)/loans/index.tsx  (STEP 1)
+
 import { View, StatusBar, Pressable, Animated, Easing } from "react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Header from "@/app/components/header-back";
@@ -24,20 +26,16 @@ const LoanCardSkeleton = ({
     >
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center flex-1">
-          {/* icon circle */}
           <View className="bg-primary-300 p-2 rounded-full mr-3">
             <View className="w-5 h-5 rounded-full bg-white/20" />
           </View>
 
           <View className="flex-1">
-            {/* title line */}
             <View className="h-4 w-48 rounded bg-white/20 mb-2" />
-            {/* subtitle line */}
             <View className="h-3 w-56 rounded bg-white/15" />
           </View>
         </View>
 
-        {/* radio circle */}
         <View className="w-5 h-5 rounded-full border-2 border-white/20" />
       </View>
     </Animated.View>
@@ -46,6 +44,8 @@ const LoanCardSkeleton = ({
 
 const Loans = () => {
   const dispatch = useAppDispatch();
+  const router = useRouter();
+
   const [selectedLoan, setSelectedLoan] = useState<string | null>(null);
 
   const {
@@ -53,7 +53,6 @@ const Loans = () => {
     isLoading: loading,
     error,
   } = useAppSelector((state) => state.loans);
-    console.log(products);
 
   const pulse = useRef(new Animated.Value(0)).current;
 
@@ -89,7 +88,27 @@ const Loans = () => {
     inputRange: [0, 1],
     outputRange: [0.55, 1],
   });
-const router = useRouter();
+
+  const selectedProduct = useMemo(() => {
+    if (!selectedLoan) return null;
+    return (
+      products.find((p: LoanProduct) => p.productCode === selectedLoan) || null
+    );
+  }, [products, selectedLoan]);
+
+  const handleContinue = () => {
+    if (!selectedProduct) return;
+
+    router.push({
+      pathname: "/(root)/loans/step2",
+      params: {
+        productCode: selectedProduct.productCode,
+        institutionCode: selectedProduct.institutionCode,
+        name: selectedProduct.name,
+      },
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
       <StatusBar barStyle="light-content" />
@@ -104,7 +123,6 @@ const router = useRouter();
       </View>
 
       <View className="px-6 flex-1">
-        {/* ✅ Skeleton loader (instead of ActivityIndicator) */}
         {loading && (
           <View className="mt-2">
             <LoanCardSkeleton opacity={skeletonOpacity} />
@@ -174,8 +192,8 @@ const router = useRouter();
       <View className="px-6 pb-6">
         <Button
           title="Continue"
-          disabled={!selectedLoan || loading}
-          onPress={()=>router.push("/(root)/loans/step2")}
+          disabled={!selectedProduct || loading}
+          onPress={handleContinue}
           variant="primary"
         />
       </View>

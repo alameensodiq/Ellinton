@@ -1,3 +1,9 @@
+// app/(root)/(tabs)/cards.tsx
+// ✅ FULL CODE (fixed)
+// ✅ IMPORTANT FIX: user selector is INSIDE the component (no hooks at top-level)
+// ✅ More modal requires authorize first
+// ✅ Only ACTIVE virtual card is used
+
 import React, { useState, useEffect } from "react";
 import {
   ScrollView,
@@ -22,7 +28,6 @@ import BlockCardContent from "@/app/components/cards/lockCardContent";
 import FundWalletContent from "@/app/components/cards/FundWallet";
 import MoreInfoContent from "@/app/components/cards/MoreInfoContent";
 import images from "@/app/assets/images";
-import ChangePin from "@/app/components/cards/ChangePinContent";
 import CardActivation from "@/app/components/cards/CardActivation";
 import { fetchPhysicalCards, PhysicalCard } from "@/app/lib/thunks/cardsThunks";
 import {
@@ -41,7 +46,6 @@ const selectVirtualCards = (state: RootState) => {
   const cards = state.virtualCards?.cards;
   return Array.isArray(cards) ? cards : EMPTY_ARR;
 };
-const user = useAppSelector((state) => state.auth.user);
 
 const selectVirtualLoading = (state: RootState) =>
   state.virtualCards?.isLoading ?? false;
@@ -53,6 +57,9 @@ export default function Card() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
+  // ✅ FIX: hook MUST be inside component
+  const user = useAppSelector((state) => state.auth.user);
+
   const TAG = "[CARDS]";
 
   const [activeTab, setActiveTab] = useState("virtual");
@@ -61,10 +68,9 @@ export default function Card() {
   const [showWithdrawalSheet, setShowWithdrawalSheet] = useState(false);
   const [showFundSheet, setShowFundSheet] = useState(false);
   const [showBlockSheet, setShowBlockSheet] = useState(false);
-  const [showPinSheet, setShowPinSheet] = useState(false);
   const [showMore, setShowMore] = useState(false);
 
-  // ✅ NEW: remember what the user wanted to do after authorize
+  // ✅ remember what to do after authorize
   const [pendingAction, setPendingAction] = useState<"more" | null>(null);
 
   const [amount, setAmount] = useState("");
@@ -92,7 +98,6 @@ export default function Card() {
   const activeVirtualCard =
     virtualCards.find((c) => c.status === "Active") ?? null;
 
-  // ✅ "has virtual" means "has ACTIVE virtual"
   const hasCardvirtual = !!activeVirtualCard;
 
   // If details arrive (after authorize), keep switch ON
@@ -163,7 +168,6 @@ export default function Card() {
 
     if (!val) return;
 
-    // Turning ON: go authorize to collect PIN
     if (activeVirtualCard?.id) {
       router.push({
         pathname: "/(root)/cards/authorize-details",
@@ -194,10 +198,6 @@ export default function Card() {
 
       case "block":
         setShowBlockSheet(true);
-        break;
-
-        // case "pin":
-        //   setShowPinSheet(true);
         break;
 
       case "more":
@@ -258,13 +258,6 @@ export default function Card() {
   };
 
   const handleCloseBlock = () => setShowBlockSheet(false);
-
-  // const handleConfirmPin = () => {
-  //   router.push("/(root)/cards/physical-card/pin/authorize");
-  //   setShowPinSheet(false);
-  // };
-
-  const handleClosePin = () => setShowPinSheet(false);
 
   const handleCloseMore = () => setShowMore(false);
 
@@ -391,16 +384,6 @@ export default function Card() {
       >
         <BlockCardContent onContinue={() => {}} />
       </BottomSheet>
-
-      {/* <BottomSheet
-        visible={showPinSheet}
-        onClose={handleClosePin}
-        onConfirm={handleConfirmPin}
-        title="Change Pin"
-        buttonText="Continue"
-      >
-        <ChangePin onContinue={() => {}} />
-      </BottomSheet> */}
     </SafeAreaView>
   );
 }

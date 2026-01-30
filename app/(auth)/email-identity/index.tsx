@@ -23,7 +23,7 @@ const EmailIdentityScreen = () => {
   const [referralCode, setReferralCode] = useState("");
   const [emailError, setEmailError] = useState("");
 
-  const { user } = useAppSelector((state) => state.auth);
+  const { user} = useAppSelector((state) => state.auth);
 
   const validateEmail = (value: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);

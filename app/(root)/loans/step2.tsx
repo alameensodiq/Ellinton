@@ -5,13 +5,21 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/app/components/header-back";
 import Button from "@/app/components/Button";
 import CustomText from "@/app/components/CustomText";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 type ConsentChoice = "consent" | "decline" | null;
 
 const DataConsent = () => {
   const [choice, setChoice] = useState<ConsentChoice>(null);
 
+  const { productCode, institutionCode, name } = useLocalSearchParams<{
+    productCode?: string;
+    institutionCode?: string;
+    name?: string;
+  }>();
+
   const canContinue = useMemo(() => choice !== null, [choice]);
+  const router = useRouter();
 
   const Card = ({
     value,
@@ -35,7 +43,6 @@ const DataConsent = () => {
       >
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1">
-            {/* Left icon bubble */}
             <View className="bg-primary-300 w-12 h-12 rounded-full items-center justify-center mr-3">
               <CustomText weight="bold" className="text-white text-xl">
                 {symbol}
@@ -53,7 +60,6 @@ const DataConsent = () => {
             </View>
           </View>
 
-          {/* Right radio */}
           <View
             className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
               isSelected ? "border-primary-600" : "border-white/30"
@@ -66,6 +72,26 @@ const DataConsent = () => {
         </View>
       </Pressable>
     );
+  };
+
+  const goNext = () => {
+    const commonParams = {
+      productCode: productCode ?? "",
+      institutionCode: institutionCode ?? "",
+      name: name ?? "",
+    };
+
+    if (choice === "consent") {
+      router.push({
+        pathname: "/(root)/loans/step3",
+        params: commonParams,
+      });
+      return;
+    }
+
+    router.push({
+      pathname: "/(root)/loans/credit-check-fail",
+    });
   };
 
   return (
@@ -101,16 +127,7 @@ const DataConsent = () => {
         <Button
           title="Continue"
           disabled={!canContinue}
-          onPress={() => {
-            // handle next step
-            if (choice === "consent") {
-              console.log("User consented");
-              // navigate("NextScreen") or dispatch(...)
-            } else {
-              console.log("User declined");
-              // navigate back / show message / exit flow
-            }
-          }}
+          onPress={goNext}
           variant="primary"
         />
       </View>

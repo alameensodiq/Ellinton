@@ -20,6 +20,7 @@ import {
   RequestVirtualCardPayload,
 } from "@/app/lib/thunks/virtualCardsThunks";
 import { unwrapResult } from "@reduxjs/toolkit";
+import Loading from "@/app/components/Loading"; 
 
 export default function AuthorizePayment() {
   const params = useLocalSearchParams();
@@ -29,6 +30,7 @@ export default function AuthorizePayment() {
     icon = "mastercard",
     color = "gold",
   } = params;
+
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -115,10 +117,11 @@ export default function AuthorizePayment() {
             params: params,
           });
         } catch (error: any) {
-          console.log(error)
+          console.log(error);
           setError(true);
           setErrorMessage(
-            error?.message || error||
+            error?.message ||
+              error ||
               "Failed to request virtual card. Please try again."
           );
           setPasscode("");
@@ -128,7 +131,6 @@ export default function AuthorizePayment() {
       };
 
       const t = setTimeout(processRequest, 300);
-
       return () => clearTimeout(t);
     }
   }, [passcode]);
@@ -138,6 +140,8 @@ export default function AuthorizePayment() {
       <StatusBar barStyle="light-content" />
 
       <Header title="Authorize" />
+
+      <Loading visible={loading} />
 
       <View className="flex-1 justify-between px-6 pb-12">
         <View className="mt-12">

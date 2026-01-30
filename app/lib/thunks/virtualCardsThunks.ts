@@ -117,7 +117,7 @@ export const requestVirtualCard = createAsyncThunk<
     const data = (await res.json()) as ApiResponse<VirtualCardDetails>;
 
     if (!res.ok || !data.success || !data.data) {
-      return rejectWithValue(data?.message || "Virtual card request failed");
+      return rejectWithValue(data?.message|| data?.data?.message || "Virtual card request failed");
     }
 
     return data.data;

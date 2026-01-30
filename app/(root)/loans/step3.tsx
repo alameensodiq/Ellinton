@@ -8,13 +8,24 @@ import CustomText from "@/app/components/CustomText";
 
 import mtnPng from "@/app/assets/icons/mtn.png";
 import airtelPng from "@/app/assets/icons/airtel.png";
-import gloPng from "@/app/assets/icons/airtel.png";
-import nineMobilePng from "@/app/assets/icons/airtel.png";
+import { svgIcons } from "@/app/assets/icons/icons";
+
+import { useLocalSearchParams, useRouter } from "expo-router";
+
+const nineMobilePng = svgIcons.ninemobile;
+const gloPng = svgIcons.glo;
 
 type NetworkChoice = "mtn" | "airtel" | "glo" | "9mobile" | null;
 
 const ChooseNetwork = () => {
+  const router = useRouter();
   const [choice, setChoice] = useState<NetworkChoice>(null);
+
+  const { productCode, institutionCode, name } = useLocalSearchParams<{
+    productCode?: string;
+    institutionCode?: string;
+    name?: string;
+  }>();
 
   const canContinue = useMemo(() => choice !== null, [choice]);
 
@@ -38,7 +49,6 @@ const ChooseNetwork = () => {
       >
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center flex-1">
-            {/* Left icon bubble */}
             <View className="bg-primary-300 w-12 h-12 rounded-full items-center justify-center mr-3">
               <Image
                 source={icon}
@@ -54,7 +64,6 @@ const ChooseNetwork = () => {
             </View>
           </View>
 
-          {/* Right radio */}
           <View
             className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
               isSelected ? "border-primary-600" : "border-white/30"
@@ -67,6 +76,20 @@ const ChooseNetwork = () => {
         </View>
       </Pressable>
     );
+  };
+
+  const handleContinue = () => {
+    if (!choice) return;
+
+    router.push({
+      pathname: "/(root)/loans/credit-check", 
+      params: {
+        productCode: productCode ?? "",
+        institutionCode: institutionCode ?? "",
+        name: name ?? "",
+        provider: choice, 
+      },
+    });
   };
 
   return (
@@ -93,10 +116,7 @@ const ChooseNetwork = () => {
         <Button
           title="Continue"
           disabled={!canContinue}
-          onPress={() => {
-            console.log("Selected network:", choice);
-            // navigate to next screen with `choice`
-          }}
+          onPress={handleContinue}
           variant="primary"
         />
       </View>

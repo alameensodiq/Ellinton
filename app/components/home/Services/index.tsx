@@ -23,7 +23,7 @@ export default function ServicesSection() {
     if (item.id === "6") router.push("/(root)/travel-&-hotel-payment");
     if (item.id === "7") router.push("/(root)/internet");
     // if (item.id === "8") router.push("/(root)/other-bills");
-    // if (item.id === "9") router.push("/(root)/loans");
+    if (item.id === "9") router.push("/(root)/loans");
   };
 
 

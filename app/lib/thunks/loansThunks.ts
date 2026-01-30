@@ -7,6 +7,7 @@ import {
   LOAN_APPLY_ENDPOINT,
   FETCH_USER_LOANS_ENDPOINT,
   FETCH_SINGLE_LOAN_ENDPOINT,
+  LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT,
 } from "../api";
 
 /* =========================
@@ -20,7 +21,7 @@ interface ApiResponse<T = any> {
 }
 
 /* =========================
-   TYPES
+   TYPES (MATCH YOUR API)
 ========================= */
 export interface LoanProduct {
   id: string;
@@ -29,42 +30,116 @@ export interface LoanProduct {
   productCode: string;
 }
 
-
 export interface LoanSchedule {
-  principal: number;
-  interest: number;
+  emi: number;
+  fee: number;
   total: number;
+  interest: number;
+  principal: number;
+  paymentType: string | null;
   repaymentDate: string;
+  paymentDueDate: string;
+  cumulativeTotal: number;
+  cumulativePrincipal: number;
+  outstandingPricipal: number;
+  repaymentAmountInNaira: number;
 }
+
+export type LoanStatus =
+  | "pending_disbursement"
+  | "active"
+  | "completed"
+  | "overdue"
+  | "failed";
 
 export interface Loan {
   id: string;
+  created_at?: string;
+  updated_at?: string;
+  user_id?: string;
+
+  product_code: string;
   product_name: string;
-  amount: number;
-  interest_rate: number;
-  total_repayment_expected: number;
-  status: "active" | "completed" | "overdue";
+
+  amount: string; // ✅ API returns string e.g "10000.00"
+  interest_rate: string; // ✅ API returns string e.g "6.00"
+
+  tenure_in_days: number;
+  loan_tenure: number;
+
+  repayment_frequency: string;
+  total_repayment_expected: string; // ✅ API returns string e.g "10140.00"
+
+  loan_reference: string;
+  mandate_request_reference?: string;
+
+  network_provider: string;
+  preferred_repayment_bank_code?: string;
+  preferred_repayment_account?: string;
+
+  consent_approved: boolean;
+  recovery_consent_approved: boolean;
+
   schedules: LoanSchedule[];
+
+  credit_check_data?: any;
+  loan_details?: string;
+
+  status: LoanStatus;
+
+  message?: string;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface FetchLoansResponse {
+  loans: Loan[];
+  pagination: Pagination;
 }
 
 /* =========================
    PAYLOADS
 ========================= */
 export interface CreditCheckPayload {
-  bvn: string;
+  networkProvider: string;
+  productCode: string;
 }
 
 export interface CalculateLoanPayload {
-  productCode: string;
-  amount: number;
+  loanAmount: number;
+  tenureInDays: number;
+  interestRate: number;
+  repaymentFrequency: string;
 }
 
 export interface ApplyLoanPayload {
   productCode: string;
-  amount: number;
-  bankCode: string;
-  accountNumber: string;
+  productName: string; // ✅ was number (wrong)
+  loanAmount: number;
+  tenureInDays: number; // ✅ was string (wrong)
+  loanTenure: number;
+  repaymentFrequency: string;
+  totalRepaymentExpected: number;
+  networkProvider: string;
+  loanDetails: string;
+  recoveryConsentApproved: boolean;
   transactionPin: string;
+  consentApproved: boolean;
+}
+
+export interface LoanDisbursementWebhookPayload {
+  loanReference: string;
+  status: string;
+  success: boolean;
+  transactionReference?: string;
+  disbursedAmount?: number;
+  disbursementDate?: string;
+  message?: string;
 }
 
 /* =========================
@@ -147,8 +222,10 @@ export const runCreditCheck = createAsyncThunk<
       return rejectWithValue(data?.message || "Credit check failed");
     }
 
+    console.log("✅ CREDIT CHECK RESPONSE:", data);
     return data.data;
   } catch (err: any) {
+    console.log("❌ CREDIT CHECK ERROR:", err);
     return rejectWithValue(err.message || "Credit check error");
   }
 });
@@ -208,7 +285,11 @@ export const applyForLoan = createAsyncThunk<
     const data = (await res.json()) as ApiResponse<Loan>;
 
     if (!res.ok || !data.success || !data.data) {
-      return rejectWithValue(data?.message || "Loan application failed");
+      return rejectWithValue(
+        data?.message ||
+          (data as any)?.data?.message ||
+          "Loan application failed"
+      );
     }
 
     return data.data;
@@ -217,35 +298,50 @@ export const applyForLoan = createAsyncThunk<
   }
 });
 
-/* =========================
-   FETCH USER LOANS
-========================= */
 export const fetchUserLoans = createAsyncThunk<
   Loan[],
-  void,
+  { status?: string; page?: number; limit?: number } | void,
   { rejectValue: string }
->("loans/fetchAll", async (_, { getState, rejectWithValue }) => {
+>("loans/fetchAll", async (args, { getState, rejectWithValue }) => {
   try {
     const token = (getState() as any).auth.token;
 
-    const res = await fetch(FETCH_USER_LOANS_ENDPOINT, {
+    const params = new URLSearchParams();
+    if (args && "status" in args && args.status)
+      params.set("status", args.status);
+    if (args && "page" in args && args.page)
+      params.set("page", String(args.page));
+    if (args && "limit" in args && args.limit)
+      params.set("limit", String(args.limit));
+
+    const url =
+      params.toString().length > 0
+        ? `${FETCH_USER_LOANS_ENDPOINT}?${params.toString()}`
+        : FETCH_USER_LOANS_ENDPOINT;
+
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const data = (await res.json()) as ApiResponse<Loan[]>;
+    const data = (await res.json()) as ApiResponse<any>;
 
-    if (!res.ok || !data.success || !data.data) {
-      return rejectWithValue(data?.message || "Fetch loans failed");
+
+    if (!res.ok || !data.success || !data.data?.loans) {
+      return rejectWithValue(
+        data?.message || data?.data?.message || "Fetch loans failed"
+      );
     }
 
-    return data.data;
+    return data.data.loans;
   } catch (err: any) {
     return rejectWithValue(err.message || "Fetch loans error");
   }
 });
 
+
 /* =========================
    FETCH SINGLE LOAN
+   (kept simple; adjust if your API wraps it differently)
 ========================= */
 export const fetchLoanById = createAsyncThunk<
   Loan,
@@ -259,14 +355,58 @@ export const fetchLoanById = createAsyncThunk<
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const data = (await res.json()) as ApiResponse<Loan>;
+    const data = (await res.json()) as ApiResponse<any>;
 
     if (!res.ok || !data.success || !data.data) {
       return rejectWithValue(data?.message || "Loan not found");
     }
 
-    return data.data;
+    // ✅ support both shapes: data.data OR data.data.loan
+    const loan = data.data.loan ? data.data.loan : data.data;
+
+    return loan as Loan;
   } catch (err: any) {
     return rejectWithValue(err.message || "Fetch loan error");
   }
 });
+
+/* =========================
+   DISBURSEMENT WEBHOOK
+========================= */
+export const sendLoanDisbursementWebhook = createAsyncThunk<
+  any,
+  LoanDisbursementWebhookPayload,
+  { rejectValue: string }
+>(
+  "loans/disbursementWebhook",
+  async (payload, { getState, rejectWithValue }) => {
+    try {
+      const token = (getState() as any).auth.token;
+
+      const res = await fetch(LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = (await res.json()) as ApiResponse<any>;
+
+      console.log("✅ DISBURSEMENT WEBHOOK RESPONSE:", data);
+
+      if (!res.ok || !data.success) {
+        console.log("❌ DISBURSEMENT WEBHOOK ERROR BODY:", data);
+        return rejectWithValue(
+          data?.message || (data as any)?.data?.message || "Webhook failed"
+        );
+      }
+
+      return data.data;
+    } catch (err: any) {
+      console.log("❌ DISBURSEMENT WEBHOOK ERROR:", err);
+      return rejectWithValue(err.message || "Webhook error");
+    }
+  }
+);

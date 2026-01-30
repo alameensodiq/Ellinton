@@ -27,7 +27,14 @@ import BasicSavings from  "./basic-savings.svg"
 import TargetSavings from  "./target-savings.svg"
 import GroupSavings from "./group-savings.svg"
 import loans from "./loans.svg"
-
+import loanfail from "./loan-fail.svg"
+import loanApprove from "./loan-approved.svg"
+import loanCondtion1 from "./loan-condition1.svg"
+import loanCondtion2 from "./loan-condition2.svg"
+import loanCondtion3 from "./loan-condition3.svg"
+import loanCondtion4 from "./loan-condition4.svg"
+import loanCondtion5 from "./loan-condition5.svg"
+import calenderPay from "./calendar-payment-loan.svg"
 
 
 export default {
@@ -72,4 +79,14 @@ export const svgIcons = {
   target_savings: TargetSavings,
   group_savings: GroupSavings,
   loans: loans,
+  glo: require("./glo.jpg"),
+  ninemobile: require("./9mobile.jpg"),
+  loanfail,
+  loanApprove,
+  loanCondtion1,
+  loanCondtion2,
+  loanCondtion3,
+  loanCondtion4,
+  loanCondtion5,
+  calenderPay
 };

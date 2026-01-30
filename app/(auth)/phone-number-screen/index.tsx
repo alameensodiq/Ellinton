@@ -195,27 +195,16 @@ const PhoneNumberScreen = () => {
    { code: "ZW", flag: "🇿🇼", dialCode: "+263", name: "Zimbabwe" },
  ];
   
-  const validatePhone = () => {
-    const nigeriaRegex = /^[789]\d{9}$/;
 
-    if (!nigeriaRegex.test(phoneNumber)) {
-      setError("Enter a valid Nigerian phone number");
-      return false;
-    }
 
-    return true;
-  };
+ const handleContinue = () => {
+   const fullPhone = `${selectedCountry.dialCode}${phoneNumber}`;
+   router.push({
+     pathname: "/(auth)/email-identity",
+     params: { phone: fullPhone },
+   });
+ };
 
-  const handleContinue = () => {
-    if (!validatePhone()) return;
-
-    const fullPhone = `${selectedCountry.dialCode}${phoneNumber}`;
-
-    router.push({
-      pathname: "/(auth)/email-identity",
-      params: { phone: fullPhone },
-    });
-  };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 pt-4">
