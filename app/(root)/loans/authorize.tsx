@@ -20,13 +20,13 @@ export default function AuthorizeLoan() {
 
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   const creditCheck = useMemo(() => {
     try {
       return params.creditCheck ? JSON.parse(params.creditCheck) : null;
     } catch (e) {
-      console.log("❌ Failed to parse creditCheck:", e);
       return null;
     }
   }, [params.creditCheck]);
@@ -35,7 +35,6 @@ export default function AuthorizeLoan() {
     try {
       return params.calc ? JSON.parse(params.calc) : null;
     } catch (e) {
-      console.log("❌ Failed to parse calc:", e);
       return null;
     }
   }, [params.calc]);
@@ -46,6 +45,7 @@ export default function AuthorizeLoan() {
       setPasscode((prev) => {
         const next = prev + num;
         setError(false);
+        setErrorMessage("");
         return next;
       });
     }
@@ -55,6 +55,20 @@ export default function AuthorizeLoan() {
     if (loading) return;
     setPasscode((prev) => prev.slice(0, -1));
     setError(false);
+    setErrorMessage("");
+  };
+
+  const getReadableError = (err: any) => {
+    // Most common shapes from thunks / fetch / axios
+    return (
+      err?.message ||
+      err?.error ||
+      err?.data?.message ||
+      err?.response?.data?.message ||
+      err?.payload ||
+      (typeof err === "string" ? err : "") ||
+      "Transaction failed. Please try again."
+    );
   };
 
   useEffect(() => {
@@ -103,21 +117,20 @@ export default function AuthorizeLoan() {
 
         consentApproved: true,
         recoveryConsentApproved: true,
+        preferredRepaymentAccount: params.preferredRepaymentAccount,
+        preferredRepaymentBankCBNCode: params.preferredRepaymentBankCBNCode,
 
         transactionPin: passcode,
       };
 
-      console.log("➡️ APPLY LOAN PAYLOAD:", payload);
 
       if (
         !payload.totalRepaymentExpected ||
         payload.totalRepaymentExpected < 1
       ) {
-        console.log(
-          "❌ totalRepaymentExpected invalid:",
-          payload.totalRepaymentExpected
-        );
+       
         setError(true);
+        setErrorMessage("Invalid repayment total. Please try again.");
         Vibration.vibrate(300);
         setPasscode("");
         setLoading(false);
@@ -127,9 +140,7 @@ export default function AuthorizeLoan() {
       dispatch(applyForLoan(payload as any))
         .unwrap()
         .then(async (res) => {
-          console.log("✅ APPLY LOAN SUCCESS:", res);
 
-          // ✅ call webhook AFTER apply success
           const loanReference = String(creditCheck?.data?.loanReference || "");
           const webhookPayload = {
             loanReference,
@@ -143,17 +154,6 @@ export default function AuthorizeLoan() {
 
           console.log("➡️ DISBURSEMENT WEBHOOK PAYLOAD:", webhookPayload);
 
-        //   try {
-        //     const webhookRes = await dispatch(
-        //       sendLoanDisbursementWebhook(webhookPayload as any)
-        //     ).unwrap();
-
-        //     console.log("✅ DISBURSEMENT WEBHOOK SUCCESS:", webhookRes);
-        //   } catch (e) {
-        //     console.log("❌ DISBURSEMENT WEBHOOK ERROR:", e);
-        //   }
-
-          // ✅ go success page (pass amount)
           router.replace({
             pathname: "/(root)/loans/success",
             params: {
@@ -163,8 +163,11 @@ export default function AuthorizeLoan() {
           });
         })
         .catch((err) => {
-          console.log("❌ APPLY LOAN ERROR:", err);
+
+          const msg = getReadableError(err);
           setError(true);
+          setErrorMessage(msg);
+
           Vibration.vibrate(400);
           setPasscode("");
         })
@@ -191,6 +194,7 @@ export default function AuthorizeLoan() {
             onChange={(value) => {
               setPasscode(value.slice(0, 4));
               setError(false);
+              setErrorMessage("");
             }}
             error={error}
             autoFocus={false}
@@ -200,7 +204,7 @@ export default function AuthorizeLoan() {
 
           {error && (
             <Text className="text-red-500 text-sm mt-4">
-              Transaction failed. Please try again.
+              {errorMessage || "Transaction failed. Please try again."}
             </Text>
           )}
         </View>

@@ -130,6 +130,8 @@ export interface ApplyLoanPayload {
   recoveryConsentApproved: boolean;
   transactionPin: string;
   consentApproved: boolean;
+  preferredRepaymentBankCBNCode: string;
+  preferredRepaymentAccount:string;
 }
 
 export interface LoanDisbursementWebhookPayload {

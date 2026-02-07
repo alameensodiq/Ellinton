@@ -26,7 +26,7 @@ const Loans = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const { loans, isLoading } = useAppSelector((s) => s.loans);
+  const { loans, isLoading } = useAppSelector((s: any) => s.loans);
 
   const [hideAmount, setHideAmount] = useState(false);
 
@@ -67,9 +67,21 @@ const Loans = () => {
     loadLoans();
   }, []);
 
+  // ✅ if all loans are "failed", treat as "no loan available"
   const activeLoan = useMemo(() => {
     if (!loans || loans.length === 0) return null;
-    return loans.find((l: any) => l.status === "active") || loans[0];
+
+    const validLoans = loans.filter(
+      (l: any) => String(l?.status || "").toLowerCase() !== "failed"
+    );
+
+    if (validLoans.length === 0) return null;
+
+    return (
+      validLoans.find(
+        (l: any) => String(l?.status || "").toLowerCase() === "active"
+      ) || validLoans[0]
+    );
   }, [loans]);
 
   // ✅ placeholder loading (while fetching loans)
@@ -185,6 +197,7 @@ const Loans = () => {
     return <LoansSkeleton />;
   }
 
+  // ✅ if no valid loan (or only failed loans), show empty state
   if (!activeLoan) {
     return (
       <SafeAreaView className="flex-1 bg-primary-100">

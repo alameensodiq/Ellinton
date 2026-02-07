@@ -8,6 +8,7 @@ import transferReducer from "./slices/transferSlice";
 import billsReducer from "./slices/billsSlice"; 
 import virtualCardsReducer from "./slices/virtualCardsSlice";
 import loansReducer from "./slices/loansSlice"; 
+import statementsReducer from "./slices/statementsSlice";
 
 
 
@@ -21,7 +22,8 @@ export const store = configureStore({
     transfers: transferReducer,
     virtualCards: virtualCardsReducer,
     bills: billsReducer,
-    loans: loansReducer, 
+    loans: loansReducer,
+    statements: statementsReducer, 
   },
 });
 

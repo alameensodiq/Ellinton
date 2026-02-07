@@ -94,6 +94,18 @@ const FETCH_SINGLE_LOAN_ENDPOINT = (id: string) =>
   
 const LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT = `${BASE_URL}/webhooks/loans/disbursement`;
 
+const STATEMENTS_REQUEST_ENDPOINT = `${BASE_URL}/statements/request`;
+const STATEMENTS_HISTORY_ENDPOINT = (page?: number, limit?: number) => {
+  const params = new URLSearchParams();
+  if (page) params.set("page", String(page));
+  if (limit) params.set("limit", String(limit));
+  const q = params.toString();
+  return q ? `${BASE_URL}/statements?${q}` : `${BASE_URL}/statements`;
+};
+const STATEMENT_BY_ID_ENDPOINT = (id: string) => `${BASE_URL}/statements/${id}`;
+
+
+
 
 export {
   BASE_URL,
@@ -154,4 +166,7 @@ export {
   FETCH_USER_LOANS_ENDPOINT,
   FETCH_SINGLE_LOAN_ENDPOINT,
   LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT,
+  STATEMENTS_REQUEST_ENDPOINT,
+  STATEMENTS_HISTORY_ENDPOINT,
+  STATEMENT_BY_ID_ENDPOINT,
 };

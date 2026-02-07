@@ -10,27 +10,23 @@ const plans = [
     title: "Basic savings",
     desc: "Your regular savings with interest, you can withdraw anytime with no charges",
     icon: svgIcons.fixed_savings,
-    route: "/(root)/savings",
   },
   {
     id: "target",
     title: "Target savings",
     desc: "Save money for life's important goals. Minimum period of 3 months with amazing return",
     icon: svgIcons.target_savings,
-    route: "/plans/target",
   },
   {
     id: "group",
     title: "Group Saving",
     desc: "Save money for life's important goals. Minimum period of 3 months with amazing return",
     icon: svgIcons.group_savings,
-    route: "/plans/group",
   },
   {
     id: "fixed",
     title: "Fixed deposit",
     desc: "Lock your money for higher returns",
-    route: "/plans/fixed",
     icon: svgIcons.basic_savings,
   },
 ];
@@ -57,7 +53,11 @@ export default function PlansContent({ onSelect }: { onSelect: () => void }) {
             key={item.id}
             onPress={() => {
               onSelect();
-              router.push(item.route);
+
+              router.push({
+                pathname: "/(root)/savings",
+                params: { type: item.id },
+              });
             }}
             className="bg-primary-300 p-4 rounded-2xl relative overflow-hidden"
           >

@@ -13,7 +13,7 @@ const kyc = () => {
     // Handle KYC verification navigation or action here
     if (user?.kyc_level === 1) {
       //navigate to kyc level 2
-      router.push("/kyc/next-of-kin");
+      router.push("/kyc");
     } else if (user?.kyc_level === 2) {
       router.push("/kyc/utility-bills");
       return;

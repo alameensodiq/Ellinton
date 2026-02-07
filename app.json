@@ -50,17 +50,18 @@
           "fonts": []
         }
       ],
-     [
-       "expo-build-properties",
-       {
-         "android": {
-           "ndkVersion": "26.1.10909125",
-           "compileSdkVersion": 35,
-           "targetSdkVersion": 35,
-           "abiFilters": ["arm64-v8a"]
-         }
-       }
-     ]
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "ndkVersion": "26.1.10909125",
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "abiFilters": ["arm64-v8a"]
+          }
+        }
+      ],
+      "./plugins/withAppsFlyerPreinstall"
     ],
 
     "experiments": {

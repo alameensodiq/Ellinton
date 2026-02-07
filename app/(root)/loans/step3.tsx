@@ -82,7 +82,7 @@ const ChooseNetwork = () => {
     if (!choice) return;
 
     router.push({
-      pathname: "/(root)/loans/credit-check", 
+      pathname: "/(root)/loans/step4", 
       params: {
         productCode: productCode ?? "",
         institutionCode: institutionCode ?? "",

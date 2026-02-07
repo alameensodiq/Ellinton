@@ -50,21 +50,20 @@ const kycUtility = () => {
         // Compress the image before uploading
         const manipulatedImage = await ImageManipulator.manipulateAsync(
           uri,
-          [{ resize: { width: 1024 } }], // Resize to max width of 1024px (maintains aspect ratio)
-          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // Compress to 70% quality as JPEG
+          [{ resize: { width: 1024 } }], // max width 1024px
+          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // 70% JPEG
         );
 
         setImageUri(manipulatedImage.uri);
 
         const base64Data = await FileSystem.readAsStringAsync(
           manipulatedImage.uri,
-          {
-            encoding: "base64",
-          }
+          { encoding: "base64" }
         );
 
         setBase64(`data:image/jpeg;base64,${base64Data}`);
         setError("");
+        setSuccess(false);
       } catch (err) {
         setError("Error processing image.");
         console.error(err);
@@ -81,22 +80,27 @@ const kycUtility = () => {
     setIsLoading(true);
     try {
       await dispatch(uploadUtilityBill({ utility_bill: base64 })).unwrap();
-      // Automatically submit Tier 3 after successful upload
       await dispatch(submitTier3()).unwrap();
+
       setSuccess(true);
       setError("");
       setImageUri(null);
       setBase64(null);
     } catch (err: any) {
-      setError(err?.message || err|| "Upload failed. Please try again.");
+      setError(err?.message || err || "Upload failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const goToSettings = () => {
+    router.push("/(root)/(tabs)");
+  };
+
   return (
     <SafeAreaView className="bg-primary-100 flex-1 px-2">
       <Header title="KYC Level" />
+
       <View className="px-4 flex-1">
         <View>
           <View className="bg-primary-400 rounded-full w-16 h-16 justify-center items-center mx-auto border border-primary-300">
@@ -104,6 +108,7 @@ const kycUtility = () => {
               {user?.kyc_level}
             </CustomText>
           </View>
+
           <CustomText className="text-center mt-4" size="xxl">
             Level {user?.kyc_level}
           </CustomText>
@@ -151,17 +156,22 @@ const kycUtility = () => {
               </View>
             )}
 
-            {error && <Text className="text-red-500 mb-4">{error}</Text>}
+            {error ? <Text className="text-red-500 mb-4">{error}</Text> : null}
 
-            {success && (
+            {success ? (
               <Text className="text-green-500 mb-4">
                 Utility bill uploaded successfully!
               </Text>
-            )}
+            ) : null}
           </View>
         </View>
 
-        {imageUri ? (
+        {/* Bottom Button Area */}
+        {success ? (
+          <View className="absolute bottom-5 left-4 right-4">
+            <Button title="Continue" variant="primary" onPress={goToSettings} />
+          </View>
+        ) : imageUri ? (
           <View className="absolute bottom-5 left-4 right-4">
             <Button
               title="Upload"

@@ -89,7 +89,7 @@ export default function Card({
                       } else if (action.label === "Transfer") {
                         router.push("/transfer");
                       } else if (action.label === "Create Plan") {
-                        // onOpenPlanSheet?.();
+                        onOpenPlanSheet?.();
                         return 
                       } else {
                         action.onPress?.();
