@@ -164,6 +164,7 @@ export const fetchLoanProducts = createAsyncThunk<
     if (!res.ok || !data.success || !data.data) {
       return rejectWithValue(data?.message || "Failed to fetch loan products");
     }
+    console.log(data)
 
     return data.data;
   } catch (err: any) {

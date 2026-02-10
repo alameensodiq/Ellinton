@@ -7,11 +7,14 @@ import CardFeatures from "./CardFeatures";
 import images from "@/app/assets/images";
 import { useRouter } from "expo-router";
 
+type CardType = "virtual" | "physical";
+
 interface CardContentProps {
   buttonTitle: string;
-  buttonRoute: string ;
   sectionTitle: string;
+  cardType: CardType;
 }
+
 
 const featuresData = [
   {
@@ -38,10 +41,15 @@ const featuresData = [
 
 const CardContent: React.FC<CardContentProps> = ({
   buttonTitle,
-  buttonRoute,
   sectionTitle,
+  cardType,
 }) => {
   const router = useRouter();
+
+  const handlePress = () => {
+    if (cardType === "virtual") router.push("/cards/virtual-card");
+    else router.push("/cards/physical-card");
+  };
 
   return (
     <View className="px-4 mt-6">
@@ -51,15 +59,17 @@ const CardContent: React.FC<CardContentProps> = ({
             source={images.card_card_bg}
             resizeMode="cover"
             style={{ flex: 1 }}
-          >
-            <Button
-              title={buttonTitle}
-              onPress={() => router.push(buttonRoute as any)}
-              variant="primary"
-              className="absolute bottom-0 w-full"
-            />
-          </ImageBackground>
+          />
         </LinearGradient>
+
+        <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+          <Button
+            title={buttonTitle}
+            onPress={handlePress}
+            variant="primary"
+            className="w-full"
+          />
+        </View>
       </View>
 
       <View className="mt-6">
@@ -69,5 +79,6 @@ const CardContent: React.FC<CardContentProps> = ({
     </View>
   );
 };
+
 
 export default CardContent;

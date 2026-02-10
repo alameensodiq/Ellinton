@@ -94,7 +94,7 @@ const kycUtility = () => {
   };
 
   const goToSettings = () => {
-    router.push("/(root)/(tabs)");
+    router.push("/(root)/kyc/success");
   };
 
   return (

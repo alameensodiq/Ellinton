@@ -48,7 +48,7 @@ const SummaryReviewScreen = () => {
     try {
       await dispatch(submitKyc()).unwrap();
       router.push({
-        pathname: "/(root)/kyc/success",
+        pathname: "/(root)/kyc/utility-bills",
       });
     } catch (err: any) {
       Alert.alert(
