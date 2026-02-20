@@ -316,7 +316,6 @@ export const createGoldTrigger = createAsyncThunk<any, any>(
         },
         body: JSON.stringify(payload),
       });
-      console.log(res);
 
 
       if (!res.ok) {
@@ -325,7 +324,8 @@ export const createGoldTrigger = createAsyncThunk<any, any>(
       }
 
       const data = (await res.json()) as ApiResponse<any>;
-      if (!data.success) return rejectWithValue(data.message || "Create trigger failed");
+      if (!data.success) return rejectWithValue(data.message || data.data.message || "Create trigger failed");
+      console.log(data)
       return data.data;
     } catch (error: any) {
       return rejectWithValue(error.message || "Create trigger error");
