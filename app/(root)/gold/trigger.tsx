@@ -48,10 +48,10 @@ export default function GoldTriggerScreen() {
   const toNumber = (s: string) => Number((s || "").replace(/,/g, "")) || 0;
 
   // compute grams from the typed amount for immediate feedback while typing
-  const grams = useMemo(() => {
-    const n = toNumber(amountText);
-    if (!n || n <= 0) return 0;
-    return n / pricePerGramNgn;
+  const gramsText = useMemo(() => {
+    const a = toNumber(amountText);
+    if (!pricePerGramNgn || a <= 0) return "0.00";
+    return (a / pricePerGramNgn).toFixed(2);
   }, [amountText, pricePerGramNgn]);
 
   const chartData = useMemo(() => {
@@ -88,7 +88,7 @@ export default function GoldTriggerScreen() {
       params: {
         amount: String(amountRaw),
         amountRaw: String(amountRaw),
-        grams: String(grams),
+        grams: String(gramsText),
         type: "buy",
         trigger: "true",
         target_price_ngn: String(targetPrice),
@@ -149,7 +149,7 @@ export default function GoldTriggerScreen() {
               }`}
             >
               <CustomText size="xxl" weight="bold" className="text-white">
-                {grams.toFixed(2)}gram
+                {gramsText} g
               </CustomText>
             </View>
           </View>
