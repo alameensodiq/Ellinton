@@ -7,8 +7,12 @@ import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
 import { Platform, StatusBar } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import { store } from "./lib/store";
 import AuthWrapper from "./(root)/AuthWrapper";
+import { logout } from "./lib/slices/authSlice";
+import { useEffect } from "react";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -29,6 +33,44 @@ export default function RootLayout() {
     StatusBar.setBackgroundColor("#3F401B", true);
     StatusBar.setBarStyle("light-content", true);
   }
+
+  useEffect(() => {
+    const originalFetch = (global as any).fetch;
+
+    (global as any).fetch = async (input: any, init?: any) => {
+      try {
+        const response = await originalFetch(input, init);
+
+        if (response && response.status === 401) {
+          try {
+            await AsyncStorage.removeItem("authToken");
+          } catch (e) {
+            // ignore
+          }
+
+          // update redux state
+          store.dispatch(logout());
+
+          // navigate user to appropriate auth screen
+          const state = store.getState() as any;
+          const user = state.auth?.user;
+          if (user) {
+            router.replace("/(auth)/current-user");
+          } else {
+            router.replace("/(auth)/login");
+          }
+        }
+
+        return response;
+      } catch (err) {
+        throw err;
+      }
+    };
+
+    return () => {
+      (global as any).fetch = originalFetch;
+    };
+  }, []);
 
   return (
     <Provider store={store}>
