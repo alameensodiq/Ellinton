@@ -45,10 +45,14 @@ export default function GoldTriggerScreen() {
     return () => clearInterval(id);
   }, [dispatch]);
 
+  const toNumber = (s: string) => Number((s || "").replace(/,/g, "")) || 0;
+
+  // compute grams from the typed amount for immediate feedback while typing
   const grams = useMemo(() => {
-    if (!amountRaw || amountRaw <= 0) return 0;
-    return amountRaw / pricePerGramNgn;
-  }, [amountRaw]);
+    const n = toNumber(amountText);
+    if (!n || n <= 0) return 0;
+    return n / pricePerGramNgn;
+  }, [amountText, pricePerGramNgn]);
 
   const chartData = useMemo(() => {
     // Prefer API-driven data (usd values) when available
