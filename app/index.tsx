@@ -15,6 +15,8 @@ import Button from "./components/Button";
 import CustomText from "./components/CustomText";
 import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { useDispatch } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 
 const backgrounds = [
   {
@@ -51,6 +53,27 @@ export default function Index() {
   const dispatch = useDispatch();
 
   useEffect(() => {
+    // If user data is already saved, skip the landing screen.
+    (async () => {
+      try {
+        const userProfile = await AsyncStorage.getItem("userProfile");
+        const token = await AsyncStorage.getItem("authToken");
+
+        if (token) {
+          router.replace("/(root)/(tabs)");
+          return;
+        }
+
+        if (userProfile) {
+          // user exists but no token — show unlock/current-user screen
+          router.replace("/(auth)/current-user");
+          return;
+        }
+      } catch (e) {
+        // ignore and show index
+      }
+    })();
+
     const interval = setInterval(() => {
       setBackgroundIndex((prev) => (prev + 1) % backgrounds.length);
     }, 6000);
