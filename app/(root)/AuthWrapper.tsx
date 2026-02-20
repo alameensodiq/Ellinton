@@ -13,6 +13,7 @@ export default function AuthWrapper() {
     isRestoring,
     error: authError,
   } = useAppSelector((state: RootState) => state.auth);
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
   const { error: beneficiariesError } = useAppSelector(
     (state) => state.beneficiaries
@@ -39,10 +40,16 @@ export default function AuthWrapper() {
   }, [isRestoring]);
 
   useEffect(() => {
-    if (!ready ) return;
+    if (!ready) return;
 
     const inAuthGroup = segments[0] === "(auth)";
     const isOnLogin = segments.join("/") === "(auth)/login";
+
+    // If we have a stored user but no token, send them to the current-user unlock screen
+    if (!isAuthenticated && user && !inAuthGroup) {
+      router.replace("/(auth)/current-user");
+      return;
+    }
 
     const errors = [
       authError,
@@ -74,6 +81,8 @@ export default function AuthWrapper() {
     cardError,
     kycError,
     transferError,
+    isAuthenticated,
+    user,
   ]);
 
   if (!ready) {

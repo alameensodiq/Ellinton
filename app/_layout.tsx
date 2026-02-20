@@ -39,13 +39,11 @@ export default function RootLayout() {
           // update redux state
           store.dispatch(logout());
 
-          // navigate user to appropriate auth screen
-          const state = store.getState() as any;
-          const user = state.auth?.user;
-          if (user) {
-            router.replace("/(auth)/current-user");
-          } else {
-            router.replace("/(auth)/login");
+          // mark session expired so other parts of the app can react
+          try {
+            await AsyncStorage.setItem("sessionExpired", "1");
+          } catch (e) {
+            // ignore
           }
         }
 
@@ -58,6 +56,35 @@ export default function RootLayout() {
     return () => {
       (global as any).fetch = originalFetch;
     };
+  }, []);
+
+  // Subscribe to store changes and navigate once when token is cleared
+  useEffect(() => {
+    let prevToken = (store.getState() as any).auth?.token;
+
+    const unsub = store.subscribe(() => {
+      try {
+        const state = store.getState() as any;
+        const token = state.auth?.token;
+        const user = state.auth?.user;
+
+        if (token === prevToken) return;
+        prevToken = token;
+
+        if (!token) {
+          // token removed: navigate appropriately
+          if (user) {
+            router.replace("/(auth)/current-user");
+          } else {
+            router.replace("/(auth)/login");
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    return unsub;
   }, []);
 
   if (!fontsLoaded) return null;
