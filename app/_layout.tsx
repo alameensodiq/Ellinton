@@ -22,18 +22,6 @@ export default function RootLayout() {
     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),
     OutfitBold: require("./assets/fonts/Outfit-Bold.ttf"),
   });
-
-  if (!fontsLoaded) return null;
-
-  SplashScreen.hideAsync();
-
-  if (Platform.OS === "android") {
-    NavigationBar.setBackgroundColorAsync("#3F401B");
-    NavigationBar.setButtonStyleAsync("light");
-    StatusBar.setBackgroundColor("#3F401B", true);
-    StatusBar.setBarStyle("light-content", true);
-  }
-
   useEffect(() => {
     const originalFetch = (global as any).fetch;
 
@@ -71,6 +59,17 @@ export default function RootLayout() {
       (global as any).fetch = originalFetch;
     };
   }, []);
+
+  if (!fontsLoaded) return null;
+
+  SplashScreen.hideAsync();
+
+  if (Platform.OS === "android") {
+    NavigationBar.setBackgroundColorAsync("#3F401B");
+    NavigationBar.setButtonStyleAsync("light");
+    StatusBar.setBackgroundColor("#3F401B", true);
+    StatusBar.setBarStyle("light-content", true);
+  }
 
   return (
     <Provider store={store}>
