@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -46,9 +46,28 @@ export default function BuyGold() {
   const [amount, setAmount] = useState(""); // ✅ always NGN for buy/sell/withdraw now
   const [address, setAddress] = useState("");
 
+  // Show loading only on the very first load (when there is no price yet)
+  const [initialLoading, setInitialLoading] = useState(!gold?.price);
+  const pollingRef = useRef<number | null>(null);
+
   useEffect(() => {
-    dispatch(fetchGoldPrice());
+    // initial fetch if price missing
+    if (!gold?.price) dispatch(fetchGoldPrice());
+
+    // poll every 60s while component is mounted
+    pollingRef.current = setInterval(() => {
+      dispatch(fetchGoldPrice());
+    }, 60_000) as unknown as number;
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
   }, [dispatch]);
+
+  // turn off the initial-loading overlay once we have a price
+  useEffect(() => {
+    if (initialLoading && gold?.price) setInitialLoading(false);
+  }, [gold?.price, initialLoading]);
 
   const pricePerGramNgn = Number(gold?.price?.pricePerGramNgn || 0);
 
@@ -66,10 +85,11 @@ export default function BuyGold() {
 
   const amountRaw = toNumber(amount); // ✅ NGN
 
-  // ✅ minimums (edit these if you want different)
-  const minBuy = 10000;
-  const minSell = 100; // NGN
-  const minWithdraw = 100; // NGN
+  // ✅ minimums
+  // For both buy and sell the minimum is now ₦50,000
+  const minBuy = 50000;
+  const minSell = 50000; // NGN
+  const minWithdraw = 100; // NGN (unchanged)
 
   const canContinue =
     txType === "buy"
@@ -81,7 +101,7 @@ export default function BuyGold() {
   return (
     <SafeAreaView className="flex-1 bg-[#3a3a1a]">
       <StatusBar barStyle="light-content" />
-      <Loading visible={gold.isLoading} />
+      <Loading visible={initialLoading} />
       <Header title={title} showCancel />
 
       <ScrollView

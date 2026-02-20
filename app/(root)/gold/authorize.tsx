@@ -8,7 +8,8 @@ import Numpad from "@/app/components/inputs/Numpad";
 import Loading from "@/app/components/Loading";
 import CustomText from "@/app/components/CustomText";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
-import { buyGold, sellGold, withdrawGold } from "@/app/lib/thunks/goldThunks";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { buyGold, sellGold, withdrawGold, createGoldTrigger } from "@/app/lib/thunks/goldThunks";
 
 const toNumber = (s: string) => Number((s || "").replace(/,/g, "")) || 0;
 
@@ -16,6 +17,7 @@ export default function AuthorizeGold() {
   const params = useLocalSearchParams<Record<string, string>>();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const gold = useAppSelector((s: any) => s.gold);
 
   const transactionType =
     params.type === "sell"
@@ -25,6 +27,7 @@ export default function AuthorizeGold() {
       : "buy";
   const isSell = transactionType === "sell";
   const isWithdraw = transactionType === "withdraw";
+  const isTrigger = params.trigger === "true" || params.trigger === "1";
 
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
@@ -49,6 +52,35 @@ export default function AuthorizeGold() {
       const payload: any = {
         transaction_pin: passcode,
       };
+
+      // If this flow is creating a trigger, build trigger payload instead
+      if (isTrigger) {
+        const baseAmountNgn = toNumber(params.amountRaw || params.amount || "0");
+        const targetPrice = Number(params.target_price_ngn) || Number(gold?.price?.data?.pricePerGramNgn || 0);
+
+        const triggerPayload: any = {
+          trigger_type: params.trigger_type || "buy_at_price",
+          target_price_ngn: Math.round(targetPrice),
+          amount_ngn: baseAmountNgn,
+          expires_at: params.expires_at,
+          transaction_pin: passcode,
+        };
+
+        dispatch(createGoldTrigger(triggerPayload) as any)
+          .unwrap()
+          .then(() => {
+            router.replace({ pathname: "/(root)/gold/success", params: { amount: String(params.amount || String(baseAmountNgn)), type: "buy" } });
+          })
+          .catch((err: any) => {
+            setError(true);
+            setErrorMessage(err?.message || String(err) || "Create trigger failed");
+            Vibration.vibrate(400);
+            setPasscode("");
+          })
+          .finally(() => setLoading(false));
+
+        return;
+      }
 
       // If grams is provided (>0), send amount_grams only. Otherwise send amount_ngn only.
       if (hasGrams) {

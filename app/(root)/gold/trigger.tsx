@@ -1,11 +1,16 @@
-import React, { useMemo, useState } from "react";
-import { View, ScrollView, Platform } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { View, ScrollView, Platform, Alert, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import Header from "@/app/components/header-back";
 import CustomText from "@/app/components/CustomText";
 import AmountInput from "@/app/components/inputs/AmountInput";
 import Button from "@/app/components/Button";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { fetchGoldPrice, createGoldTrigger } from "@/app/lib/thunks/goldThunks";
+import { useRouter } from "expo-router";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import {
   AreaChart,
@@ -21,8 +26,24 @@ export default function GoldTriggerScreen() {
   const [amountText, setAmountText] = useState("75,000");
   const [amountRaw, setAmountRaw] = useState<number>(75000);
   const [range] = useState<RangeKey>("7D"); // keep for later, but no UI now
+  const dispatch = useAppDispatch();
+  const gold = useAppSelector((s: any) => s.gold);
+  const router = useRouter();
 
-  const pricePerGramNgn = 5680;
+  // Show current price from store (fallback)
+  const pricePerGramNgn = Number(gold?.price?.data?.pricePerGramNgn || 5680);
+
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  );
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  useEffect(() => {
+    // fetch initial and poll every 60s
+    if (!gold?.price) dispatch(fetchGoldPrice());
+    const id = setInterval(() => dispatch(fetchGoldPrice()), 60_000);
+    return () => clearInterval(id);
+  }, [dispatch]);
 
   const grams = useMemo(() => {
     if (!amountRaw || amountRaw <= 0) return 0;
@@ -30,15 +51,46 @@ export default function GoldTriggerScreen() {
   }, [amountRaw]);
 
   const chartData = useMemo(() => {
+    // Prefer API-driven data (usd values) when available
+    const p = gold?.price?.data;
+    if (p) {
+      const low = Number(p.lowUsd || p.low || 0);
+      const high = Number(p.highUsd || p.high || 0);
+      if (low && high) {
+        const mid = (low + high) / 2;
+        // create a small series from low->mid->high for the chart
+        return [low, low + (mid - low) / 2, mid, mid + (high - mid) / 2, high];
+      }
+    }
+
     if (range === "1D") return [520, 610, 580, 700, 860];
     if (range === "7D") return [520, 560, 600, 640, 700, 760, 820];
     return [520, 560, 590, 650, 700, 740, 780, 820, 850, 880];
-  }, [range]);
+  }, [range, gold?.price]);
 
   
 
   const onConfirm = () => {
-    console.log("Confirm trigger:", { amountRaw, grams, range });
+    // enforce min buy/sell amount of ₦50,000
+    if (amountRaw < 50000) {
+      Alert.alert("Minimum amount", "Minimum amount for triggers is ₦50,000");
+      return;
+    }
+
+    // route to authorize screen so user can enter PIN and confirm trigger
+    const targetPrice = Math.round(Number(gold?.price?.data?.pricePerGramNgn || 0));
+    router.push({
+      pathname: "/(root)/gold/authorize",
+      params: {
+        amount: String(amountRaw),
+        amountRaw: String(amountRaw),
+        grams: String(grams),
+        type: "buy",
+        trigger: "true",
+        target_price_ngn: String(targetPrice),
+        expires_at: selectedDate.toISOString().slice(0, 10),
+      },
+    });
   };
 
   return (
