@@ -6,6 +6,7 @@ import {
   Platform,
   ScrollView,
   TextInput,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -86,7 +87,6 @@ export default function BuyGold() {
   const amountRaw = toNumber(amount); // ✅ NGN
 
   // ✅ minimums
-  // For both buy and sell the minimum is now ₦50,000
   const minBuy = 50000;
   const minSell = 50000; // NGN
   const minWithdraw = 100; // NGN (unchanged)
@@ -158,9 +158,9 @@ export default function BuyGold() {
             />
             <Text className="text-white/70 text-xs ml-2">
               {txType === "buy"
-                ? "Minimum amount is ₦10,000"
+                ? "Minimum amount is ₦50,000"
                 : txType === "sell"
-                ? "Enter the naira amount you want to sell"
+                ? "Minimum amount is ₦50,000"
                 : "Enter the naira amount you want to withdraw — delivery address required"}
             </Text>
           </View>
@@ -209,18 +209,33 @@ export default function BuyGold() {
       </ScrollView>
 
       {/* Continue */}
-      <View className="px-5 pb-6 absolute w-full bottom-0 bg-[#3a3a1a]">
+      <View className="px-5 pb-6 absolute w-full bottom-10 bg-[#3a3a1a]">
         <Button
           title="Continue"
           variant="primary"
-          disabled={!canContinue}
           onPress={() => {
+            if ((txType === "buy" || txType === "sell") && amountRaw < 50000) {
+              Alert.alert("Minimum amount", "Minimum amount is ₦50,000");
+              return;
+            }
+
+            if (
+              txType === "withdraw" &&
+              (amountRaw < 100 || address.trim().length <= 3)
+            ) {
+              Alert.alert(
+                "Missing details",
+                "Enter a valid amount and delivery address."
+              );
+              return;
+            }
+
             router.push({
               pathname: "/gold/confirm-payment",
               params: {
-                amount, // ✅ NGN (what user typed)
-                amountRaw: String(amountRaw), // ✅ NGN raw
-                grams, // ✅ computed grams for backend
+                amount, 
+                amountRaw: String(amountRaw), 
+                grams,
                 type: txType,
                 delivery_address: txType === "withdraw" ? address : undefined,
               },

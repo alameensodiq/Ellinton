@@ -79,7 +79,14 @@ export default function GoldDashboard() {
                   Current Value
                 </CustomText>
                 <CustomText size="lg" weight="bold" className="text-white">
-                  {hidden ? "••••••" : `₦${wallet?.current_value_ngn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`}
+                  {hidden
+                    ? "••••••"
+                    : `₦${
+                        wallet?.current_value_ngn.toLocaleString("en-NG", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }) || "0.00"
+                      }`}
                 </CustomText>
               </View>
             </View>
@@ -89,18 +96,18 @@ export default function GoldDashboard() {
               <ActionTile
                 label="Buy"
                 iconName="cart-outline"
-                onPress={() => router.push({ pathname: "/gold", params: { type: "buy" } })}
+                onPress={() =>
+                  router.push({ pathname: "/gold", params: { type: "buy" } })
+                }
               />
               <ActionTile
                 label="Sell"
                 iconName="pricetag-outline"
-                onPress={() => router.push({ pathname: "/gold", params: { type: "sell" } })}
+                onPress={() =>
+                  router.push({ pathname: "/gold", params: { type: "sell" } })
+                }
               />
-              <ActionTile
-                label="Withdraw"
-                iconName="wallet-outline"
-                onPress={() => router.push({ pathname: "/gold", params: { type: "withdraw" } })}
-              />
+
               <ActionTile
                 label="Gift"
                 iconName="gift-outline"
@@ -111,7 +118,9 @@ export default function GoldDashboard() {
                       gift: "true",
                       // pass current wallet values as defaults
                       amount_grams: String(wallet?.balance_grams ?? 0),
-                      amount: String(Math.round(wallet?.current_value_ngn ?? 0)),
+                      amount: String(
+                        Math.round(wallet?.current_value_ngn ?? 0)
+                      ),
                     },
                   })
                 }
@@ -149,9 +158,26 @@ export default function GoldDashboard() {
           <View className="bg-[#5A5B1F] rounded-3xl overflow-hidden">
             <InvestedRow
               title="Total Invested"
-              subtitle={`₦${wallet?.total_invested_ngn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`}
-              rightTop={`₦${wallet?.current_value_ngn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`}
-              rightBottom={`${wallet?.profit_loss_percent >= 0 ? "+" : ""}${wallet?.profit_loss_percent || 0}% (₦${wallet?.profit_loss_ngn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"})`}
+              subtitle={`₦${
+                wallet?.total_invested_ngn.toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }) || "0.00"
+              }`}
+              rightTop={`₦${
+                wallet?.current_value_ngn.toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }) || "0.00"
+              }`}
+              rightBottom={`${wallet?.profit_loss_percent >= 0 ? "+" : ""}${
+                wallet?.profit_loss_percent || 0
+              }% (₦${
+                wallet?.profit_loss_ngn.toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }) || "0.00"
+              })`}
               rightBottomPositive={wallet?.profit_loss_ngn >= 0}
               iconName="bar-chart-outline"
             />
@@ -160,9 +186,26 @@ export default function GoldDashboard() {
 
             <InvestedRow
               title="Live Gold Price"
-              subtitle={`₦${livePrice?.price_per_gram_ngn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}/gram`}
-              rightTop={`$${livePrice?.price_per_toz_usd.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`}
-              rightBottom={`${livePrice?.change_percent >= 0 ? "+" : ""}${livePrice?.change_percent || 0}% ($${livePrice?.change_usd.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"})`}
+              subtitle={`₦${
+                livePrice?.price_per_gram_ngn.toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }) || "0.00"
+              }/gram`}
+              rightTop={`$${
+                livePrice?.price_per_toz_usd.toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }) || "0.00"
+              }`}
+              rightBottom={`${livePrice?.change_percent >= 0 ? "+" : ""}${
+                livePrice?.change_percent || 0
+              }% ($${
+                livePrice?.change_usd.toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }) || "0.00"
+              })`}
               rightBottomPositive={livePrice?.change_percent >= 0}
               iconName="stats-chart-outline"
             />
@@ -172,7 +215,12 @@ export default function GoldDashboard() {
             <InvestedRow
               title="SGR Certificate"
               subtitle={`Weight: ${skr?.weight_grams.toFixed(8) || "0"} grams`}
-              rightTop={`₦${skr?.current_valuation_ngn.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`}
+              rightTop={`₦${
+                skr?.current_valuation_ngn.toLocaleString("en-NG", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                }) || "0.00"
+              }`}
               rightBottom={skr?.storage_location || "Dubai Vault"}
               rightBottomPositive
               iconName="shield-outline"
@@ -189,16 +237,42 @@ export default function GoldDashboard() {
               {transactions.slice(0, 5).map((transaction: any) => (
                 <Pressable
                   key={transaction.id}
-                  onPress={() => router.push(`/gold/transactions/${transaction.id}`)}
+                  onPress={() =>
+                    router.push(`/gold/transactions/${transaction.id}`)
+                  }
                 >
                   <HistoryItem
                     id={transaction.id}
-                    type={transaction.type === "buy" ? "Gold Purchase" : transaction.type === "sell" ? "Gold Sale" : "Transfer"}
+                    type={
+                      transaction.type === "buy"
+                        ? "Gold Purchase"
+                        : transaction.type === "sell"
+                        ? "Gold Sale"
+                        : "Transfer"
+                    }
                     from={`Ref: ${transaction.reference}`}
-                    amount={transaction.type === "buy" ? `-₦${parseFloat(transaction.amount_ngn).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `+₦${parseFloat(transaction.amount_ngn).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                    amount={
+                      transaction.type === "buy"
+                        ? `-₦${parseFloat(
+                            transaction.amount_ngn
+                          ).toLocaleString("en-NG", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`
+                        : `+₦${parseFloat(
+                            transaction.amount_ngn
+                          ).toLocaleString("en-NG", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`
+                    }
                     amountPositive={transaction.type === "sell"}
-                    amountGrams={`${parseFloat(transaction.amount_grams).toFixed(8)} grams`}
-                    date={new Date(transaction.created_at).toLocaleDateString("en-NG")}
+                    amountGrams={`${parseFloat(
+                      transaction.amount_grams
+                    ).toFixed(8)} grams`}
+                    date={new Date(transaction.created_at).toLocaleDateString(
+                      "en-NG"
+                    )}
                   />
                 </Pressable>
               ))}
