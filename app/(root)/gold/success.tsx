@@ -19,15 +19,18 @@ export default function GoldSuccess() {
   const isSell = transactionType === "sell";
   const isBuy = transactionType === "buy";
   const isWithdraw = transactionType === "withdraw";
+  const isTrigger = params.trigger === "true" || params.trigger === "1";
 
-  const successMessage = isSell
+  const successMessage = isTrigger
+    ? "Your trigger was successful"
+    : isSell
     ? "Your gold sale is confirmed."
     : isWithdraw
     ? "Your gold withdrawal is confirmed."
     : "Your gold order is confirmed.";
 
-  // ✅ If it's sell or buy, go to dashboard. If it's withdraw, go to gold home (change if you want).
-  const doneRoute = isSell || isBuy ? "/(root)/gold/dashboard" : "/(root)/gold";
+  // ✅ If it's trigger, go to gold home. If it's sell or buy, go to dashboard. If it's withdraw, go to gold home.
+  const doneRoute = isTrigger ? "/(root)/gold" : isSell || isBuy ? "/(root)/gold/dashboard" : "/(root)/gold";
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
