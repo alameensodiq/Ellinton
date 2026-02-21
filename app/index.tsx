@@ -16,7 +16,6 @@ import CustomText from "./components/CustomText";
 import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
 
 const backgrounds = [
   {
@@ -49,6 +48,7 @@ const backgrounds = [
 export default function Index() {
   const router = useRouter();
   const [backgroundIndex, setBackgroundIndex] = useState(0);
+  const [checkingStorage, setCheckingStorage] = useState(true);
   const pan = useRef(new Animated.ValueXY()).current;
   const dispatch = useDispatch();
 
@@ -71,6 +71,8 @@ export default function Index() {
         }
       } catch (e) {
         // ignore and show index
+      } finally {
+        setCheckingStorage(false);
       }
     })();
 
@@ -80,6 +82,8 @@ export default function Index() {
 
     return () => clearInterval(interval);
   }, []);
+
+  if (checkingStorage) return null;
 
   const panResponder = useRef(
     PanResponder.create({
