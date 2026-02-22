@@ -51,7 +51,6 @@ export default function Index() {
   const [checkingStorage, setCheckingStorage] = useState(true);
   const pan = useRef(new Animated.ValueXY()).current;
   const dispatch = useDispatch();
-
   useEffect(() => {
     // If user data is already saved, skip the landing screen.
     (async () => {
@@ -82,9 +81,6 @@ export default function Index() {
 
     return () => clearInterval(interval);
   }, []);
-
-  if (checkingStorage) return null;
-
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) =>
@@ -101,6 +97,8 @@ export default function Index() {
       },
     })
   ).current;
+
+  if (checkingStorage) return null;
   const handleAuthNavigation = (path: string) => {
     dispatch(logout());
     dispatch(clearError());
