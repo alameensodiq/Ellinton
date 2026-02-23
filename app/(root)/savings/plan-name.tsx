@@ -104,14 +104,7 @@ export default function PlanNameScreen() {
           </View>
         </View>
       </ScrollView>
-
-      <View className="absolute bottom-0 left-0 right-0 bg-primary-100 p-4 border-t border-primary-400 gap-3 flex-row">
-        <Button
-          title="Back"
-          variant="secondary"
-          onPress={() => router.back()}
-          className="flex-1"
-        />
+      <View className="absolute bottom-5 left-0 right-0 p-4 gap-3 flex-row">
         <Button
           title="Continue"
           variant="primary"

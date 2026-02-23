@@ -147,7 +147,7 @@ export default function ProductsScreen() {
         </CustomText>
       )}
 
-      <View className="absolute bottom-0 left-0 right-0 bg-primary-100 p-4 border-t border-primary-400">
+      <View className="absolute bottom-10 left-0 right-0 bg-primary-100 p-4 border-t border-primary-400">
         <Button
           title="Continue"
           variant="primary"

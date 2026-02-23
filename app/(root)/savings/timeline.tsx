@@ -1,10 +1,4 @@
 // app/(root)/timeline.tsx
-// ✅ Weekly + Monthly now open your BottomSheet dropdown
-// ✅ Selecting shows: "Weekly / Wednesday" and "Monthly / 15th" (example)
-// ✅ Start/End date fields show calendar icon on the right
-// ✅ Tapping the field OR the icon opens the same BottomSheet date picker
-// ✅ No other UI changes
-
 import React, { useMemo, useState } from "react";
 import {
   View,
@@ -21,7 +15,9 @@ import { Ionicons } from "@expo/vector-icons";
 import TextInputField from "@/app/components/inputs/TextInputField";
 import { useRouter } from "expo-router";
 import BottomSheet from "@/app/components/BottomSheet";
-import DateTimePicker from "@react-native-community/datetimepicker";
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
 
 const frequencies = [
   { key: "once", label: "Once" },
@@ -52,6 +48,7 @@ type DurationKey = (typeof durations)[number]["key"];
 type WeekDay = (typeof weekDays)[number];
 
 type SheetType = null | "weekly" | "monthly" | "startDate" | "endDate";
+type AndroidPickerType = null | "start" | "end";
 
 const formatDate = (d: Date) =>
   d.toLocaleDateString("en-GB", {
@@ -78,6 +75,9 @@ export default function Timeline() {
   // bottomsheet control
   const [sheet, setSheet] = useState<SheetType>(null);
 
+  // ANDROID: native picker control
+  const [androidPicker, setAndroidPicker] = useState<AndroidPickerType>(null);
+
   // temp picks (so user can cancel)
   const [tempWeeklyDay, setTempWeeklyDay] = useState<WeekDay>(weeklyDay);
   const [tempMonthlyDay, setTempMonthlyDay] = useState<number>(monthlyDay);
@@ -88,7 +88,7 @@ export default function Timeline() {
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
   const [endDateObj, setEndDateObj] = useState<Date | null>(null);
 
-  // temp date for date sheet
+  // temp date for picker
   const [tempDate, setTempDate] = useState<Date>(new Date());
 
   const router = useRouter();
@@ -117,11 +117,23 @@ export default function Timeline() {
 
   const openStartDate = () => {
     setTempDate(startDateObj ?? new Date());
+
+    if (Platform.OS === "android") {
+      setAndroidPicker("start");
+      return;
+    }
+
     setSheet("startDate");
   };
 
   const openEndDate = () => {
     setTempDate(endDateObj ?? startDateObj ?? new Date());
+
+    if (Platform.OS === "android") {
+      setAndroidPicker("end");
+      return;
+    }
+
     setSheet("endDate");
   };
 
@@ -129,6 +141,34 @@ export default function Timeline() {
     () => Array.from({ length: 28 }, (_, i) => i + 1),
     []
   );
+
+  const handleAndroidDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    // Android fires dismissed too
+    if (event.type === "dismissed") {
+      setAndroidPicker(null);
+      return;
+    }
+
+    if (!date) return;
+
+    setTempDate(date);
+
+    if (androidPicker === "start") {
+      setStartDateObj(date);
+      setStartDate(formatDate(date));
+
+      // if end date is before start date, clear it
+      if (endDateObj && endDateObj.getTime() < date.getTime()) {
+        setEndDateObj(null);
+        setEndDate("");
+      }
+    } else if (androidPicker === "end") {
+      setEndDateObj(date);
+      setEndDate(formatDate(date));
+    }
+
+    setAndroidPicker(null);
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
@@ -194,12 +234,12 @@ export default function Timeline() {
             How long do you want to save?
           </CustomText>
 
-          <View className="flex-row flex-wrap gap-4 justify-center mb-4">
+          <View className="flex-row flex-wrap gap-6 justify-center mb-4">
             {durations.map((dur) => (
               <Pressable
                 key={dur.key}
                 onPress={() => setDuration(dur.key)}
-                className={`p-4 px-16 rounded-xl ${
+                className={`p-4 px-14 rounded-xl ${
                   duration === dur.key ? "bg-primary-300" : "bg-primary-400"
                 }`}
               >
@@ -213,7 +253,6 @@ export default function Timeline() {
             ))}
           </View>
 
-          {/* Custom Duration */}
           <CustomText size="sm" className="mb-4" secondary>
             Let me decide
           </CustomText>
@@ -254,6 +293,19 @@ export default function Timeline() {
           />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* ANDROID: show ONLY native picker (no BottomSheet) */}
+      {Platform.OS === "android" && androidPicker && (
+        <DateTimePicker
+          value={tempDate}
+          mode="date"
+          display="default"
+          minimumDate={
+            androidPicker === "end" ? startDateObj ?? new Date() : new Date()
+          }
+          onChange={handleAndroidDateChange}
+        />
+      )}
 
       {/* WEEKLY dropdown */}
       <BottomSheet
@@ -321,68 +373,70 @@ export default function Timeline() {
         </View>
       </BottomSheet>
 
-      {/* START DATE picker */}
-      <BottomSheet
-        visible={sheet === "startDate"}
-        onClose={() => setSheet(null)}
-        title="Choose date"
-        buttonText="Done"
-        onConfirm={() => {
-          setStartDateObj(tempDate);
-          setStartDate(formatDate(tempDate));
+      {/* iOS ONLY: START DATE picker in BottomSheet */}
+      {Platform.OS === "ios" && (
+        <BottomSheet
+          visible={sheet === "startDate"}
+          onClose={() => setSheet(null)}
+          title="Choose date"
+          buttonText="Done"
+          onConfirm={() => {
+            setStartDateObj(tempDate);
+            setStartDate(formatDate(tempDate));
 
-          // if end date is before start date, clear it
-          if (endDateObj && endDateObj.getTime() < tempDate.getTime()) {
-            setEndDateObj(null);
-            setEndDate("");
-          }
+            if (endDateObj && endDateObj.getTime() < tempDate.getTime()) {
+              setEndDateObj(null);
+              setEndDate("");
+            }
 
-          setSheet(null);
-        }}
-      >
-        <CustomText size="lg" weight="bold" className="mb-2">
-          Select start date
-        </CustomText>
-        <CustomText size="sm" secondary className="mb-6">
-          Choose your preferred date
-        </CustomText>
+            setSheet(null);
+          }}
+        >
+          <CustomText size="lg" weight="bold" className="mb-2">
+            Select start date
+          </CustomText>
+          <CustomText size="sm" secondary className="mb-6">
+            Choose your preferred date
+          </CustomText>
 
-        <DateTimePicker
-          value={tempDate}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={(_, d) => d && setTempDate(d)}
-          minimumDate={new Date()}
-        />
-      </BottomSheet>
+          <DateTimePicker
+            value={tempDate}
+            mode="date"
+            display="spinner"
+            onChange={(_, d) => d && setTempDate(d)}
+            minimumDate={new Date()}
+          />
+        </BottomSheet>
+      )}
 
-      {/* END DATE picker */}
-      <BottomSheet
-        visible={sheet === "endDate"}
-        onClose={() => setSheet(null)}
-        title="Choose date"
-        buttonText="Done"
-        onConfirm={() => {
-          setEndDateObj(tempDate);
-          setEndDate(formatDate(tempDate));
-          setSheet(null);
-        }}
-      >
-        <CustomText size="lg" weight="bold" className="mb-2">
-          Select end date
-        </CustomText>
-        <CustomText size="sm" secondary className="mb-6">
-          Choose your preferred date
-        </CustomText>
+      {Platform.OS === "ios" && (
+        <BottomSheet
+          visible={sheet === "endDate"}
+          onClose={() => setSheet(null)}
+          title="Choose date"
+          buttonText="Done"
+          onConfirm={() => {
+            setEndDateObj(tempDate);
+            setEndDate(formatDate(tempDate));
+            setSheet(null);
+          }}
+        >
+          <CustomText size="lg" weight="bold" className="mb-2">
+            Select end date
+          </CustomText>
+          <CustomText size="sm" secondary className="mb-6">
+            Choose your preferred date
+          </CustomText>
 
-        <DateTimePicker
-          value={tempDate}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={(_, d) => d && setTempDate(d)}
-          minimumDate={startDateObj ?? new Date()}
-        />
-      </BottomSheet>
+          <DateTimePicker
+            value={tempDate}
+            mode="date"
+            display="spinner"
+            onChange={(_, d) => d && setTempDate(d)}
+            minimumDate={startDateObj ?? new Date()}
+          />
+        </BottomSheet>
+      )}
     </SafeAreaView>
   );
 }
