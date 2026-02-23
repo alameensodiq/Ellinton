@@ -67,8 +67,7 @@ const Login = () => {
         router.replace("/(root)/(tabs)");
       }
     }
-    clearError();
-  }, [isAuthenticated, requiresPasscodeSetup]);
+  }, [isAuthenticated, user, requiresPasscodeSetup, router]);
 
   const handleLogin = async () => {
     if (!email || !pin) return;
