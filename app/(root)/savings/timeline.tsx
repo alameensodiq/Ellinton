@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Button from "@/app/components/Button";
 import { Ionicons } from "@expo/vector-icons";
 import TextInputField from "@/app/components/inputs/TextInputField";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import BottomSheet from "@/app/components/BottomSheet";
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -92,6 +92,25 @@ export default function Timeline() {
   const [tempDate, setTempDate] = useState<Date>(new Date());
 
   const router = useRouter();
+  const params = useLocalSearchParams<Record<string, any>>();
+
+  const durationMap: Record<DurationKey, number> = {
+    "3m": 90,
+    "6m": 180,
+    "9m": 270,
+    "1y": 365,
+  };
+
+  const tenureDays = useMemo(() => {
+    if (duration && durationMap[duration]) return durationMap[duration];
+    if (startDateObj && endDateObj) {
+      const diff = Math.ceil(
+        (endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return diff > 0 ? diff : 0;
+    }
+    return undefined;
+  }, [duration, startDateObj, endDateObj]);
 
   const weeklyLabel = useMemo(() => {
     return frequency === "weekly" ? `Weekly / ${weeklyDay}` : "Weekly";
@@ -286,11 +305,26 @@ export default function Timeline() {
           />
 
           <View className="flex-1 mt-4" />
-          <Button
-            title="Continue"
-            variant="primary"
-            onPress={() => router.push("/(root)/savings/estimated-outcome")}
-          />
+            <Button
+              title="Continue"
+              variant="primary"
+              onPress={() => {
+                // gather params and navigate to estimated outcome
+                router.push({
+                  pathname: "/(root)/savings/estimated-outcome",
+                  params: {
+                    ...params,
+                    frequency,
+                    tenure: tenureDays ? String(tenureDays) : undefined,
+                    dayOfWeek: frequency === "weekly" ? weeklyDay : undefined,
+                    dateInMonth: frequency === "monthly" ? String(monthlyDay) : undefined,
+                    startDate: startDate || undefined,
+                    endDate: endDate || undefined,
+                    amount: params.targetAmount || params.amount || undefined,
+                  },
+                });
+              }}
+            />
         </ScrollView>
       </KeyboardAvoidingView>
 

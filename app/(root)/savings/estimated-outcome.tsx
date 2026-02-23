@@ -2,11 +2,14 @@
 // ✅ Screen design like your screenshot
 // ✅ Continue -> opens BottomSheet confirmation -> Ok -> moves to next screen
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { View, ScrollView, StatusBar, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { calculateSavingsEstimate } from "@/app/lib/thunks/savingsThunks";
 
 import Header from "@/app/components/header-back";
 import ProgressBar from "@/app/components/ProgressBar";
@@ -18,23 +21,18 @@ const money = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 
 export default function EstimatedOutcome() {
   const router = useRouter();
-  const params = useLocalSearchParams<{
-    next?: string;
-    estimated_amount?: string;
-    interest_rate?: string;
-    estimated_interest?: string;
-    maturity_date?: string;
-    frequency_label?: string;
-    times?: string;
-  }>();
+  const params = useLocalSearchParams<Record<string, any>>();
 
-  // fallbacks to match screenshot
-  const estimatedAmount = Number(params.estimated_amount || 100000);
-  const interestRate = String(params.interest_rate || "0.003%");
-  const estimatedInterest = Number(params.estimated_interest || 10900);
-  const maturityDateText = String(params.maturity_date || "February 20, 2026");
-  const frequencyLabel = String(params.frequency_label || "₦1,000 weekly");
-  const times = String(params.times || "30");
+  const dispatch = useAppDispatch();
+  const { estimate } = useAppSelector((s) => s.savings);
+
+  // Use estimate from API if available, else fallbacks
+  const estimatedAmount = Number(estimate?.maturityAmount ?? params.estimated_amount ?? 0);
+  const interestRate = estimate?.rate != null ? `${estimate.rate}%` : String(params.interest_rate || "0.00%");
+  const estimatedInterest = Number(estimate?.estimatedInterest ?? params.estimated_interest ?? 0);
+  const maturityDateText = String(params.maturity_date || params.endDate || "");
+  const frequencyLabel = String(params.frequency_label || `${params.amount || params.targetAmount || "0"} ${params.frequency || "once"}`);
+  const times = String(estimate?.deposits ?? params.times ?? "");
 
   const nextRoute = useMemo(() => {
     const n = params.next;
@@ -43,6 +41,17 @@ export default function EstimatedOutcome() {
 
   const [interestEnabled, setInterestEnabled] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
+
+  useEffect(() => {
+    const amount = Number(params.estimated_amount || params.amount || params.targetAmount || 0);
+    const tenure = params.tenure ? Number(params.tenure) : undefined;
+    const type = params.type || "basic";
+    const frequency = params.frequency || "once";
+
+    if (amount && tenure) {
+      dispatch(calculateSavingsEstimate({ amount, type, tenure, frequency }));
+    }
+  }, [params, dispatch]);
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
@@ -144,6 +153,7 @@ export default function EstimatedOutcome() {
           title="Continue"
           variant="primary"
           onPress={() => setConfirmVisible(true)}
+          disabled={!estimate}
         />
       </View>
 
@@ -155,7 +165,19 @@ export default function EstimatedOutcome() {
         buttonText="Ok"
         onConfirm={() => {
           setConfirmVisible(false);
-          router.push("/(root)/savings/plan-details" as any);
+          // pass estimate and accumulated params to plan-details
+          router.push({
+            pathname: "./plan-details",
+            params: {
+              ...params,
+              maturityAmount: estimate?.maturityAmount,
+              estimatedInterest: estimate?.estimatedInterest,
+              principal: estimate?.principal,
+              deposits: estimate?.deposits,
+              rate: estimate?.rate,
+              productCode: params.productCode || estimate?.productCode,
+            },
+          } as any);
         }}
       >
         <View className="items-center mt-6">
