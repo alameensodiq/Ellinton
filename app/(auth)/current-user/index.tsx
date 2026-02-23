@@ -23,11 +23,19 @@ export default function CurrentUser() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const { user, isLoading, isRestoring } = useAppSelector((state) => state.auth);
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
 
   const email = user?.email || "";
+
+  if (isRestoring || !user) {
+    return (
+      <SafeAreaView className="flex-1 bg-primary-100 justify-center items-center">
+        <Loading visible={true} />
+      </SafeAreaView>
+    );
+  }
 
   const handleNumberPress = (num: string) => {
     if (passcode.length < 6) {
