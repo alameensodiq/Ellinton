@@ -29,14 +29,6 @@ export default function CurrentUser() {
 
   const email = user?.email || "";
 
-  if (isRestoring || !user) {
-    return (
-      <SafeAreaView className="flex-1 bg-primary-100 justify-center items-center">
-        <Loading visible={true} />
-      </SafeAreaView>
-    );
-  }
-
   const handleNumberPress = (num: string) => {
     if (passcode.length < 6) {
       setPasscode((prev) => {
@@ -100,63 +92,71 @@ export default function CurrentUser() {
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
       <StatusBar barStyle="light-content" />
-      <View className="items-center mt-12">
-        <View className="w-24 h-24 rounded-full  bg-primary-200 overflow-hidden border-4 border-primary-300">
-          {userAvatar ? (
-            <Image source={{ uri: userAvatar }} className="w-full h-full" />
-          ) : (
-            <View className="w-full h-full bg-primary-500 justify-center items-center">
-              <Text className="text-white font-bold text-lg">
-                {getInitials(userName)}
-              </Text>
+      {isRestoring || !user ? (
+        <View className="flex-1 justify-center items-center">
+          <Loading visible={true} />
+        </View>
+      ) : (
+        <>
+          <View className="items-center mt-12">
+            <View className="w-24 h-24 rounded-full  bg-primary-200 overflow-hidden border-4 border-primary-300">
+              {userAvatar ? (
+                <Image source={{ uri: userAvatar }} className="w-full h-full" />
+              ) : (
+                <View className="w-full h-full bg-primary-500 justify-center items-center">
+                  <Text className="text-white font-bold text-lg">
+                    {getInitials(userName)}
+                  </Text>
+                </View>
+              )}
             </View>
-          )}
-        </View>
 
-        <CustomText className="text-center mt-4">Welcome back</CustomText>
-        <CustomText className="text-center" size="lg">
-          {userName}
-        </CustomText>
-      </View>
-      <View className="flex-1 justify-between px-6 pb-12">
-        <View className="mt-6">
-          <Text className="text-white text-base mb-3">Enter your passcode</Text>
+            <CustomText className="text-center mt-4">Welcome back</CustomText>
+            <CustomText className="text-center" size="lg">
+              {userName}
+            </CustomText>
+          </View>
+          <View className="flex-1 justify-between px-6 pb-12">
+            <View className="mt-6">
+              <Text className="text-white text-base mb-3">Enter your passcode</Text>
 
-          <OtpInput
-            digitCount={6}
-            value={passcode}
-            onChange={(value) => {
-              setPasscode(value);
-              setError(false);
-            }}
-            error={error}
-            autoFocus={false}
-            secure={true}
-          />
+              <OtpInput
+                digitCount={6}
+                value={passcode}
+                onChange={(value) => {
+                  setPasscode(value);
+                  setError(false);
+                }}
+                error={error}
+                autoFocus={false}
+                secure={true}
+              />
 
-          {error && (
-            <Text className="text-red-500 text-sm mt-4">
-              Incorrect passcode. Please try again.
-            </Text>
-          )}
-        </View>
+              {error && (
+                <Text className="text-red-500 text-sm mt-4">
+                  Incorrect passcode. Please try again.
+                </Text>
+              )}
+            </View>
 
-        <Numpad onPress={handleNumberPress} onDelete={handleDelete} />
-        <TouchableOpacity>
-          <Text
-            onPress={() => router.push("/(auth)/forget-password")}
-            className="text-primary-200 text-center font-semibold text-md mt-4"
-          >
-            Forgot passcode?
-          </Text>
-        </TouchableOpacity>
-        <InfoText
-          text="Not you?"
-          actionText="Back to login"
-          onPress={() => router.push("/(auth)/login")}
-        />
-      </View>
-      <Loading visible={isLoading} />
+            <Numpad onPress={handleNumberPress} onDelete={handleDelete} />
+            <TouchableOpacity>
+              <Text
+                onPress={() => router.push("/(auth)/forget-password")}
+                className="text-primary-200 text-center font-semibold text-md mt-4"
+              >
+                Forgot passcode?
+              </Text>
+            </TouchableOpacity>
+            <InfoText
+              text="Not you?"
+              actionText="Back to login"
+              onPress={() => router.push("/(auth)/login")}
+            />
+          </View>
+          <Loading visible={isLoading} />
+        </>
+      )}
     </SafeAreaView>
   );
 }
