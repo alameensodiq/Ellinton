@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { View } from "react-native";
+import React, { useMemo, useState, useEffect } from "react";
+import { View, FlatList, TouchableOpacity, Pressable } from "react-native";
 import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,15 +7,31 @@ import Button from "@/app/components/Button";
 import { svgIcons } from "@/app/assets/icons/icons";
 import TextInputField from "@/app/components/inputs/TextInputField";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { fetchSavingsProducts } from "@/app/lib/thunks/savingsThunks";
+import Loading from "@/app/components/Loading";
 
 type PlanType = "basic" | "target" | "group" | "fixed";
 
+interface Product {
+  tenure: number;
+  code: string;
+  rate: number;
+  name: string;
+}
+
 export default function Index() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const params = useLocalSearchParams<{ type?: string }>();
 
   const [planName, setPlanName] = useState("");
   const [planNameError, setPlanNameError] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [step, setStep] = useState<"products" | "name">("products");
+
+  const { products, isLoading } = useAppSelector((state) => state.savings);
 
   const planType = useMemo<PlanType>(() => {
     const t = (params.type || "").toLowerCase();
@@ -23,6 +39,17 @@ export default function Index() {
       return t;
     return "basic";
   }, [params.type]);
+
+  // Fetch savings products on mount
+  useEffect(() => {
+    const typeMap: Record<PlanType, string> = {
+      basic: "basic",
+      target: "fixed",
+      group: "fixed",
+      fixed: "fixed",
+    };
+    dispatch(fetchSavingsProducts({ type: typeMap[planType] }));
+  }, [dispatch, planType]);
 
   const planMeta = useMemo(() => {
     const meta: Record<PlanType, any> = {
@@ -87,6 +114,16 @@ export default function Index() {
   }, [planType]);
 
   const handleContinue = () => {
+    // Step 1: Select a product
+    if (step === "products") {
+      if (!selectedProduct) {
+        return;
+      }
+      setStep("name");
+      return;
+    }
+
+    // Step 2: Enter plan name and continue
     const name = planName.trim();
 
     if (!name) {
@@ -101,67 +138,160 @@ export default function Index() {
       params: {
         type: planType,
         planName: name,
+        productCode: selectedProduct?.code,
+        productRate: selectedProduct?.rate,
+        productTenure: selectedProduct?.tenure,
       },
     });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 p-4">
-      <ProgressBar currentStep={1} totalSteps={4} />
-
-      <CustomText size="lg" weight="bold">
-        Name your plan
-      </CustomText>
-
-      <CustomText size="sm" secondary className="mt-1">
-        Give your savings plan a meaningful name
-      </CustomText>
-
-      <TextInputField
-        label="Plan name"
-        value={planName}
-        onChangeText={(t) => {
-          setPlanName(t);
-          if (planNameError) setPlanNameError("");
-        }}
-        placeholder="Plan name"
-        error={planNameError}
+      <ProgressBar 
+        currentStep={step === "products" ? 1 : 2} 
+        totalSteps={4} 
       />
 
-      <CustomText size="sm" secondary>
-        A descriptive name makes savings interesting
-      </CustomText>
+      {step === "products" ? (
+        // Step 1: Product Selection
+        <>
+          <CustomText size="lg" weight="bold">
+            Select a savings plan
+          </CustomText>
 
-      <View className="flex-1" />
+          <CustomText size="sm" secondary className="mt-1">
+            Choose from available savings products
+          </CustomText>
 
-      <CustomText size="sm" weight="bold" className="mb-2">
-        {planMeta.title}
-      </CustomText>
-
-      <CustomText size="sm" secondary className="mb-4">
-        {planMeta.desc}
-      </CustomText>
-
-      <View className="mb-4 bg-primary-400 rounded-2xl p-4">
-        {planMeta.bullets.map((b: any, idx: number) => {
-          const Icon = b.icon;
-          const showBorder = idx !== planMeta.bullets.length - 1;
-
-          return (
-            <View
-              key={idx}
-              className={`flex-row gap-4 items-center py-4 ${
-                showBorder ? "border-b border-primary-300" : ""
-              }`}
-            >
-              <Icon width={24} height={24} />
-              <CustomText size="sm">{b.text}</CustomText>
+          {isLoading ? (
+            <Loading visible={true} />
+          ) : (
+            <View className="flex-1 mt-4">
+              <FlatList
+                data={products}
+                keyExtractor={(item) => item.code}
+                scrollEnabled={false}
+                renderItem={({ item }) => (
+                  <Pressable
+                    onPress={() => setSelectedProduct(item)}
+                    className={`p-4 rounded-2xl mb-3 border-2 ${
+                      selectedProduct?.code === item.code
+                        ? "bg-primary-300 border-primary-200"
+                        : "bg-primary-400 border-primary-300"
+                    }`}
+                  >
+                    <View className="flex-row justify-between items-start">
+                      <View className="flex-1">
+                        <CustomText size="lg" weight="bold">
+                          {item.name}
+                        </CustomText>
+                        <CustomText size="sm" secondary className="mt-1">
+                          Tenure: {item.tenure} days
+                        </CustomText>
+                        <CustomText size="sm" secondary>
+                          Rate: {item.rate}% p.a.
+                        </CustomText>
+                      </View>
+                      <View
+                        className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
+                          selectedProduct?.code === item.code
+                            ? "bg-primary-200 border-primary-200"
+                            : "border-primary-200"
+                        }`}
+                      >
+                        {selectedProduct?.code === item.code && (
+                          <View className="w-3 h-3 bg-primary-100 rounded-full" />
+                        )}
+                      </View>
+                    </View>
+                  </Pressable>
+                )}
+              />
             </View>
-          );
-        })}
-      </View>
+          )}
 
-      <Button title="Continue" variant="primary" onPress={handleContinue} />
+          <View className="gap-3">
+            <Button
+              title="Continue"
+              variant="primary"
+              onPress={handleContinue}
+              disabled={!selectedProduct || isLoading}
+            />
+          </View>
+        </>
+      ) : (
+        // Step 2: Plan Name Entry
+        <>
+          <CustomText size="lg" weight="bold">
+            Name your plan
+          </CustomText>
+
+          <CustomText size="sm" secondary className="mt-1">
+            Give your savings plan a meaningful name
+          </CustomText>
+
+          <TextInputField
+            label="Plan name"
+            value={planName}
+            onChangeText={(t) => {
+              setPlanName(t);
+              if (planNameError) setPlanNameError("");
+            }}
+            placeholder="Plan name"
+            error={planNameError}
+          />
+
+          <CustomText size="sm" secondary>
+            A descriptive name makes savings interesting
+          </CustomText>
+
+          <View className="mt-6 bg-primary-400 rounded-2xl p-4">
+            <CustomText size="sm" weight="bold" className="mb-3">
+              {selectedProduct?.name}
+            </CustomText>
+
+            <View className="gap-2">
+              <View className="flex-row justify-between">
+                <CustomText size="sm" secondary>
+                  Tenure
+                </CustomText>
+                <CustomText size="sm" weight="bold">
+                  {selectedProduct?.tenure} days
+                </CustomText>
+              </View>
+              <View className="flex-row justify-between">
+                <CustomText size="sm" secondary>
+                  Interest Rate
+                </CustomText>
+                <CustomText size="sm" weight="bold">
+                  {selectedProduct?.rate}%
+                </CustomText>
+              </View>
+            </View>
+          </View>
+
+          <View className="flex-1" />
+
+          <View className="gap-3 flex-row">
+            <Button
+              title="Back"
+              variant="secondary"
+              onPress={() => {
+                setStep("products");
+                setPlanName("");
+                setPlanNameError("");
+              }}
+              className="flex-1"
+            />
+            <Button
+              title="Continue"
+              variant="primary"
+              onPress={handleContinue}
+              className="flex-1"
+            />
+          </View>
+        </>
+      )}
     </SafeAreaView>
   );
 }

@@ -53,7 +53,7 @@ const otherServices: ServiceItem[] = [
   { id: "11", icon: SERVICE_ICONS.schedule, label: "Schedule transaction" },
 ];
 
-const wealthManagement: ServiceItem[] = [
+const   wealthManagement: ServiceItem[] = [
   { id: "12", icon: SERVICE_ICONS.basicSavings, label: "Basic savings" },
   { id: "13", icon: SERVICE_ICONS.targetSavings, label: "Target savings" },
   { id: "14", icon: SERVICE_ICONS.groupSavings, label: "Group savings" },

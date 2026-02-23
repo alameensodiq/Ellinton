@@ -24,6 +24,13 @@ export default function ServicesSection() {
     if (item.id === "7") router.push("/(root)/internet");
     // if (item.id === "8") router.push("/(root)/other-bills");
     if (item.id === "9") router.push("/(root)/loans");
+    
+    // Savings/Wealth Management routes
+    if (item.id === "12") router.push({ pathname: "/(root)/savings", params: { type: "basic" } });
+    if (item.id === "13") router.push({ pathname: "/(root)/savings", params: { type: "target" } });
+    if (item.id === "14") router.push({ pathname: "/(root)/savings", params: { type: "group" } });
+    if (item.id === "15") router.push({ pathname: "/(root)/savings", params: { type: "fixed" } });
+    
     if (item.id === "17") router.push("/(root)/gold/dashboard");
   };
 
