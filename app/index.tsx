@@ -56,15 +56,9 @@ export default function Index() {
     (async () => {
       try {
         const userProfile = await AsyncStorage.getItem("userProfile");
-        const token = await AsyncStorage.getItem("authToken");
-
-        if (token) {
-          router.replace("/(root)/(tabs)");
-          return;
-        }
 
         if (userProfile) {
-          // user exists but no token — show unlock/current-user screen
+          // user exists — always show unlock/current-user screen on app reload
           router.replace("/(auth)/current-user");
           return;
         }
