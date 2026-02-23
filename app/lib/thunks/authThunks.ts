@@ -19,6 +19,7 @@ import {
   UPDATE_USER_ADDRESS_PROFILE_ENDPOINT,
   UPDATE_USER_PROFILE_PASSWORD_ENDPOINT,
   CHANGE_TRANSACTION_PIN_USERS_ENDPOINT,
+  SEARCH_USERS_ENDPOINT,
 } from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout, setCredentials, setUserOnly } from "../slices/authSlice";
@@ -975,6 +976,45 @@ export const changePasscode = createAsyncThunk(
       return rejectWithValue(
         error.data?.message || error.message || "Change passcode error"
       );
+    }
+  }
+);
+
+export const searchUsers = createAsyncThunk<
+  any[],
+  { search: string }
+>(
+  "auth/searchUsers",
+  async (payload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const url = `${SEARCH_USERS_ENDPOINT}?search=${encodeURIComponent(payload.search)}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        return rejectWithValue(
+          errorData?.data?.message ||
+            errorData?.message ||
+            `Search failed (${response.status})`
+        );
+      }
+
+      const data = (await response.json()) as ApiResponse<any[]>;
+      if (!data.success)
+        return rejectWithValue(data.message || "User search failed");
+      return data.data || [];
+    } catch (error: any) {
+      return rejectWithValue(error.message || "User search error");
     }
   }
 );
