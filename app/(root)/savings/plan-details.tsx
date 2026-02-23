@@ -1,6 +1,6 @@
 
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { View, ScrollView, StatusBar, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,9 +10,110 @@ import { LinearGradient } from "expo-linear-gradient";
 import Header from "@/app/components/header-back";
 import CustomText from "@/app/components/CustomText";
 import Button from "@/app/components/Button";
+import { useLocalSearchParams } from "expo-router";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { calculateSavingsEstimate, createSaving } from "@/app/lib/thunks/savingsThunks";
+import Loading from "@/app/components/Loading";
 
 export default function PlanDetails() {
   const router = useRouter();
+  const params = useLocalSearchParams<Record<string, any>>();
+  const dispatch = useAppDispatch();
+  const { estimate, isLoading, savingsDetail } = useAppSelector((s) => s.savings);
+
+  const [localEstimate, setLocalEstimate] = useState<any | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  // Accept estimate passed via params or fetch using calculate thunk
+  useEffect(() => {
+    // If estimate fields passed in params, use them
+    if (params.maturityAmount || params.estimatedInterest || params.principal) {
+      setLocalEstimate({
+        maturityAmount: Number(params.maturityAmount) || null,
+        estimatedInterest: Number(params.estimatedInterest) || null,
+        principal: Number(params.principal) || null,
+        deposits: Number(params.deposits) || null,
+        rate: Number(params.rate) || null,
+        productCode: params.productCode || params.productCode,
+      });
+      return;
+    }
+
+    // Otherwise, attempt to calculate from provided inputs
+    const amount = params.amount ?? params.targetAmount ?? params.initialAmount;
+    const type = params.type ?? "basic";
+    const tenure = params.tenure ? Number(params.tenure) : undefined;
+    const frequency = params.frequency ?? "once";
+
+    if (amount && tenure) {
+      dispatch(
+        calculateSavingsEstimate({
+          amount: Number(amount),
+          type,
+          tenure: Number(tenure),
+          frequency,
+        })
+      );
+    }
+  }, [params, dispatch]);
+
+  // Mirror redux estimate to local state when available
+  useEffect(() => {
+    if (estimate) setLocalEstimate(estimate);
+  }, [estimate]);
+
+  // Navigate to success once saving created
+  useEffect(() => {
+    if (savingsDetail) {
+      setCreating(false);
+      // show success screen with maturity amount if available
+      const amt = savingsDetail.maturityAmount || savingsDetail.amount || localEstimate?.maturityAmount || params.amount;
+      router.replace({
+        pathname: "/(root)/savings/success",
+        params: { amount: String(amt ?? "0"), description: "Basic saving created successful" },
+      });
+    }
+  }, [savingsDetail, router, localEstimate, params.amount]);
+
+  const estimateDisplay = useMemo(() => {
+    return (
+      localEstimate || {
+        maturityAmount: null,
+        estimatedInterest: null,
+        principal: params.amount ? Number(params.amount) : null,
+        deposits: params.deposits ? Number(params.deposits) : null,
+        rate: params.rate ? Number(params.rate) : null,
+      }
+    );
+  }, [localEstimate, params.amount, params.deposits, params.rate]);
+
+  const handleCreate = async () => {
+    setCreating(true);
+
+    const payload: any = {
+      name: params.planName || "My savings plan",
+      productCode: params.productCode || params.productCode || "",
+      amount: Number(params.amount ?? params.initialAmount ?? params.targetAmount ?? 0),
+      frequency: params.frequency || "once",
+      tenure: params.tenure ? Number(params.tenure) : undefined,
+      startDate: params.startDate || params.start || undefined,
+      endDate: params.endDate || params.end || undefined,
+      dayOfWeek: params.dayOfWeek || undefined,
+      dateInMonth: params.dateInMonth ? Number(params.dateInMonth) : undefined,
+      debitSource: params.debitSource || "CARD",
+      maturityAction: params.maturityAction || "TRANSFER_TO_ACCOUNT",
+    };
+
+    if (params.targetAmount) payload.targetAmount = Number(params.targetAmount);
+    if (params.participants) payload.participants = params.participants;
+
+    try {
+      await dispatch(createSaving(payload));
+    } catch (e) {
+      setCreating(false);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
