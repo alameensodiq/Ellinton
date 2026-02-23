@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { View, FlatList, TouchableOpacity, Pressable } from "react-native";
+import { View, ScrollView, Pressable } from "react-native";
 import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -154,63 +154,66 @@ export default function Index() {
 
       {step === "products" ? (
         // Step 1: Product Selection
-        <>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        >
           <CustomText size="lg" weight="bold">
             Select a savings plan
           </CustomText>
 
-          <CustomText size="sm" secondary className="mt-1">
+          <CustomText size="sm" secondary className="mt-1 mb-4">
             Choose from available savings products
           </CustomText>
 
           {isLoading ? (
             <Loading visible={true} />
-          ) : (
-            <View className="flex-1 mt-4">
-              <FlatList
-                data={products}
-                keyExtractor={(item) => item.code}
-                scrollEnabled={false}
-                renderItem={({ item }) => (
-                  <Pressable
-                    onPress={() => setSelectedProduct(item)}
-                    className={`p-4 rounded-2xl mb-3 border-2 ${
-                      selectedProduct?.code === item.code
-                        ? "bg-primary-300 border-primary-200"
-                        : "bg-primary-400 border-primary-300"
-                    }`}
-                  >
-                    <View className="flex-row justify-between items-start">
-                      <View className="flex-1">
-                        <CustomText size="lg" weight="bold">
-                          {item.name}
-                        </CustomText>
-                        <CustomText size="sm" secondary className="mt-1">
-                          Tenure: {item.tenure} days
-                        </CustomText>
-                        <CustomText size="sm" secondary>
-                          Rate: {item.rate}% p.a.
-                        </CustomText>
-                      </View>
-                      <View
-                        className={`w-6 h-6 rounded-full border-2 items-center justify-center ${
-                          selectedProduct?.code === item.code
-                            ? "bg-primary-200 border-primary-200"
-                            : "border-primary-200"
-                        }`}
-                      >
-                        {selectedProduct?.code === item.code && (
-                          <View className="w-3 h-3 bg-primary-100 rounded-full" />
-                        )}
-                      </View>
+          ) : products.length > 0 ? (
+            <View>
+              {products.map((item, index) => (
+                <Pressable
+                  key={item.code}
+                  onPress={() => setSelectedProduct(item)}
+                  className={`p-4 rounded-2xl mb-3 border-2 ${
+                    selectedProduct?.code === item.code
+                      ? "bg-primary-300 border-primary-200"
+                      : "bg-primary-400 border-primary-300"
+                  }`}
+                >
+                  <View className="flex-row justify-between items-start">
+                    <View className="flex-1">
+                      <CustomText size="lg" weight="bold">
+                        {item.name}
+                      </CustomText>
+                      <CustomText size="sm" secondary className="mt-1">
+                        Tenure: {item.tenure} days
+                      </CustomText>
+                      <CustomText size="sm" secondary>
+                        Rate: {item.rate}% p.a.
+                      </CustomText>
                     </View>
-                  </Pressable>
-                )}
-              />
+                    <View
+                      className={`w-6 h-6 rounded-full border-2 items-center justify-center ml-3 ${
+                        selectedProduct?.code === item.code
+                          ? "bg-primary-200 border-primary-200"
+                          : "border-primary-200"
+                      }`}
+                    >
+                      {selectedProduct?.code === item.code && (
+                        <View className="w-3 h-3 bg-primary-100 rounded-full" />
+                      )}
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
             </View>
+          ) : (
+            <CustomText size="sm" secondary className="text-center mt-4">
+              No products available
+            </CustomText>
           )}
 
-          <View className="gap-3">
+          <View className="gap-3 mt-6">
             <Button
               title="Continue"
               variant="primary"
@@ -218,15 +221,18 @@ export default function Index() {
               disabled={!selectedProduct || isLoading}
             />
           </View>
-        </>
+        </ScrollView>
       ) : (
         // Step 2: Plan Name Entry
-        <>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
+        >
           <CustomText size="lg" weight="bold">
             Name your plan
           </CustomText>
 
-          <CustomText size="sm" secondary className="mt-1">
+          <CustomText size="sm" secondary className="mt-1 mb-4">
             Give your savings plan a meaningful name
           </CustomText>
 
@@ -241,11 +247,11 @@ export default function Index() {
             error={planNameError}
           />
 
-          <CustomText size="sm" secondary>
+          <CustomText size="sm" secondary className="mt-2 mb-4">
             A descriptive name makes savings interesting
           </CustomText>
 
-          <View className="mt-6 bg-primary-400 rounded-2xl p-4">
+          <View className="mt-4 bg-primary-400 rounded-2xl p-4">
             <CustomText size="sm" weight="bold" className="mb-3">
               {selectedProduct?.name}
             </CustomText>
@@ -270,9 +276,7 @@ export default function Index() {
             </View>
           </View>
 
-          <View className="flex-1" />
-
-          <View className="gap-3 flex-row">
+          <View className="gap-3 flex-row mt-8">
             <Button
               title="Back"
               variant="secondary"
@@ -290,7 +294,7 @@ export default function Index() {
               className="flex-1"
             />
           </View>
-        </>
+        </ScrollView>
       )}
     </SafeAreaView>
   );
