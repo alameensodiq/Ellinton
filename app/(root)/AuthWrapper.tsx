@@ -45,12 +45,6 @@ export default function AuthWrapper() {
     const inAuthGroup = segments[0] === "(auth)";
     const isOnLogin = segments.join("/") === "(auth)/login";
 
-    // If we have a stored user but no token, send them to the current-user unlock screen
-    if (!isAuthenticated && user && !inAuthGroup) {
-      router.replace("/(auth)/current-user");
-      return;
-    }
-
     const errors = [
       authError,
       beneficiariesError,
