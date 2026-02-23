@@ -52,22 +52,8 @@ export default function Index() {
   const pan = useRef(new Animated.ValueXY()).current;
   const dispatch = useDispatch();
   useEffect(() => {
-    // If user data is already saved, skip the landing screen.
-    (async () => {
-      try {
-        const userProfile = await AsyncStorage.getItem("userProfile");
-
-        if (userProfile) {
-          // user exists — always show unlock/current-user screen on app reload
-          router.replace("/(auth)/current-user");
-          return;
-        }
-      } catch (e) {
-        // ignore and show index
-      } finally {
-        setCheckingStorage(false);
-      }
-    })();
+    // Show landing page on app startup
+    setCheckingStorage(false);
 
     const interval = setInterval(() => {
       setBackgroundIndex((prev) => (prev + 1) % backgrounds.length);
