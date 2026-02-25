@@ -11,7 +11,7 @@ import loansReducer from "./slices/loansSlice";
 import statementsReducer from "./slices/statementsSlice";
 import goldReducer from "./slices/goldSlice";
 import savingsReducer from "./slices/savingsSlice";
-
+import overdraftReducer from "./slices/overdraftSlice";
 
 
 export const store = configureStore({
@@ -25,9 +25,10 @@ export const store = configureStore({
     virtualCards: virtualCardsReducer,
     bills: billsReducer,
     loans: loansReducer,
-    statements: statementsReducer, 
+    statements: statementsReducer,
     gold: goldReducer,
     savings: savingsReducer,
+    overdraft: overdraftReducer, 
   },
 });
 

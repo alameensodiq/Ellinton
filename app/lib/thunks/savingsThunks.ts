@@ -24,8 +24,8 @@ export const fetchSavingsProducts = createAsyncThunk<any, { type?: string }>(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const url = payload?.type 
-        ? `${SAVINGS_PRODUCTS_ENDPOINT}?type=${payload.type}` 
+      const url = payload?.type
+        ? `${SAVINGS_PRODUCTS_ENDPOINT}?type=${payload.type}`
         : SAVINGS_PRODUCTS_ENDPOINT;
 
       const res = await fetch(url, {
@@ -81,7 +81,9 @@ export const calculateSavingsEstimate = createAsyncThunk<
       if (!res.ok) {
         const err = await res.json().catch(() => null);
         return rejectWithValue(
-          err?.data?.message || err?.message || `Calculate failed (${res.status})`
+          err?.data?.message ||
+            err?.message ||
+            `Calculate failed (${res.status})`
         );
       }
 
@@ -110,10 +112,6 @@ export const createSaving = createAsyncThunk<
     dateInMonth?: number;
     debitSource: string;
     maturityAction: string;
-    cardPan?: string;
-    cardExpiryDate?: string;
-    cardCvv?: string;
-    cardHolderName?: string;
     targetAmount?: number;
     participants?: Array<{
       userId: string;
@@ -121,38 +119,38 @@ export const createSaving = createAsyncThunk<
       userName: string;
     }>;
   }
->(
-  "savings/create",
-  async (payload, { rejectWithValue, getState }) => {
-    try {
-      const state = getState() as any;
-      const token = state.auth.token;
+>("savings/create", async (payload, { rejectWithValue, getState }) => {
+  try {
+    const state = getState() as any;
+    const token = state.auth.token;
 
-      const res = await fetch(SAVINGS_CREATE_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+    const res = await fetch(SAVINGS_CREATE_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        return rejectWithValue(
-          err?.data?.message || err?.message || `Create failed (${res.status})`
-        );
-      }
-
-      const data = (await res.json()) as ApiResponse<any>;
-      if (!data.success)
-        return rejectWithValue(data.message || "Create saving failed");
-      return data.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message || "Create saving error");
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      return rejectWithValue(
+        err?.data?.message || err?.message || `Create failed (${res.status})`
+      );
     }
+
+    const data = (await res.json()) as ApiResponse<any>;
+    if (!data.success)
+      return rejectWithValue(
+        data.message || data.data.message || "Create saving failed"
+      );
+    return data.data;
+  } catch (error: any) {
+    console.log(error);
+    return rejectWithValue(error.message || "Create saving error");
   }
-);
+});
 
 // Fetch User Savings
 export const fetchUserSavings = createAsyncThunk<
@@ -193,7 +191,8 @@ export const fetchUserSavings = createAsyncThunk<
 
       const data = (await res.json()) as ApiResponse<any>;
       if (!data.success)
-        return rejectWithValue(data.message || "Fetch user savings failed");
+        return rejectWithValue(data.message || data.data.message || "Fetch user savings failed");
+      console.log("Fetched user savings:", data.data);
       return data.data;
     } catch (error: any) {
       return rejectWithValue(error.message || "Fetch user savings error");
@@ -209,38 +208,35 @@ export const topUpSaving = createAsyncThunk<
     amount: number;
     uniqueRef: string;
   }
->(
-  "savings/topUp",
-  async (payload, { rejectWithValue, getState }) => {
-    try {
-      const state = getState() as any;
-      const token = state.auth.token;
+>("savings/topUp", async (payload, { rejectWithValue, getState }) => {
+  try {
+    const state = getState() as any;
+    const token = state.auth.token;
 
-      const res = await fetch(SAVINGS_TOP_UP_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+    const res = await fetch(SAVINGS_TOP_UP_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        return rejectWithValue(
-          err?.data?.message || err?.message || `Top up failed (${res.status})`
-        );
-      }
-
-      const data = (await res.json()) as ApiResponse<any>;
-      if (!data.success)
-        return rejectWithValue(data.message || "Top up saving failed");
-      return data.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message || "Top up saving error");
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      return rejectWithValue(
+        err?.data?.message || err?.message || `Top up failed (${res.status})`
+      );
     }
+
+    const data = (await res.json()) as ApiResponse<any>;
+    if (!data.success)
+      return rejectWithValue(data.message || "Top up saving failed");
+    return data.data;
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Top up saving error");
   }
-);
+});
 
 // Withdraw from Saving
 export const withdrawFromSaving = createAsyncThunk<
@@ -250,38 +246,37 @@ export const withdrawFromSaving = createAsyncThunk<
     amount: number;
     uniqueRef: string;
   }
->(
-  "savings/withdraw",
-  async (payload, { rejectWithValue, getState }) => {
-    try {
-      const state = getState() as any;
-      const token = state.auth.token;
+>("savings/withdraw", async (payload, { rejectWithValue, getState }) => {
+  try {
+    const state = getState() as any;
+    const token = state.auth.token;
 
-      const res = await fetch(SAVINGS_WITHDRAWAL_ENDPOINT, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
+    const res = await fetch(SAVINGS_WITHDRAWAL_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        return rejectWithValue(
-          err?.data?.message || err?.message || `Withdrawal failed (${res.status})`
-        );
-      }
-
-      const data = (await res.json()) as ApiResponse<any>;
-      if (!data.success)
-        return rejectWithValue(data.message || "Withdrawal from saving failed");
-      return data.data;
-    } catch (error: any) {
-      return rejectWithValue(error.message || "Withdrawal from saving error");
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      return rejectWithValue(
+        err?.data?.message ||
+          err?.message ||
+          `Withdrawal failed (${res.status})`
+      );
     }
+
+    const data = (await res.json()) as ApiResponse<any>;
+    if (!data.success)
+      return rejectWithValue(data.message || "Withdrawal from saving failed");
+    return data.data;
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Withdrawal from saving error");
   }
-);
+});
 
 // Fetch User Savings Transactions
 export const fetchSavingsTransactions = createAsyncThunk<

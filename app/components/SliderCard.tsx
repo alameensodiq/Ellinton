@@ -18,6 +18,9 @@ import { fetchAccountInfo } from "../lib/thunks/accountThunks";
 import BottomSheet from "./BottomSheet";
 import PlansContent from "./home/plans/PlansContent";
 
+// ✅ add this thunk
+import { fetchOverdraftPosition } from "../lib/thunks/overdraftThunks";
+
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width - 20;
 
@@ -27,7 +30,7 @@ interface ShowBalanceState {
 
 interface Props {
   onOpenAccounts?: () => void;
-  onOpenPlanSheet?: () => void; 
+  onOpenPlanSheet?: () => void;
 }
 
 export default function BalanceCardSlider({
@@ -35,8 +38,14 @@ export default function BalanceCardSlider({
   onOpenPlanSheet,
 }: Props) {
   const dispatch = useDispatch<AppDispatch>();
+
   const accountInfo = useSelector(
     (state: RootState) => state.accounts.accountInfo
+  );
+
+  // ✅ overdraft position from redux
+  const overdraftPosition = useSelector(
+    (state: RootState) => (state as any).overdraft?.position
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -47,6 +56,9 @@ export default function BalanceCardSlider({
 
   useEffect(() => {
     dispatch(fetchAccountInfo());
+
+    // ✅ call overdraft position
+    dispatch(fetchOverdraftPosition() as any);
   }, [dispatch]);
 
   const cardsData = getCardsData(accountInfo);
@@ -94,8 +106,9 @@ export default function BalanceCardSlider({
               onOpenAccounts={onOpenAccounts}
               onOpenPlanSheet={() => {
                 setPlanSheetVisible(true);
-                onOpenPlanSheet?.(); 
+                onOpenPlanSheet?.();
               }}
+              overdraftBalance={overdraftPosition?.balance}
             />
           </View>
         ))}

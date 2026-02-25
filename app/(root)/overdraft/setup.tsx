@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
@@ -6,33 +6,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AmountCard from "@/app/components/home/cards/AmountCard";
 
-const prettyType = (t?: string) => {
-  const map: Record<string, string> = {
-    basic: "Basic saving",
-    target: "Target saving",
-    group: "Group saving",
-    fixed: "Fixed saving",
-  };
-  return map[String(t || "").toLowerCase()] || "Saving";
-};
-
 const Success = () => {
   const router = useRouter();
-  const params = useLocalSearchParams();
-
-  const rawAmount = Array.isArray(params.amount)
-    ? params.amount[0]
-    : params.amount || "0";
-  const description =
-    (Array.isArray(params.description)
-      ? params.description[0]
-      : params.description) || "Savings plan";
-  const type = Array.isArray(params.type) ? params.type[0] : params.type;
-
-  const title = useMemo(
-    () => `${prettyType(String(type))} created successful`,
-    [type]
-  );
+  
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-6">
@@ -42,20 +18,15 @@ const Success = () => {
         </TouchableOpacity>
       </View>
 
-      <View className="flex-1 justify-center space-y-6">
-        <AmountCard
-          amount={String(rawAmount)}
-          description={String(description)}
-        />
-
+      <View className="flex-1 justify-center  space-y-6">
         <Text className="text-8xl text-center mt-10">🎉</Text>
 
-        <Text className="text-3xl font-bold text-white leading-normal text-center mt-4">
-          {title}
+        <Text className="text-3xl font-bold text-white leading-normal text-center mt-4 ">
+          Unlocked Achievement
         </Text>
 
         <Text className="text-accent-100 text-center text-base leading-relaxed mt-4">
-          Your plan has been created successfully
+          Tap to see how your loyalty pays off.
         </Text>
       </View>
 

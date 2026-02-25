@@ -12,9 +12,15 @@ import {
 interface SavingsState {
   products: any[];
   estimate: any | null;
+
+  // your old fields
   savings: any[];
   savingsDetail: any | null;
   transactions: any[];
+
+  // ✅ NEW: store fetchUserSavings response properly
+  userSavings: { data: any[]; total: number } | null;
+
   isLoading: boolean;
   error: string | null;
 }
@@ -22,9 +28,13 @@ interface SavingsState {
 const initialState: SavingsState = {
   products: [],
   estimate: null,
+
   savings: [],
   savingsDetail: null,
   transactions: [],
+
+  userSavings: null, // ✅
+
   isLoading: false,
   error: null,
 };
@@ -44,11 +54,14 @@ const savingsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchSavingsProducts.fulfilled, (state, action: PayloadAction<any[]>) => {
-        state.isLoading = false;
-        state.products = action.payload || [];
-        state.error = null;
-      })
+      .addCase(
+        fetchSavingsProducts.fulfilled,
+        (state, action: PayloadAction<any[]>) => {
+          state.isLoading = false;
+          state.products = action.payload || [];
+          state.error = null;
+        }
+      )
       .addCase(fetchSavingsProducts.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
@@ -59,11 +72,14 @@ const savingsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(calculateSavingsEstimate.fulfilled, (state, action: PayloadAction<any>) => {
-        state.isLoading = false;
-        state.estimate = action.payload;
-        state.error = null;
-      })
+      .addCase(
+        calculateSavingsEstimate.fulfilled,
+        (state, action: PayloadAction<any>) => {
+          state.isLoading = false;
+          state.estimate = action.payload;
+          state.error = null;
+        }
+      )
       .addCase(calculateSavingsEstimate.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
@@ -77,9 +93,11 @@ const savingsSlice = createSlice({
       .addCase(createSaving.fulfilled, (state, action: PayloadAction<any>) => {
         state.isLoading = false;
         state.savingsDetail = action.payload;
+
         if (action.payload) {
           state.savings = [action.payload, ...state.savings];
         }
+
         state.error = null;
       })
       .addCase(createSaving.rejected, (state, action) => {
@@ -87,16 +105,19 @@ const savingsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Fetch User Savings
+      // ✅ Fetch User Savings (FIXED)
       .addCase(fetchUserSavings.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchUserSavings.fulfilled, (state, action: PayloadAction<any[]>) => {
-        state.isLoading = false;
-        state.savings = action.payload || [];
-        state.error = null;
-      })
+      .addCase(
+        fetchUserSavings.fulfilled,
+        (state, action: PayloadAction<any>) => {
+          state.isLoading = false;
+          state.userSavings = action.payload || { data: [], total: 0 }; // ✅
+          state.error = null;
+        }
+      )
       .addCase(fetchUserSavings.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
@@ -135,11 +156,14 @@ const savingsSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchSavingsTransactions.fulfilled, (state, action: PayloadAction<any[]>) => {
-        state.isLoading = false;
-        state.transactions = action.payload || [];
-        state.error = null;
-      })
+      .addCase(
+        fetchSavingsTransactions.fulfilled,
+        (state, action: PayloadAction<any[]>) => {
+          state.isLoading = false;
+          state.transactions = action.payload || [];
+          state.error = null;
+        }
+      )
       .addCase(fetchSavingsTransactions.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;

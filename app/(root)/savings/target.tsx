@@ -14,9 +14,6 @@ export default function Target() {
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, string>>();
 
-  const planName = useMemo(() => params.planName || "", [params.planName]);
-  const type = useMemo(() => params.type || "basic", [params.type]);
-
   const [targetAmount, setTargetAmount] = useState("0");
 
   const amountNumber = useMemo(() => {
@@ -26,10 +23,6 @@ export default function Target() {
 
   const canContinue = amountNumber > 0;
 
-  const handleQuickPick = (value: string) => {
-    setTargetAmount(value);
-  };
-
   const handleContinue = () => {
     if (!canContinue) return;
 
@@ -37,8 +30,6 @@ export default function Target() {
       pathname: "/(root)/savings/timeline",
       params: {
         ...params,
-        planName,
-        type,
         targetAmount: String(amountNumber),
       },
     });
@@ -60,7 +51,6 @@ export default function Target() {
           Select how much you want to start saving with.
         </CustomText>
 
-        {/* Quick select */}
         <CustomText size="sm" weight="bold" className="mb-3">
           Quick Select
         </CustomText>
@@ -72,7 +62,7 @@ export default function Target() {
             return (
               <Pressable
                 key={amt}
-                onPress={() => handleQuickPick(amt)}
+                onPress={() => setTargetAmount(amt)}
                 className={`w-[31%] mb-3 rounded-xl px-3 py-3 items-center justify-center border ${
                   active
                     ? "bg-primary-200 border-primary-600"
@@ -87,7 +77,6 @@ export default function Target() {
           })}
         </View>
 
-        {/* Manual */}
         <CustomText size="sm" weight="bold" className="mt-4 mb-3">
           Enter manually
         </CustomText>

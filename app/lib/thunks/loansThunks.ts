@@ -8,6 +8,7 @@ import {
   FETCH_USER_LOANS_ENDPOINT,
   FETCH_SINGLE_LOAN_ENDPOINT,
   LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT,
+  LOAN_CONFIRM_CONSENT_ENDPOINT,
 } from "../api";
 
 /* =========================
@@ -192,6 +193,7 @@ export const fetchLoanBanks = createAsyncThunk<
     if (!res.ok || !data.success || !data.data) {
       return rejectWithValue(data?.message || "Failed to fetch banks");
     }
+    console.log(data.data)
 
     return data.data;
   } catch (err: any) {
@@ -258,6 +260,7 @@ export const calculateLoan = createAsyncThunk<
     if (!res.ok || !data.success) {
       return rejectWithValue(data?.message || "Loan calculation failed");
     }
+    console.log("✅ LOAN CALCULATION RESPONSE:", data);
 
     return data.data;
   } catch (err: any) {
@@ -413,3 +416,34 @@ export const sendLoanDisbursementWebhook = createAsyncThunk<
     }
   }
 );
+
+
+export const confirmLoanConsent = createAsyncThunk<
+  { id: string; status: LoanStatus },
+  string,
+  { rejectValue: string }
+>("loans/confirmConsent", async (loanId, { getState, rejectWithValue }) => {
+  try {
+    const token = (getState() as any).auth.token;
+
+    const res = await fetch(LOAN_CONFIRM_CONSENT_ENDPOINT(loanId), {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = (await res.json()) as ApiResponse<any>;
+
+    if (!res.ok || !data.success || !data.data) {
+      return rejectWithValue(
+        data?.message || data?.data?.message || "Consent confirmation failed"
+      );
+    }
+
+    return data.data as { id: string; status: LoanStatus };
+  } catch (err: any) {
+    return rejectWithValue(err.message || "Consent confirmation error");
+  }
+});

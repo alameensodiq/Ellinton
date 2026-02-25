@@ -1,36 +1,18 @@
-// app/(root)/timeline.tsx
 import React, { useMemo, useState } from "react";
-import {
-  View,
-  Pressable,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { View, Pressable, ScrollView } from "react-native";
 import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Button from "@/app/components/Button";
 import { Ionicons } from "@expo/vector-icons";
-import TextInputField from "@/app/components/inputs/TextInputField";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import BottomSheet from "@/app/components/BottomSheet";
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 
 const frequencies = [
   { key: "once", label: "Once" },
   { key: "daily", label: "Daily" },
   { key: "weekly", label: "Weekly" },
   { key: "monthly", label: "Monthly" },
-] as const;
-
-const durations = [
-  { key: "3m", label: "3 months", days: "90 days" },
-  { key: "6m", label: "6 months", days: "180 days" },
-  { key: "9m", label: "9 months", days: "270 days" },
-  { key: "1y", label: "1 year", days: "365 days" },
 ] as const;
 
 const weekDays = [
@@ -44,11 +26,8 @@ const weekDays = [
 ] as const;
 
 type FrequencyKey = (typeof frequencies)[number]["key"];
-type DurationKey = (typeof durations)[number]["key"];
 type WeekDay = (typeof weekDays)[number];
-
-type SheetType = null | "weekly" | "monthly" | "startDate" | "endDate";
-type AndroidPickerType = null | "start" | "end";
+type SheetType = null | "weekly" | "monthly";
 
 const formatDate = (d: Date) =>
   d.toLocaleDateString("en-GB", {
@@ -56,6 +35,12 @@ const formatDate = (d: Date) =>
     month: "short",
     year: "numeric",
   });
+
+const addDays = (d: Date, days: number) => {
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + days);
+  return copy;
+};
 
 const ordinal = (n: number) => {
   const s = ["th", "st", "nd", "rd"];
@@ -65,8 +50,10 @@ const ordinal = (n: number) => {
 };
 
 export default function Timeline() {
+  const router = useRouter();
+  const params = useLocalSearchParams<Record<string, any>>();
+
   const [frequency, setFrequency] = useState<FrequencyKey>("weekly");
-  const [duration, setDuration] = useState<DurationKey>("3m");
 
   // dropdown selections
   const [weeklyDay, setWeeklyDay] = useState<WeekDay>("Wednesday");
@@ -75,42 +62,26 @@ export default function Timeline() {
   // bottomsheet control
   const [sheet, setSheet] = useState<SheetType>(null);
 
-  // ANDROID: native picker control
-  const [androidPicker, setAndroidPicker] = useState<AndroidPickerType>(null);
-
   // temp picks (so user can cancel)
   const [tempWeeklyDay, setTempWeeklyDay] = useState<WeekDay>(weeklyDay);
   const [tempMonthlyDay, setTempMonthlyDay] = useState<number>(monthlyDay);
 
-  // custom dates
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [startDateObj, setStartDateObj] = useState<Date | null>(null);
-  const [endDateObj, setEndDateObj] = useState<Date | null>(null);
+  const productTenureDays = useMemo(() => {
+    const t = Number(params.productTenure || params.tenure || 0);
+    return t > 0 ? t : 0;
+  }, [params.productTenure, params.tenure]);
 
-  // temp date for picker
-  const [tempDate, setTempDate] = useState<Date>(new Date());
+  const startDateObj = useMemo(() => new Date(), []);
+  const maturityDateObj = useMemo(
+    () => addDays(startDateObj, productTenureDays),
+    [startDateObj, productTenureDays]
+  );
 
-  const router = useRouter();
-  const params = useLocalSearchParams<Record<string, any>>();
-
-  const durationMap: Record<DurationKey, number> = {
-    "3m": 90,
-    "6m": 180,
-    "9m": 270,
-    "1y": 365,
-  };
-
-  const tenureDays = useMemo(() => {
-    if (duration && durationMap[duration]) return durationMap[duration];
-    if (startDateObj && endDateObj) {
-      const diff = Math.ceil(
-        (endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      return diff > 0 ? diff : 0;
-    }
-    return undefined;
-  }, [duration, startDateObj, endDateObj]);
+  const startDateText = useMemo(() => formatDate(startDateObj), [startDateObj]);
+  const maturityDateText = useMemo(
+    () => formatDate(maturityDateObj),
+    [maturityDateObj]
+  );
 
   const weeklyLabel = useMemo(() => {
     return frequency === "weekly" ? `Weekly / ${weeklyDay}` : "Weekly";
@@ -134,212 +105,124 @@ export default function Timeline() {
     setSheet("monthly");
   };
 
-  const openStartDate = () => {
-    setTempDate(startDateObj ?? new Date());
-
-    if (Platform.OS === "android") {
-      setAndroidPicker("start");
-      return;
-    }
-
-    setSheet("startDate");
-  };
-
-  const openEndDate = () => {
-    setTempDate(endDateObj ?? startDateObj ?? new Date());
-
-    if (Platform.OS === "android") {
-      setAndroidPicker("end");
-      return;
-    }
-
-    setSheet("endDate");
-  };
-
   const monthlyDaysList = useMemo(
     () => Array.from({ length: 28 }, (_, i) => i + 1),
     []
   );
 
-  const handleAndroidDateChange = (event: DateTimePickerEvent, date?: Date) => {
-    // Android fires dismissed too
-    if (event.type === "dismissed") {
-      setAndroidPicker(null);
-      return;
-    }
+  const onContinue = () => {
+    if (!productTenureDays) return;
 
-    if (!date) return;
+    router.push({
+      pathname: "/(root)/savings/estimated-outcome",
+      params: {
+        ...params,
+        frequency,
+        tenure: String(productTenureDays),
 
-    setTempDate(date);
+        // keep these for display and API if needed
+        startDate: startDateText,
+        endDate: maturityDateText,
+        maturity_date: maturityDateText,
 
-    if (androidPicker === "start") {
-      setStartDateObj(date);
-      setStartDate(formatDate(date));
+        dayOfWeek: frequency === "weekly" ? weeklyDay : undefined,
+        dateInMonth: frequency === "monthly" ? String(monthlyDay) : undefined,
 
-      // if end date is before start date, clear it
-      if (endDateObj && endDateObj.getTime() < date.getTime()) {
-        setEndDateObj(null);
-        setEndDate("");
-      }
-    } else if (androidPicker === "end") {
-      setEndDateObj(date);
-      setEndDate(formatDate(date));
-    }
-
-    setAndroidPicker(null);
+        amount: params.targetAmount || params.amount || undefined,
+      },
+    });
   };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={{ padding: 16 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <ProgressBar currentStep={3} totalSteps={4} />
+        <ProgressBar currentStep={3} totalSteps={4} />
 
-          <CustomText size="lg" weight="bold">
-            Set your timeline
-          </CustomText>
-          <CustomText size="sm" secondary className="mt-1 mb-10">
-            Choose how long you want to save
-          </CustomText>
+        <CustomText size="lg" weight="bold">
+          Set your timeline
+        </CustomText>
+        <CustomText size="sm" secondary className="mt-1 mb-10">
+          Choose how often you want to save (duration is based on the product).
+        </CustomText>
 
-          <CustomText size="lg" weight="bold" className="mb-4">
-            How often do you want to save?
-          </CustomText>
+        <CustomText size="lg" weight="bold" className="mb-4">
+          How often do you want to save?
+        </CustomText>
 
-          <View className="flex-row mb-8 flex-wrap gap-4">
-            {frequencies.map((freq) => {
-              const isSelected = frequency === freq.key;
-              const showDropdown =
-                freq.key === "weekly" || freq.key === "monthly";
+        <View className="flex-row mb-10 flex-wrap gap-4">
+          {frequencies.map((freq) => {
+            const isSelected = frequency === freq.key;
+            const showDropdown =
+              freq.key === "weekly" || freq.key === "monthly";
 
-              const label =
-                freq.key === "weekly"
-                  ? weeklyLabel
-                  : freq.key === "monthly"
-                  ? monthlyLabel
-                  : freq.label;
+            const label =
+              freq.key === "weekly"
+                ? weeklyLabel
+                : freq.key === "monthly"
+                ? monthlyLabel
+                : freq.label;
 
-              const onPress = () => {
-                if (freq.key === "weekly") return openWeekly();
-                if (freq.key === "monthly") return openMonthly();
-                setFrequency(freq.key);
-              };
+            const onPress = () => {
+              if (freq.key === "weekly") return openWeekly();
+              if (freq.key === "monthly") return openMonthly();
+              setFrequency(freq.key);
+            };
 
-              return (
-                <Pressable
-                  key={freq.key}
-                  onPress={onPress}
-                  className={`flex-row items-center gap-2 p-4 px-6 rounded-xl ${
-                    isSelected ? "bg-primary-300" : "bg-primary-400"
-                  }`}
-                >
-                  <CustomText size="sm">{label}</CustomText>
-                  {showDropdown && (
-                    <Ionicons name="chevron-down" size={16} color="#fff" />
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <CustomText size="lg" weight="bold" className="mb-4">
-            How long do you want to save?
-          </CustomText>
-
-          <View className="flex-row flex-wrap gap-6 justify-center mb-4">
-            {durations.map((dur) => (
+            return (
               <Pressable
-                key={dur.key}
-                onPress={() => setDuration(dur.key)}
-                className={`p-4 px-14 rounded-xl ${
-                  duration === dur.key ? "bg-primary-300" : "bg-primary-400"
+                key={freq.key}
+                onPress={onPress}
+                className={`flex-row items-center gap-2 p-4 px-6 rounded-xl ${
+                  isSelected ? "bg-primary-300" : "bg-primary-400"
                 }`}
               >
-                <CustomText size="sm" weight="bold">
-                  {dur.label}
-                </CustomText>
-                <CustomText size="xs" secondary>
-                  {dur.days}
-                </CustomText>
+                <CustomText size="sm">{label}</CustomText>
+                {showDropdown && (
+                  <Ionicons name="chevron-down" size={16} color="#fff" />
+                )}
               </Pressable>
-            ))}
-          </View>
+            );
+          })}
+        </View>
 
-          <CustomText size="sm" className="mb-4" secondary>
-            Let me decide
-          </CustomText>
+        {/* Read-only duration summary (from product) */}
+        <View className="bg-primary-400 rounded-2xl border border-white/10 overflow-hidden">
+          {[
+            { label: "Duration", value: `${productTenureDays} days` },
+            { label: "Start date", value: startDateText },
+            { label: "Maturity date", value: maturityDateText },
+          ].map((row, idx, arr) => (
+            <View key={row.label}>
+              <View className="flex-row items-center justify-between px-5 py-5">
+                <CustomText size="sm" secondary>
+                  {row.label}
+                </CustomText>
+                <CustomText size="sm" weight="bold">
+                  {row.value}
+                </CustomText>
+              </View>
+              {idx !== arr.length - 1 && (
+                <View className="h-[1px] bg-white/10 mx-5" />
+              )}
+            </View>
+          ))}
+        </View>
 
-          <TextInputField
-            label="Start date"
-            value={startDate}
-            onChangeText={setStartDate}
-            placeholder="Custom duration"
-            showSoftInputOnFocus={false}
-            caretHidden
-            onFocus={openStartDate}
-            rightIcon={
-              <Ionicons name="calendar-outline" size={20} color="#fff" />
-            }
-            onRightIconPress={openStartDate}
-          />
+        <View className="h-10" />
+      </ScrollView>
 
-          <TextInputField
-            label="End date"
-            value={endDate}
-            onChangeText={setEndDate}
-            placeholder="Custom duration"
-            showSoftInputOnFocus={false}
-            caretHidden
-            onFocus={openEndDate}
-            rightIcon={
-              <Ionicons name="calendar-outline" size={20} color="#fff" />
-            }
-            onRightIconPress={openEndDate}
-          />
-
-          <View className="flex-1 mt-4" />
-            <Button
-              title="Continue"
-              variant="primary"
-              onPress={() => {
-                // gather params and navigate to estimated outcome
-                router.push({
-                  pathname: "/(root)/savings/estimated-outcome",
-                  params: {
-                    ...params,
-                    frequency,
-                    tenure: tenureDays ? String(tenureDays) : undefined,
-                    dayOfWeek: frequency === "weekly" ? weeklyDay : undefined,
-                    dateInMonth: frequency === "monthly" ? String(monthlyDay) : undefined,
-                    startDate: startDate || undefined,
-                    endDate: endDate || undefined,
-                    amount: params.targetAmount || params.amount || undefined,
-                  },
-                });
-              }}
-            />
-        </ScrollView>
-      </KeyboardAvoidingView>
-
-      {/* ANDROID: show ONLY native picker (no BottomSheet) */}
-      {Platform.OS === "android" && androidPicker && (
-        <DateTimePicker
-          value={tempDate}
-          mode="date"
-          display="default"
-          minimumDate={
-            androidPicker === "end" ? startDateObj ?? new Date() : new Date()
-          }
-          onChange={handleAndroidDateChange}
+      <View className="absolute left-0 right-0 bottom-5 px-4 pb-6 pt-3 bg-primary-100 border-t border-white/10">
+        <Button
+          title="Continue"
+          variant="primary"
+          onPress={onContinue}
+          disabled={!productTenureDays}
         />
-      )}
+      </View>
 
       {/* WEEKLY dropdown */}
       <BottomSheet
@@ -406,71 +289,6 @@ export default function Timeline() {
           ))}
         </View>
       </BottomSheet>
-
-      {/* iOS ONLY: START DATE picker in BottomSheet */}
-      {Platform.OS === "ios" && (
-        <BottomSheet
-          visible={sheet === "startDate"}
-          onClose={() => setSheet(null)}
-          title="Choose date"
-          buttonText="Done"
-          onConfirm={() => {
-            setStartDateObj(tempDate);
-            setStartDate(formatDate(tempDate));
-
-            if (endDateObj && endDateObj.getTime() < tempDate.getTime()) {
-              setEndDateObj(null);
-              setEndDate("");
-            }
-
-            setSheet(null);
-          }}
-        >
-          <CustomText size="lg" weight="bold" className="mb-2">
-            Select start date
-          </CustomText>
-          <CustomText size="sm" secondary className="mb-6">
-            Choose your preferred date
-          </CustomText>
-
-          <DateTimePicker
-            value={tempDate}
-            mode="date"
-            display="spinner"
-            onChange={(_, d) => d && setTempDate(d)}
-            minimumDate={new Date()}
-          />
-        </BottomSheet>
-      )}
-
-      {Platform.OS === "ios" && (
-        <BottomSheet
-          visible={sheet === "endDate"}
-          onClose={() => setSheet(null)}
-          title="Choose date"
-          buttonText="Done"
-          onConfirm={() => {
-            setEndDateObj(tempDate);
-            setEndDate(formatDate(tempDate));
-            setSheet(null);
-          }}
-        >
-          <CustomText size="lg" weight="bold" className="mb-2">
-            Select end date
-          </CustomText>
-          <CustomText size="sm" secondary className="mb-6">
-            Choose your preferred date
-          </CustomText>
-
-          <DateTimePicker
-            value={tempDate}
-            mode="date"
-            display="spinner"
-            onChange={(_, d) => d && setTempDate(d)}
-            minimumDate={startDateObj ?? new Date()}
-          />
-        </BottomSheet>
-      )}
     </SafeAreaView>
   );
 }

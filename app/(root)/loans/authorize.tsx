@@ -6,10 +6,7 @@ import Header from "@/app/components/header-back";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Numpad from "@/app/components/inputs/Numpad";
 
-import {
-  applyForLoan,
-  sendLoanDisbursementWebhook,
-} from "@/app/lib/thunks/loansThunks";
+import { applyForLoan } from "@/app/lib/thunks/loansThunks";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import Loading from "@/app/components/Loading";
 
@@ -103,32 +100,25 @@ export default function AuthorizeLoan() {
       const payload = {
         productCode: params.productCode,
         productName: params.name,
-
         loanAmount,
         interestRate,
         tenureInDays,
         loanTenure: tenureInDays,
         repaymentFrequency,
-
         totalRepaymentExpected,
-
         networkProvider: params.provider,
         loanDetails: "Business expansion",
-
         consentApproved: true,
         recoveryConsentApproved: true,
         preferredRepaymentAccount: params.preferredRepaymentAccount,
         preferredRepaymentBankCBNCode: params.preferredRepaymentBankCBNCode,
-
         transactionPin: passcode,
       };
-
 
       if (
         !payload.totalRepaymentExpected ||
         payload.totalRepaymentExpected < 1
       ) {
-       
         setError(true);
         setErrorMessage("Invalid repayment total. Please try again.");
         Vibration.vibrate(300);
@@ -140,22 +130,8 @@ export default function AuthorizeLoan() {
       dispatch(applyForLoan(payload as any))
         .unwrap()
         .then(async (res) => {
-
-          const loanReference = String(creditCheck?.data?.loanReference || "");
-          const webhookPayload = {
-            loanReference,
-            status: "Disbursed",
-            success: true,
-            transactionReference: loanReference || `TXN-DISB-${Date.now()}`,
-            disbursedAmount: loanAmount,
-            disbursementDate: new Date().toISOString(),
-            message: "Loan disbursed successfully",
-          };
-
-          console.log("➡️ DISBURSEMENT WEBHOOK PAYLOAD:", webhookPayload);
-
           router.replace({
-            pathname: "/(root)/loans/success",
+            pathname: "/(root)/loans/recover-consent",
             params: {
               ...params,
               amount: String(loanAmount),
@@ -163,7 +139,6 @@ export default function AuthorizeLoan() {
           });
         })
         .catch((err) => {
-
           const msg = getReadableError(err);
           setError(true);
           setErrorMessage(msg);

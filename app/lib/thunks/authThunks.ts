@@ -239,6 +239,7 @@ export const loginUser = createAsyncThunk(
         body: JSON.stringify(payload),
       });
 
+      console.log(payload)
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
         return rejectWithValue(errorData?.data?.message || errorData?.message);
