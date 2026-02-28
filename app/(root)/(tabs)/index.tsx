@@ -45,6 +45,7 @@ const HomeScreen = () => {
   };
 
   const showKycBanner = user?.kyc_level === 1;
+  const showKycBanner2 = user?.kyc_level === 2;
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
@@ -68,6 +69,14 @@ const HomeScreen = () => {
             description="To access all features it’s essential to verify your identity."
             icon={images.landing_kyc_icon}
             onPress={() => router.push("/(root)/kyc")}
+          />
+        )}
+        {showKycBanner2 && (
+          <InfoBanner
+            title="Complete your KYC verification"
+            description="To access all features it’s essential to verify your identity."
+            icon={images.landing_kyc_icon}
+            onPress={() => router.push("/(root)/kyc/utility-bills")}
           />
         )}
         <View className="mb-10">

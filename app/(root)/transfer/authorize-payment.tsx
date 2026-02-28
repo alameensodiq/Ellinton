@@ -92,10 +92,12 @@ export default function AuthorizePayment() {
           return;
         }
 
-        const payloadBase = {
+        const payloadBase: any = {
           beneficiaryAccountNumber: transferData.accountNumber,
           amount: transferData.amount,
-          narration: transferData.remark || "",
+          narration: transferData.remark || transferData?.narration || "transfer",
+          ...(transferData.amount_grams && { amount_grams: transferData.amount_grams }),
+          ...(transferData.gift && { gift: true }),
           transactionPin: passcode,
           uniqueReference: `TXN_${Date.now()}`,
           isScheduled: transferData.isScheduled || false,

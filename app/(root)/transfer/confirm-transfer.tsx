@@ -20,6 +20,7 @@ import TransferSummaryCard from "@/app/components/TransferSummaryCard";
 import ScheduleTransaction from "@/app/components/ScheduleTransaction";
 import { dayOptions, frequencyOptions } from "@/app/lib/utils";
 import { svgIcons } from "@/app/assets/icons/icons";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "zero naira";
@@ -133,6 +134,9 @@ export default function ConfirmTransfer() {
   const numericAmount = parseFloat(amount.replace(/,/g, ""));
   const totalDebit = numericAmount + fee;
 
+  const goldBalance = useAppSelector((s: any) => s.gold.dashboard?.wallet?.balance_grams ?? 0);
+  const amountGramsParam = params.amount_grams as string | undefined;
+
   const amountInWords = useMemo(() => {
     const num = Math.floor(numericAmount);
     const words = numberToWords(num);
@@ -174,6 +178,8 @@ export default function ConfirmTransfer() {
       receiverName,
       addAsBeneficiary,
       remark,
+      ...(amountGramsParam && { amount_grams: Number(amountGramsParam) }),
+      ...(params?.gift && { gift: params.gift === "true" }),
       isScheduled: scheduleEnabled,
       ...(scheduleEnabled && {
         scheduleName,

@@ -25,7 +25,7 @@ const ApplyLoan = () => {
   const CalendarPay = svgIcons.calenderPay;
 
   const [calc, setCalc] = useState<any[] | null>(null);
-  const [calcLoading, setCalcLoading] = useState(false); 
+  const [calcLoading, setCalcLoading] = useState(false);
 
   // creditCheck comes as a string
   const creditCheck = useMemo(() => {
@@ -43,7 +43,6 @@ const ApplyLoan = () => {
   const interest = creditCheck?.data?.interestRate ?? 0;
   const annualInterest = creditCheck?.data?.annualInterestRate ?? 0;
   const repaymentFrequency = creditCheck?.data?.repaymentFrequency ?? "";
-  const loanReference = creditCheck?.data?.loanReference ?? "";
 
   useEffect(() => {
     if (!creditCheck?.data) return;
@@ -55,16 +54,15 @@ const ApplyLoan = () => {
       repaymentFrequency: String(repaymentFrequency),
     };
 
-
-    setCalcLoading(true); 
+    setCalcLoading(true);
     dispatch(calculateLoan(payload))
       .unwrap()
       .then((res) => {
         setCalc(res);
       })
-      .catch((err) => {})
+      .catch(() => {})
       .finally(() => {
-        setCalcLoading(false); 
+        setCalcLoading(false);
       });
   }, [
     dispatch,
@@ -74,6 +72,15 @@ const ApplyLoan = () => {
     interest,
     repaymentFrequency,
   ]);
+
+  // ✅ total repayment = LAST cumulativeTotal
+  const totalRepayment = useMemo(() => {
+    if (!calc || calc.length === 0) return 0;
+    const last = calc[calc.length - 1];
+    return Number(
+      last?.cumulativeTotal ?? last?.repaymentAmountInNaira ?? last?.total ?? 0
+    );
+  }, [calc]);
 
   const Row = ({
     Icon,
@@ -111,7 +118,7 @@ const ApplyLoan = () => {
     </View>
   );
 
-  const canAccept = !calcLoading && !!calc?.[0];
+  const canAccept = !calcLoading && !!calc?.length && totalRepayment > 0;
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
@@ -155,7 +162,7 @@ const ApplyLoan = () => {
                     Approved Amount
                   </CustomText>
                   <CustomText weight="bold" className="text-white">
-                    ₦{amount}
+                    ₦{Number(amount).toLocaleString()}
                   </CustomText>
                 </View>
               )}
@@ -209,37 +216,39 @@ const ApplyLoan = () => {
                 </>
               )}
 
-              {calc?.[0] && !calcLoading && (
+              {!!calc?.length && !calcLoading && (
                 <>
                   <View className="h-[1px] bg-white/10 my-3" />
 
+                  {/* ✅ Total Repayment uses LAST cumulativeTotal */}
                   <View className="flex-row justify-between mb-2">
                     <CustomText className="text-white">
                       Total Repayment
                     </CustomText>
                     <CustomText weight="bold" className="text-white">
-                      ₦{calc[0].repaymentAmountInNaira}
+                      ₦{Number(totalRepayment).toLocaleString()}
                     </CustomText>
                   </View>
 
+                  {/* keep showing first schedule info if you want */}
                   <View className="flex-row justify-between mb-2">
                     <CustomText className="text-white">Interest</CustomText>
                     <CustomText weight="bold" className="text-white">
-                      ₦{calc[0].interest}
+                      ₦{Number(calc[0]?.interest ?? 0).toLocaleString()}
                     </CustomText>
                   </View>
 
                   <View className="flex-row justify-between mb-2">
                     <CustomText className="text-white">Principal</CustomText>
                     <CustomText weight="bold" className="text-white">
-                      ₦{calc[0].principal}
+                      ₦{Number(calc[0]?.principal ?? 0).toLocaleString()}
                     </CustomText>
                   </View>
 
                   <View className="flex-row justify-between mb-2">
                     <CustomText className="text-white">Due Date</CustomText>
                     <CustomText weight="bold" className="text-white">
-                      {String(calc[0].paymentDueDate).slice(0, 10)}
+                      {String(calc[0]?.paymentDueDate).slice(0, 10)}
                     </CustomText>
                   </View>
 
@@ -248,7 +257,7 @@ const ApplyLoan = () => {
                       Repayment Date
                     </CustomText>
                     <CustomText weight="bold" className="text-white">
-                      {String(calc[0].repaymentDate).slice(0, 10)}
+                      {String(calc[0]?.repaymentDate).slice(0, 10)}
                     </CustomText>
                   </View>
                 </>
@@ -312,15 +321,16 @@ const ApplyLoan = () => {
               title={calcLoading ? "Loading..." : "Accept offer"}
               onPress={() =>
                 router.push({
-                  pathname: "/(root)/loans/repayment-schedule",
+                  pathname: "/(root)/loans/authorize",
                   params: {
                     ...params,
                     calc: JSON.stringify(calc ?? []),
+                    creditCheck: params.creditCheck,
                   },
                 })
               }
               variant="primary"
-              disabled={!canAccept} 
+              disabled={!canAccept}
             />
 
             <View className="mt-3">

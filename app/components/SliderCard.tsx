@@ -18,6 +18,9 @@ import { fetchAccountInfo } from "../lib/thunks/accountThunks";
 import BottomSheet from "./BottomSheet";
 import PlansContent from "./home/plans/PlansContent";
 
+import { fetchOverdraftPosition } from "../lib/thunks/overdraftThunks";
+import { fetchUserSavings } from "../lib/thunks/savingsThunks";
+
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width - 20;
 
@@ -27,7 +30,7 @@ interface ShowBalanceState {
 
 interface Props {
   onOpenAccounts?: () => void;
-  onOpenPlanSheet?: () => void; 
+  onOpenPlanSheet?: () => void;
 }
 
 export default function BalanceCardSlider({
@@ -35,21 +38,37 @@ export default function BalanceCardSlider({
   onOpenPlanSheet,
 }: Props) {
   const dispatch = useDispatch<AppDispatch>();
+
   const accountInfo = useSelector(
     (state: RootState) => state.accounts.accountInfo
+  );
+
+  const overdraftPosition = useSelector(
+    (state: RootState) => (state as any).overdraft?.position
+  );
+
+  // ✅ overall savings total (computed in savingsSlice)
+  const savingsTotal = useSelector(
+    (state: RootState) => (state as any).savings?.totals?.overall ?? 0
   );
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBalance, setShowBalance] = useState<ShowBalanceState>({});
   const scrollViewRef = useRef<ScrollView>(null);
-
   const [planSheetVisible, setPlanSheetVisible] = useState(false);
 
   useEffect(() => {
     dispatch(fetchAccountInfo());
+    dispatch(fetchOverdraftPosition() as any);
+
+    // ✅ load all savings types so totals become correct
+    ["BASIC", "TARGET", "GROUP", "FIXED"].forEach((type) => {
+      dispatch(fetchUserSavings({ page: 1, limit: 500, type }) as any);
+    });
   }, [dispatch]);
 
-  const cardsData = getCardsData(accountInfo);
+  // ✅ pass savingsTotal into your cards builder
+  const cardsData = getCardsData(accountInfo, savingsTotal);
 
   const toggleBalance = (cardId: number) => {
     setShowBalance((prev) => ({
@@ -94,8 +113,9 @@ export default function BalanceCardSlider({
               onOpenAccounts={onOpenAccounts}
               onOpenPlanSheet={() => {
                 setPlanSheetVisible(true);
-                onOpenPlanSheet?.(); 
+                onOpenPlanSheet?.();
               }}
+              overdraftBalance={overdraftPosition?.balance}
             />
           </View>
         ))}

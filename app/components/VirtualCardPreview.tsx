@@ -43,11 +43,11 @@ export default function VirtualCardPreview({
   const finalTextColor = textColor || "white";
 
   const finalCurrency = selectedCard?.currency || "NGN";
-  const finalSymbol = symbol || (finalCurrency === "USD" ? "$" : "₦");
+  const finalSymbol = symbol || (finalCurrency === "USD" ? "$" : "$");
 
   const finalAmount =
     amount ??
-    (selectedCard?.balance != null ? String(selectedCard.balance) : "0");
+    (selectedCard?.balance != null ? String(selectedCard.balance) : "-");
 
   const finalCardNumber = showDetails
     ? selectedCard?.card_number || "•••• •••• •••• ••••"

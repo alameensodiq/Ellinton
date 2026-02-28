@@ -13,7 +13,12 @@ interface CardProps {
   onCopyCard: (cardNumber: string) => void;
   onOpenAccounts?: () => void;
   onOpenPlanSheet?: () => void;
+
+  overdraftBalance?: string | number;
 }
+
+const money = (n: any) =>
+  `₦${Math.round(Number(n || 0)).toLocaleString("en-NG")}`;
 
 export default function Card({
   card,
@@ -21,11 +26,18 @@ export default function Card({
   onToggleBalance,
   onCopyCard,
   onOpenAccounts,
-  onOpenPlanSheet
-
+  onOpenPlanSheet,
+  overdraftBalance,
 }: CardProps) {
   const maskedBalance = "••••••";
   const router = useRouter();
+
+  const hasOverdraft =
+    overdraftBalance !== null && overdraftBalance !== undefined;
+
+  // ✅ only show overdraft on card id 1 (Available balance)
+  const showOverdraftOnThisCard = card.id === 1 && hasOverdraft;
+
   return (
     <View style={{ width: "100%" }} className="px-1">
       <View className="rounded-3xl overflow-hidden">
@@ -33,9 +45,9 @@ export default function Card({
           colors={card.gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className={`"h-72 ${
+          className={`h-72 ${
             Platform.OS == "ios" ? "px-8" : "py-0"
-          } px-2  justify-between"`}
+          } px-2 justify-between`}
         >
           <View className="flex-row justify-between items-start mb-6 p-4">
             <View className="flex-col">
@@ -58,19 +70,33 @@ export default function Card({
               </TouchableOpacity>
             </View>
 
-            {card.displayCardNumber && card.cardNumber && (
+            {showOverdraftOnThisCard ? (
               <View className="flex-row items-center bg-white/12 border border-white/10 rounded-xl px-3 py-2 gap-2">
-                <MaterialIcons name="payment" size={16} color="white" />
+                <MaterialIcons name="security" size={16} color="white" />
                 <Text className="text-white text-xs font-semibold tracking-wide">
-                  {card.displayCardNumber}
+                  {showBalance ? money(overdraftBalance) : maskedBalance}
                 </Text>
-                <TouchableOpacity
-                  onPress={() => onCopyCard(card.cardNumber!)}
-                  className="p-2"
-                >
-                  <MaterialIcons name="content-copy" size={14} color="white" />
-                </TouchableOpacity>
               </View>
+            ) : (
+              card.displayCardNumber &&
+              card.cardNumber && (
+                <View className="flex-row items-center bg-white/12 border border-white/10 rounded-xl px-3 py-2 gap-2">
+                  <MaterialIcons name="payment" size={16} color="white" />
+                  <Text className="text-white text-xs font-semibold tracking-wide">
+                    {card.displayCardNumber}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => onCopyCard(card.cardNumber!)}
+                    className="p-2"
+                  >
+                    <MaterialIcons
+                      name="content-copy"
+                      size={14}
+                      color="white"
+                    />
+                  </TouchableOpacity>
+                </View>
+              )
             )}
           </View>
 
@@ -88,9 +114,11 @@ export default function Card({
                         onOpenAccounts?.();
                       } else if (action.label === "Transfer") {
                         router.push("/transfer");
+                      } else if (action.label === "View plans") {
+                        router.push("/(root)/savings/my-plans");
                       } else if (action.label === "Create Plan") {
                         onOpenPlanSheet?.();
-                        return 
+                        return;
                       } else {
                         action.onPress?.();
                       }

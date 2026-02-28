@@ -36,7 +36,7 @@ export default function TransferDetails() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState((params?.amount as string) || "");
   const [addAsBeneficiary, setAddAsBeneficiary] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const validationResult = useSelector(
@@ -46,6 +46,9 @@ export default function TransferDetails() {
     (state: RootState) => state.accounts.error
   );
   const user = useAppSelector((state) => state.auth.user);
+  const incomingGift = params?.gift === "true";
+  const incomingAmountGrams = params?.amount_grams as string | undefined;
+  const goldBalance = useAppSelector((state: any) => state.gold.dashboard?.wallet?.balance_grams ?? 0);
 
   const accountNumber = params.accountNumber as string;
   const bank = params.bank as string;
@@ -131,6 +134,9 @@ export default function TransferDetails() {
           ...(beneficiary && { beneficiary: JSON.stringify(beneficiary) }),
           amount,
           addAsBeneficiary: addAsBeneficiary.toString(),
+          ...(incomingGift && { gift: "true" }),
+          ...(incomingAmountGrams && { amount_grams: incomingAmountGrams }),
+          ...(params?.remark && { remark: params.remark }),
         },
       });
     }
@@ -155,6 +161,13 @@ export default function TransferDetails() {
         >
           <SenderCard />
 
+          {incomingGift && (
+            <View className="mb-4">
+              <Text className="text-sm text-white/60">Gold balance</Text>
+              <Text className="text-white font-semibold">{Number(goldBalance).toFixed(8)} g</Text>
+            </View>
+          )}
+
           <ReceiverCard
             receiverName={receiverName}
             receiverBank={receiverBank}
@@ -162,6 +175,15 @@ export default function TransferDetails() {
             addAsBeneficiary={addAsBeneficiary}
             setAddAsBeneficiary={setAddAsBeneficiary}
           />
+
+          {incomingGift && incomingAmountGrams && (
+            <View className="mb-4">
+              <Text className="text-sm text-white/60 mb-2">Gold to gift</Text>
+              <View className="rounded-2xl bg-[#4a4a28] px-4 py-3">
+                <Text className="text-white font-semibold">{Number(incomingAmountGrams).toFixed(8)} g</Text>
+              </View>
+            </View>
+          )}
 
           <View className="mb-6">
             <Text className="text-sm text-white/70 mb-3">Add amount</Text>

@@ -53,13 +53,13 @@ const otherServices: ServiceItem[] = [
   { id: "11", icon: SERVICE_ICONS.schedule, label: "Schedule transaction" },
 ];
 
-const wealthManagement: ServiceItem[] = [
+const   wealthManagement: ServiceItem[] = [
   { id: "12", icon: SERVICE_ICONS.basicSavings, label: "Basic savings" },
   { id: "13", icon: SERVICE_ICONS.targetSavings, label: "Target savings" },
   { id: "14", icon: SERVICE_ICONS.groupSavings, label: "Group savings" },
   { id: "15", icon: SERVICE_ICONS.fixedDeposit, label: "Fixed deposit" },
   { id: "16", icon: SERVICE_ICONS.shares, label: "Buy shares" },
-  { id: "17", icon: SERVICE_ICONS.gold, label: "Buy gold" },
+  { id: "17", icon: SERVICE_ICONS.gold, label: "Gold" },
 ];
 
 const utilityserviceItems = [

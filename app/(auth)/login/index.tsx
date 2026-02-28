@@ -24,6 +24,7 @@ import CustomText from "@/app/components/CustomText";
 import images from "@/app/assets/images";
 import { loginUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Login = () => {
   const [pin, setPin] = useState("");
@@ -35,6 +36,24 @@ const Login = () => {
 
   const { isLoading, error, isAuthenticated, requiresPasscodeSetup, user } =
     useAppSelector((state) => state.auth);
+
+  // Auto-fill email if user profile is saved
+  useEffect(() => {
+    const loadSavedEmail = async () => {
+      try {
+        const userProfile = await AsyncStorage.getItem("userProfile");
+        if (userProfile) {
+          const parsedUser = JSON.parse(userProfile);
+          if (parsedUser?.email) {
+            setEmail(parsedUser.email);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadSavedEmail();
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -48,8 +67,7 @@ const Login = () => {
         router.replace("/(root)/(tabs)");
       }
     }
-    clearError();
-  }, [isAuthenticated, requiresPasscodeSetup]);
+  }, [isAuthenticated]);
 
   const handleLogin = async () => {
     if (!email || !pin) return;

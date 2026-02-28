@@ -44,7 +44,7 @@ const WithdrawalContent: React.FC<WithdrawalContentProps> = ({
         <AmountInput value={amount} onChange={setAmount} placeholder="0" />
 
         <CustomText secondary size="sm" weight="medium" className="mb-20 mt-4">
-          ❔ Enter an amount above ₦100
+          ❔ Enter an amount above $5
         </CustomText>
       </View>
     </View>

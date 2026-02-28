@@ -99,7 +99,8 @@ export interface WithdrawVirtualCardPayload {
 
 export const requestVirtualCard = createAsyncThunk<
   VirtualCardDetails,
-  RequestVirtualCardPayload
+  RequestVirtualCardPayload,
+  { rejectValue: string }
 >("virtualCards/request", async (payload, { getState, rejectWithValue }) => {
   try {
     const state = getState() as any;
@@ -114,17 +115,24 @@ export const requestVirtualCard = createAsyncThunk<
       body: JSON.stringify(payload),
     });
 
-    const data = (await res.json()) as ApiResponse<VirtualCardDetails>;
+    const data = await res.json();
 
-    if (!res.ok || !data.success || !data.data) {
-      return rejectWithValue(data?.message|| data?.data?.message || "Virtual card request failed");
+    const message =
+      data?.message ||
+      data?.data?.message ||
+      data?.error?.message ||
+      "Virtual card request failed";
+
+    if (!res.ok || !data?.success || !data?.data) {
+      return rejectWithValue(message);
     }
 
-    return data.data;
+    return data.data as VirtualCardDetails;
   } catch (err: any) {
-    return rejectWithValue(err.message || "Virtual card request error");
+    return rejectWithValue(err?.message || "Virtual card request error");
   }
 });
+
 
 /* =========================
    FETCH ALL VIRTUAL CARDS

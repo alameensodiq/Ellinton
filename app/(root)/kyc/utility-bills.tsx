@@ -14,6 +14,10 @@ import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system/legacy";
 import { uploadUtilityBill, submitTier3 } from "@/app/lib/thunks/kycThunks";
 
+const MAX_BYTES = 800 * 1024; // 800KB target (base64 still increases size)
+const START_WIDTH = 720;
+const MIN_WIDTH = 420;
+
 const kycUtility = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -23,7 +27,6 @@ const kycUtility = () => {
   const [base64, setBase64] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -35,7 +38,45 @@ const kycUtility = () => {
     })();
   }, []);
 
+  const clearImage = () => {
+    setImageUri(null);
+    setBase64(null);
+    setError("");
+  };
+
+  const compressUntilSmall = async (uri: string) => {
+    let width = START_WIDTH;
+    let compress = 0.35;
+
+    let out = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width } }],
+      { compress, format: ImageManipulator.SaveFormat.JPEG }
+    );
+
+    let info = await FileSystem.getInfoAsync(out.uri);
+    let size = (info as any)?.size ?? 0;
+
+    while (size > MAX_BYTES && width > MIN_WIDTH) {
+      width = Math.floor(width * 0.85);
+      compress = Math.max(0.2, compress - 0.05);
+
+      out = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width } }],
+        { compress, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      info = await FileSystem.getInfoAsync(out.uri);
+      size = (info as any)?.size ?? 0;
+    }
+
+    return { uri: out.uri, size };
+  };
+
   const pickImage = async () => {
+    setError("");
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
       allowsEditing: true,
@@ -43,31 +84,31 @@ const kycUtility = () => {
       quality: 1,
     });
 
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
+    if (result.canceled) return;
 
-      try {
-        // Compress the image before uploading
-        const manipulatedImage = await ImageManipulator.manipulateAsync(
-          uri,
-          [{ resize: { width: 1024 } }], // max width 1024px
-          { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG } // 70% JPEG
+    const uri = result.assets[0].uri;
+
+    try {
+      const { uri: compressedUri, size } = await compressUntilSmall(uri);
+
+      if (size > MAX_BYTES) {
+        clearImage();
+        setError(
+          "Image is still too large. Please pick a smaller/clearer photo."
         );
-
-        setImageUri(manipulatedImage.uri);
-
-        const base64Data = await FileSystem.readAsStringAsync(
-          manipulatedImage.uri,
-          { encoding: "base64" }
-        );
-
-        setBase64(`data:image/jpeg;base64,${base64Data}`);
-        setError("");
-        setSuccess(false);
-      } catch (err) {
-        setError("Error processing image.");
-        console.error(err);
+        return;
       }
+
+      setImageUri(compressedUri);
+
+      const base64Data = await FileSystem.readAsStringAsync(compressedUri, {
+        encoding: "base64",
+      });
+
+      setBase64(`data:image/jpeg;base64,${base64Data}`);
+    } catch (err) {
+      console.error(err);
+      setError("Error processing image.");
     }
   };
 
@@ -82,19 +123,14 @@ const kycUtility = () => {
       await dispatch(uploadUtilityBill({ utility_bill: base64 })).unwrap();
       await dispatch(submitTier3()).unwrap();
 
-      setSuccess(true);
-      setError("");
-      setImageUri(null);
-      setBase64(null);
+      // ✅ go straight to success page
+      clearImage();
+      router.replace("/(root)/kyc/success");
     } catch (err: any) {
       setError(err?.message || err || "Upload failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const goToSettings = () => {
-    router.push("/(root)/kyc/success");
   };
 
   return (
@@ -143,12 +179,7 @@ const kycUtility = () => {
                   resizeMode="contain"
                 />
                 <Pressable
-                  onPress={() => {
-                    setImageUri(null);
-                    setBase64(null);
-                    setError("");
-                    setSuccess(false);
-                  }}
+                  onPress={clearImage}
                   className="absolute top-2 right-2 bg-red-500 rounded-full p-2"
                 >
                   <Ionicons name="close" size={20} color="white" />
@@ -157,21 +188,10 @@ const kycUtility = () => {
             )}
 
             {error ? <Text className="text-red-500 mb-4">{error}</Text> : null}
-
-            {success ? (
-              <Text className="text-green-500 mb-4">
-                Utility bill uploaded successfully!
-              </Text>
-            ) : null}
           </View>
         </View>
 
-        {/* Bottom Button Area */}
-        {success ? (
-          <View className="absolute bottom-5 left-4 right-4">
-            <Button title="Continue" variant="primary" onPress={goToSettings} />
-          </View>
-        ) : imageUri ? (
+        {imageUri ? (
           <View className="absolute bottom-5 left-4 right-4">
             <Button
               title="Upload"

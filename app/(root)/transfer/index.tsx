@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import Header from "@/app/components/header-back";
 import TextInputField from "@/app/components/inputs/TextInputField";
@@ -43,6 +43,12 @@ const mapApiBeneficiary = (api: ApiBeneficiary, id: number): Beneficiary => ({
 export default function TransferScreen() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const params = useLocalSearchParams<Record<string, string>>();
+  const incomingGift = params?.gift === "true";
+  const incomingAmount = params?.amount || "";
+  const incomingAmountGrams = params?.amount_grams || "";
+  const incomingRemark = params?.remark || "";
+
   const [accountNumber, setAccountNumber] = useState("");
   const [selectedBank, setSelectedBank] = useState("");
   const [loading, setLoading] = useState(false);
@@ -110,6 +116,10 @@ export default function TransferScreen() {
           bank: beneficiary.bank,
           bankCode,
           beneficiary: JSON.stringify(beneficiary),
+          ...(incomingGift && { gift: "true" }),
+          ...(incomingAmount && { amount: incomingAmount }),
+          ...(incomingAmountGrams && { amount_grams: incomingAmountGrams }),
+          ...(incomingRemark && { remark: incomingRemark }),
         },
       });
     }, 1200);
@@ -126,6 +136,10 @@ export default function TransferScreen() {
           accountNumber,
           bank: bankName,
           bankCode,
+          ...(incomingGift && { gift: "true" }),
+          ...(incomingAmount && { amount: incomingAmount }),
+          ...(incomingAmountGrams && { amount_grams: incomingAmountGrams }),
+          ...(incomingRemark && { remark: incomingRemark }),
         },
       });
     }, 300);
@@ -142,6 +156,10 @@ export default function TransferScreen() {
         bank,
         bankCode,
         accountName: validationResult?.accountName,
+        ...(incomingGift && { gift: "true" }),
+        ...(incomingAmount && { amount: incomingAmount }),
+        ...(incomingAmountGrams && { amount_grams: incomingAmountGrams }),
+        ...(incomingRemark && { remark: incomingRemark }),
       },
     });
   };

@@ -7,8 +7,12 @@ import * as SplashScreen from "expo-splash-screen";
 import { useFonts } from "expo-font";
 import * as NavigationBar from "expo-navigation-bar";
 import { Platform, StatusBar } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
 import { store } from "./lib/store";
 import AuthWrapper from "./(root)/AuthWrapper";
+import { logout } from "./lib/slices/authSlice";
+import { useEffect } from "react";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,6 +22,70 @@ export default function RootLayout() {
     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),
     OutfitBold: require("./assets/fonts/Outfit-Bold.ttf"),
   });
+  useEffect(() => {
+    const originalFetch = (global as any).fetch;
+
+    (global as any).fetch = async (input: any, init?: any) => {
+      try {
+        const response = await originalFetch(input, init);
+
+        if (response && response.status === 401) {
+          try {
+            await AsyncStorage.removeItem("authToken");
+          } catch (e) {
+            // ignore
+          }
+
+          // update redux state
+          store.dispatch(logout());
+
+          // mark session expired so other parts of the app can react
+          try {
+            await AsyncStorage.setItem("sessionExpired", "1");
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        return response;
+      } catch (err) {
+        throw err;
+      }
+    };
+
+    return () => {
+      (global as any).fetch = originalFetch;
+    };
+  }, []);
+
+  // Subscribe to store changes and navigate once when token is cleared
+  useEffect(() => {
+    let prevToken = (store.getState() as any).auth?.token;
+
+    const unsub = store.subscribe(() => {
+      try {
+        const state = store.getState() as any;
+        const token = state.auth?.token;
+        const user = state.auth?.user;
+
+        if (token === prevToken) return;
+        prevToken = token;
+
+        if (!token) {
+          // token removed: navigate appropriately
+          if (user) {
+            router.replace("/(auth)/current-user");
+          } else {
+            router.replace("/(auth)/login");
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    });
+
+    return unsub;
+  }, []);
 
   if (!fontsLoaded) return null;
 

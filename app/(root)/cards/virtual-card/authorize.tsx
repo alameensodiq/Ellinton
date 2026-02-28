@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StatusBar,
-  TouchableOpacity,
-  Vibration,
-  Alert,
-} from "react-native";
+import { View, Text, StatusBar, Vibration } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import Header from "@/app/components/header-back";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Numpad from "@/app/components/inputs/Numpad";
@@ -20,7 +12,7 @@ import {
   RequestVirtualCardPayload,
 } from "@/app/lib/thunks/virtualCardsThunks";
 import { unwrapResult } from "@reduxjs/toolkit";
-import Loading from "@/app/components/Loading"; 
+import Loading from "@/app/components/Loading";
 
 export default function AuthorizePayment() {
   const params = useLocalSearchParams();
@@ -63,12 +55,16 @@ export default function AuthorizePayment() {
     white: "White",
   };
 
+  const resetError = () => {
+    setError(false);
+    setErrorMessage("");
+  };
+
   const handleNumberPress = (num: string) => {
     if (passcode.length < 4 && !loading) {
       setPasscode((prev) => {
         const next = prev + num;
-        setError(false);
-        setErrorMessage("");
+        resetError();
         return next;
       });
     }
@@ -77,62 +73,54 @@ export default function AuthorizePayment() {
   const handleDelete = () => {
     if (!loading) {
       setPasscode((prev) => prev.slice(0, -1));
-      setError(false);
-      setErrorMessage("");
+      resetError();
     }
   };
 
   useEffect(() => {
-    if (passcode.length === 4) {
-      const processRequest = async () => {
-        setLoading(true);
+    if (passcode.length !== 4) return;
 
-        if (passcode !== "1234") {
-          setError(true);
-          setErrorMessage("Incorrect passcode. Please try again.");
-          Vibration.vibrate(400);
-          setPasscode("");
-          setLoading(false);
-          return;
-        }
+    const processRequest = async () => {
+      setLoading(true);
 
-        const payload: RequestVirtualCardPayload = {
-          amount: Number(amount),
-          type: apiTypeMap[icon as string] || "MASTERCARD",
-          color: apiColorMap[color as string] || "Gold",
-          billingStreet,
-          billingCity,
-          billingState,
-          billingCountry,
-          billingPostalCode,
-          transactionPin: passcode,
-        };
-
-        try {
-          const actionResult = await dispatch(requestVirtualCard(payload));
-          unwrapResult(actionResult);
-
-          router.push({
-            pathname: "/(root)/cards/virtual-card/success",
-            params: params,
-          });
-        } catch (error: any) {
-          console.log(error);
-          setError(true);
-          setErrorMessage(
-            error?.message ||
-              error ||
-              "Failed to request virtual card. Please try again."
-          );
-          setPasscode("");
-        } finally {
-          setLoading(false);
-        }
+      const payload: RequestVirtualCardPayload = {
+        amount: Number(amount),
+        type: apiTypeMap[icon as string] || "MASTERCARD",
+        color: apiColorMap[color as string] || "Gold",
+        billingStreet,
+        billingCity,
+        billingState,
+        billingCountry,
+        billingPostalCode,
+        transactionPin: passcode, 
       };
 
-      const t = setTimeout(processRequest, 300);
-      return () => clearTimeout(t);
-    }
+      try {
+        const actionResult = await dispatch(requestVirtualCard(payload));
+        unwrapResult(actionResult);
+
+        router.push({
+          pathname: "/(root)/cards/virtual-card/success",
+          params,
+        });
+      } catch (err: any) {
+        const msg =
+          typeof err === "string"
+            ? err
+            : err?.message ||
+              "Failed to request virtual card. Please try again.";
+
+        setError(true);
+        setErrorMessage(msg);
+        Vibration.vibrate(400);
+        setPasscode("");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const t = setTimeout(processRequest, 300);
+    return () => clearTimeout(t);
   }, [passcode]);
 
   return (
@@ -152,8 +140,7 @@ export default function AuthorizePayment() {
             value={passcode}
             onChange={(value) => {
               setPasscode(value.slice(0, 4));
-              setError(false);
-              setErrorMessage("");
+              resetError();
             }}
             error={error}
             autoFocus={false}

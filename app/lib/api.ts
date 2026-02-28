@@ -1,7 +1,7 @@
 // const BASE_URL = "http://3.220.216.48:3005/api/v2";
 // const BASE_URL = "https://unvenial-uncomplaining-von.ngrok-free.dev/api/v2";
 const BASE_URL = "https://api.ellingtonbank.com/api/v2";
-
+// const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
@@ -18,6 +18,7 @@ const CREATE_ACCOUNT_USERS_ENDPOINT = (userId: string) =>
   `${BASE_URL}/users/${userId}/create-account`;
 const CREATE_TRANSACTION_PIN_USERS_ENDPOINT = (userId: string) =>
   `${BASE_URL}/users/${userId}/create-transaction-pin`;
+const SEARCH_USERS_ENDPOINT = `${BASE_URL}/users/search`;
 const FORGET_PASSCODE_VERIFY_OTP_AUTH_ENDPOINT = `${BASE_URL}/auth/forgot-passcode/verify-otp`;
 
 //auth
@@ -32,9 +33,7 @@ const GET_USER_PROFILE_ENDPOINT = `${BASE_URL}/users/me`;
 const UPDATE_USER_PROFILE_ENDPOINT = `${BASE_URL}/users/me`;
 const UPDATE_USER_ADDRESS_PROFILE_ENDPOINT = `${BASE_URL}/users/address`;
 const UPDATE_USER_PROFILE_PASSWORD_ENDPOINT = `${BASE_URL}/users/profile/passport`;
-export const CHANGE_TRANSACTION_PIN_USERS_ENDPOINT =
-  `${BASE_URL}/users/change-transaction-pin`;
-
+export const CHANGE_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}/users/change-transaction-pin`;
 
 //kyc
 const KYC_STATUS_ENDPOINT = `${BASE_URL}/kyc/status`;
@@ -56,7 +55,6 @@ const BANKS_ENDPOINT = `${BASE_URL}/utilities/banks`;
 const TRANSFER_SAME_BANK = `${BASE_URL}/transfers/intra-bank`;
 const TRANSFER_OTHER_BANK = `${BASE_URL}/transfers/inter-bank`;
 export const FETCH_ACCOUNT_TRANSACTIONS = `${BASE_URL}/transactions/account`;
-
 
 //cards
 const CARD_INITIATE_PAYMENT_ENDPOINT = `${BASE_URL}/cards/initiate-payment`;
@@ -89,9 +87,8 @@ const LOAN_CREDIT_CHECK_ENDPOINT = `${BASE_URL}/loans/credit-check`;
 const LOAN_CALCULATE_ENDPOINT = `${BASE_URL}/loans/calculate`;
 const LOAN_APPLY_ENDPOINT = `${BASE_URL}/loans/apply`;
 const FETCH_USER_LOANS_ENDPOINT = `${BASE_URL}/loans`;
-const FETCH_SINGLE_LOAN_ENDPOINT = (id: string) =>
-  `${BASE_URL}/loans/${id}`;
-  
+const FETCH_SINGLE_LOAN_ENDPOINT = (id: string) => `${BASE_URL}/loans/${id}`;
+
 const LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT = `${BASE_URL}/webhooks/loans/disbursement`;
 
 const STATEMENTS_REQUEST_ENDPOINT = `${BASE_URL}/statements/request`;
@@ -104,8 +101,35 @@ const STATEMENTS_HISTORY_ENDPOINT = (page?: number, limit?: number) => {
 };
 const STATEMENT_BY_ID_ENDPOINT = (id: string) => `${BASE_URL}/statements/${id}`;
 
+// gold
+const GOLD_DASHBOARD_ENDPOINT = `${BASE_URL}/gold/dashboard`;
+const GOLD_PRICE_ENDPOINT = `${BASE_URL}/gold/price`;
+const GOLD_PRICE_HISTORY_ENDPOINT = `${BASE_URL}/gold/price/history`;
+const GOLD_BUY_ENDPOINT = `${BASE_URL}/gold/buy`;
+const GOLD_SELL_ENDPOINT = `${BASE_URL}/gold/sell`;
+const GOLD_GIFT_ENDPOINT = `${BASE_URL}/gold/gift`;
+const GOLD_WITHDRAW_ENDPOINT = `${BASE_URL}/gold/withdraw`;
+const GOLD_TRANSACTIONS_ENDPOINT = `${BASE_URL}/gold/transactions`;
+const GOLD_TRANSACTION_BY_ID_ENDPOINT = (id: string) =>
+  `${BASE_URL}/gold/transactions/${id}`;
+const GOLD_TRIGGERS_ENDPOINT = `${BASE_URL}/gold/triggers`;
+const GOLD_TRIGGER_BY_ID_ENDPOINT = (id: string) =>
+  `${BASE_URL}/gold/triggers/${id}`;
+const GOLD_SKR_ENDPOINT = `${BASE_URL}/gold/skr`;
+const LOAN_CONFIRM_CONSENT_ENDPOINT = (id: string) =>
+  `${BASE_URL}/loans/${id}/confirm-consent`;
 
-
+// savings
+const SAVINGS_PRODUCTS_ENDPOINT = `${BASE_URL}/savings/products`;
+const SAVINGS_CALCULATE_ESTIMATE_ENDPOINT = `${BASE_URL}/savings/calculate-estimate`;
+const SAVINGS_CREATE_ENDPOINT = `${BASE_URL}/savings`;
+const SAVINGS_FETCH_USER_ENDPOINT = `${BASE_URL}/savings`;
+const SAVINGS_TOP_UP_ENDPOINT = `${BASE_URL}/savings/top-up`;
+const SAVINGS_WITHDRAWAL_ENDPOINT = `${BASE_URL}/savings/withdrawal`;
+const SAVINGS_TRANSACTIONS_ENDPOINT = `${BASE_URL}/savings/transactions`;
+const OVERDRAFT_APPLY_ENDPOINT = `${BASE_URL}/overdrafts/apply`;
+const OVERDRAFT_ACCOUNT_ENDPOINT = `${BASE_URL}/overdrafts/account`;
+const OVERDRAFT_POSITION_ENDPOINT = `${BASE_URL}/overdrafts/account/position`;
 
 export {
   BASE_URL,
@@ -117,6 +141,7 @@ export {
   VERIFY_FACIAL_USERS_ENDPOINT,
   CREATE_ACCOUNT_USERS_ENDPOINT,
   CREATE_TRANSACTION_PIN_USERS_ENDPOINT,
+  SEARCH_USERS_ENDPOINT,
   CHANGE_PASSCODE_AUTH_ENDPOINT,
   FORGET_PASSCODE_AUTH_ENDPOINT,
   FORGET_PASSCODE_RESET_AUTH_ENDPOINT,
@@ -169,4 +194,27 @@ export {
   STATEMENTS_REQUEST_ENDPOINT,
   STATEMENTS_HISTORY_ENDPOINT,
   STATEMENT_BY_ID_ENDPOINT,
+  GOLD_DASHBOARD_ENDPOINT,
+  GOLD_PRICE_ENDPOINT,
+  GOLD_PRICE_HISTORY_ENDPOINT,
+  GOLD_BUY_ENDPOINT,
+  GOLD_SELL_ENDPOINT,
+  GOLD_GIFT_ENDPOINT,
+  GOLD_WITHDRAW_ENDPOINT,
+  GOLD_TRANSACTIONS_ENDPOINT,
+  GOLD_TRANSACTION_BY_ID_ENDPOINT,
+  GOLD_TRIGGERS_ENDPOINT,
+  GOLD_TRIGGER_BY_ID_ENDPOINT,
+  GOLD_SKR_ENDPOINT,
+  SAVINGS_PRODUCTS_ENDPOINT,
+  SAVINGS_CALCULATE_ESTIMATE_ENDPOINT,
+  SAVINGS_CREATE_ENDPOINT,
+  SAVINGS_FETCH_USER_ENDPOINT,
+  SAVINGS_TOP_UP_ENDPOINT,
+  SAVINGS_WITHDRAWAL_ENDPOINT,
+  SAVINGS_TRANSACTIONS_ENDPOINT,
+  OVERDRAFT_APPLY_ENDPOINT,
+  OVERDRAFT_ACCOUNT_ENDPOINT,
+  OVERDRAFT_POSITION_ENDPOINT,
+  LOAN_CONFIRM_CONSENT_ENDPOINT,
 };

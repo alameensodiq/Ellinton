@@ -20,6 +20,7 @@ import {
   changePasscode,
   restoreAuth,
   changeTransactionPin,
+  searchUsers,
 } from "../thunks/authThunks";
 
 interface User {
@@ -63,6 +64,7 @@ interface AuthState {
   error: string | null;
   isAuthenticated: boolean;
   isRestoring: boolean;
+  searchResults: User[];
 }
 
 const initialState: AuthState = {
@@ -73,6 +75,7 @@ const initialState: AuthState = {
   error: null,
   isAuthenticated: false,
   isRestoring: false,
+  searchResults: [],
 };
 
 const authSlice = createSlice({
@@ -507,6 +510,25 @@ const authSlice = createSlice({
       })
       .addCase(changePasscode.rejected, (state, action) => {
         state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    /** -----------------------------------------
+     * SEARCH USERS
+     * ----------------------------------------- */
+    builder
+      .addCase(searchUsers.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(searchUsers.fulfilled, (state, action: PayloadAction<User[]>) => {
+        state.isLoading = false;
+        state.searchResults = action.payload || [];
+        state.error = null;
+      })
+      .addCase(searchUsers.rejected, (state, action) => {
+        state.isLoading = false;
+        state.searchResults = [];
         state.error = action.payload as string;
       });
   },
