@@ -9,21 +9,39 @@ import {
   fetchSavingsTransactions,
 } from "../thunks/savingsThunks";
 
+type UserSavingsResponse = { data: any[]; total: number };
+
+type SavingsTotals = {
+  basic: number;
+  target: number;
+  group: number;
+  fixed: number;
+  overall: number;
+};
+
 interface SavingsState {
   products: any[];
   estimate: any | null;
 
-  // your old fields
   savings: any[];
   savingsDetail: any | null;
   transactions: any[];
 
-  // ✅ NEW: store fetchUserSavings response properly
-  userSavings: { data: any[]; total: number } | null;
+  // current screen list (your MyPlans screen uses this)
+  userSavings: UserSavingsResponse | null;
+
+  // ✅ cache per type + totals
+  userSavingsByType: Record<string, UserSavingsResponse>;
+  totals: SavingsTotals;
 
   isLoading: boolean;
   error: string | null;
 }
+
+const sumSaved = (arr: any[]) =>
+  arr.reduce((t, x) => t + Number(x?.amount_saved ?? x?.amount ?? 0), 0);
+
+const normalizeType = (t: any) => String(t || "").toLowerCase(); // "basic" etc
 
 const initialState: SavingsState = {
   products: [],
@@ -33,7 +51,16 @@ const initialState: SavingsState = {
   savingsDetail: null,
   transactions: [],
 
-  userSavings: null, // ✅
+  userSavings: null,
+
+  userSavingsByType: {},
+  totals: {
+    basic: 0,
+    target: 0,
+    group: 0,
+    fixed: 0,
+    overall: 0,
+  },
 
   isLoading: false,
   error: null,
@@ -105,7 +132,7 @@ const savingsSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // ✅ Fetch User Savings (FIXED)
+      // ✅ Fetch User Savings (updates totals + cache)
       .addCase(fetchUserSavings.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -114,7 +141,35 @@ const savingsSlice = createSlice({
         fetchUserSavings.fulfilled,
         (state, action: PayloadAction<any>) => {
           state.isLoading = false;
-          state.userSavings = action.payload || { data: [], total: 0 }; // ✅
+
+          const payload: UserSavingsResponse = action.payload || {
+            data: [],
+            total: 0,
+          };
+
+          // keep the current list for MyPlans screen
+          state.userSavings = payload;
+
+          // figure out which type was fetched
+          const type = normalizeType((action as any).meta?.arg?.type); // "basic" | "target" | "group" | "fixed"
+          if (type) {
+            state.userSavingsByType[type] = payload;
+
+            const list = Array.isArray(payload?.data) ? payload.data : [];
+            const totalForType = sumSaved(list);
+
+            if (type === "basic") state.totals.basic = totalForType;
+            if (type === "target") state.totals.target = totalForType;
+            if (type === "group") state.totals.group = totalForType;
+            if (type === "fixed") state.totals.fixed = totalForType;
+
+            state.totals.overall =
+              state.totals.basic +
+              state.totals.target +
+              state.totals.group +
+              state.totals.fixed;
+          }
+
           state.error = null;
         }
       )

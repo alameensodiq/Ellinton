@@ -15,6 +15,25 @@ const CreditSuccess = () => {
 
   const [open, setOpen] = useState(false);
 
+  let approvedLoanAmount: number | null = null;
+
+  try {
+    const parsed = params.creditCheck ? JSON.parse(params.creditCheck) : null;
+    const amount =
+      parsed?.data?.approvedLoanAmount ?? parsed?.approvedLoanAmount ?? null;
+
+    if (amount !== null && amount !== undefined) {
+      approvedLoanAmount = Number(amount);
+    }
+  } catch (e) {
+    approvedLoanAmount = null;
+  }
+
+  const formattedAmount =
+    approvedLoanAmount !== null && !Number.isNaN(approvedLoanAmount)
+      ? `₦${approvedLoanAmount.toLocaleString()}`
+      : null;
+
   const goLoans = () => {
     setOpen(false);
     router.replace({
@@ -44,10 +63,20 @@ const CreditSuccess = () => {
         <CustomText
           size="sm"
           secondary
-          className="text-center text-white/80 mb-10"
+          className="text-center text-white/80 mb-3"
         >
-          Congratulations! You have been pre-approved for the salah loan
+          Congratulations! You have been pre-approved 
         </CustomText>
+
+        {formattedAmount && (
+          <CustomText
+            weight="bold"
+            size="lg"
+            className="text-center text-white"
+          >
+            Approved amount: {formattedAmount}
+          </CustomText>
+        )}
       </View>
 
       <View className="px-6 pb-6">
@@ -59,7 +88,7 @@ const CreditSuccess = () => {
       </View>
 
       <Sheet visible={open} onClose={() => setOpen(false)}>
-        <OfferLetter onAccept={goLoans} />
+        <OfferLetter onAccept={goLoans} approvedAmount={formattedAmount} />
       </Sheet>
     </SafeAreaView>
   );
@@ -67,24 +96,36 @@ const CreditSuccess = () => {
 
 export default CreditSuccess;
 
-const OfferLetter = ({ onAccept }: { onAccept: () => void }) => {
+const OfferLetter = ({
+  onAccept,
+  approvedAmount,
+}: {
+  onAccept: () => void;
+  approvedAmount: string | null;
+}) => {
   return (
     <View className="-mt-6 mb-4">
       <CustomText
         weight="bold"
         size="lg"
-        className="text-white text-center mb-4 "
+        className="text-white text-center mb-2"
       >
         Offer letter
       </CustomText>
 
-      <CustomText secondary className=" mb-4">
+      {approvedAmount && (
+        <CustomText weight="bold" className="text-white text-center mb-4">
+          Approved amount: {approvedAmount}
+        </CustomText>
+      )}
+
+      <CustomText secondary className="mb-4">
         YOUR DATA IS PROTECTED {"\n"}
         All our banking and investment procedures happen through encrypted
         technology and robust firewalls that ensure the protection of your data
       </CustomText>
 
-      <CustomText secondary className=" mb-4">
+      <CustomText secondary className="mb-4">
         YOUR RIGHTS ARE SERVED {"\n"}
         We ensure that you are enjoying all the personal and financial rights in
         banking regarding the service you prefer.

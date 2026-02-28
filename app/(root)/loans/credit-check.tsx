@@ -43,19 +43,23 @@ const CreditScore = () => {
     )
       .unwrap()
       .then((res) => {
-        console.log("✅ CREDIT CHECK SUCCESS RESPONSE:", res);
+        console.log("✅ CREDIT CHECK SUCCESS RESPONSE:", res);1
+
+        if (res?.data == null) {
+          throw new Error("Credit check returned null data");
+        }
 
         loop.stop();
-       router.replace({
-         pathname: "/(root)/loans/credit-check-success",
-         params: {
-           ...params,
-           creditCheck: JSON.stringify(res), 
-         },
-       });
-
+        router.replace({
+          pathname: "/(root)/loans/credit-check-success",
+          params: {
+            ...params,
+            creditCheck: JSON.stringify(res),
+          },
+        });
       })
       .catch((err) => {
+
         loop.stop();
         router.replace({
           pathname: "/(root)/loans/credit-check-fail",

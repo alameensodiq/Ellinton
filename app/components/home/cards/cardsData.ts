@@ -1,6 +1,6 @@
 import { ImageSourcePropType } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import Images from "../../../assets/images"; 
+import Images from "../../../assets/images";
 import { AccountInfo } from "@/app/lib/thunks/accountThunks";
 
 export interface ActionButton {
@@ -22,17 +22,24 @@ export interface CardData {
   actions?: ActionButton[];
 }
 
-export const getCardsData = (accountInfo?: AccountInfo | null): CardData[] => {
-  console.log(accountInfo)
-const firstCardBalance =
-  accountInfo?.accountBalance !== undefined &&
-  accountInfo.accountBalance !== null
-    ? accountInfo.accountBalance.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })
-    : "0.00";
+const formatMoney = (n: any) => {
+  const val = Number(n || 0);
+  return val.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
+// ✅ add savingsTotal param
+export const getCardsData = (
+  accountInfo?: AccountInfo | null,
+  savingsTotal: number = 0
+): CardData[] => {
+  const firstCardBalance =
+    accountInfo?.accountBalance !== undefined &&
+    accountInfo.accountBalance !== null
+      ? formatMoney(accountInfo.accountBalance)
+      : "0.00";
 
   const firstCardAccountNumber = accountInfo?.accountNumber || "";
   const firstCardDisplayNumber = firstCardAccountNumber
@@ -64,7 +71,8 @@ const firstCardBalance =
     {
       id: 2,
       title: "Total savings",
-      balance: "0.00",
+      // ✅ real total savings here
+      balance: formatMoney(savingsTotal),
       gradientColors: ["#333419", "#18180C"],
       imagePosition: "top-right",
       image: Images.landing_balance_card2,

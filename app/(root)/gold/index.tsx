@@ -5,7 +5,6 @@ import {
   StatusBar,
   Platform,
   ScrollView,
-  TextInput,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -35,27 +34,18 @@ export default function BuyGold() {
   const gold = useAppSelector((s: any) => s.gold);
 
   const { type } = useLocalSearchParams<{ type?: string }>();
-  const txType =
-    type === "sell" ? "sell" : type === "withdraw" ? "withdraw" : "buy";
-  const title =
-    txType === "sell"
-      ? "Sell Gold"
-      : txType === "withdraw"
-      ? "Withdraw Gold"
-      : "Buy Gold";
+  const txType = type === "sell" ? "sell" : "buy";
+  const title = txType === "sell" ? "Sell Gold" : "Buy Gold";
 
-  const [amount, setAmount] = useState(""); // ✅ always NGN for buy/sell/withdraw now
-  const [address, setAddress] = useState("");
+  const [amount, setAmount] = useState(""); // NGN
 
   // Show loading only on the very first load (when there is no price yet)
   const [initialLoading, setInitialLoading] = useState(!gold?.price);
   const pollingRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // initial fetch if price missing
     if (!gold?.price) dispatch(fetchGoldPrice());
 
-    // poll every 60s while component is mounted
     pollingRef.current = setInterval(() => {
       dispatch(fetchGoldPrice());
     }, 60_000) as unknown as number;
@@ -65,14 +55,12 @@ export default function BuyGold() {
     };
   }, [dispatch]);
 
-  // turn off the initial-loading overlay once we have a price
   useEffect(() => {
     if (initialLoading && gold?.price) setInitialLoading(false);
   }, [gold?.price, initialLoading]);
 
   const pricePerGramNgn = Number(gold?.price?.pricePerGramNgn || 0);
 
-  // ✅ grams is always derived from NGN for buy/sell/withdraw
   const grams = useMemo(() => {
     const a = toNumber(amount);
     if (!pricePerGramNgn || a <= 0) return "0.00";
@@ -84,19 +72,10 @@ export default function BuyGold() {
   const changePct = Number(gold?.price?.changePercent || 0);
   const isUp = changeUsd >= 0;
 
-  const amountRaw = toNumber(amount); // ✅ NGN
+  const amountRaw = toNumber(amount);
 
-  // ✅ minimums
-  const minBuy = 50000;
-  const minSell = 50000; // NGN
-  const minWithdraw = 100; // NGN (unchanged)
-
-  const canContinue =
-    txType === "buy"
-      ? amountRaw >= minBuy
-      : txType === "sell"
-      ? amountRaw >= minSell
-      : amountRaw >= minWithdraw && address.trim().length > 3;
+  const minBuy = 50_000;
+  const minSell = 20_000;
 
   return (
     <SafeAreaView className="flex-1 bg-[#3a3a1a]">
@@ -145,7 +124,7 @@ export default function BuyGold() {
           <AmountInput
             value={amount}
             onChange={setAmount}
-            placeholder={txType === "buy" ? "10,000" : "Enter amount"}
+            placeholder={txType === "buy" ? "50,000" : "20,000"}
             sign="₦"
             onChangeValue={(n) => console.log("raw:", n)}
           />
@@ -159,37 +138,13 @@ export default function BuyGold() {
             <Text className="text-white/70 text-xs ml-2">
               {txType === "buy"
                 ? "Minimum amount is ₦50,000"
-                : txType === "sell"
-                ? "Minimum amount is ₦50,000"
-                : "Enter the naira amount you want to withdraw — delivery address required"}
+                : "Minimum amount is ₦20,000"}
             </Text>
           </View>
 
-          {/* Address for withdraw */}
-          {txType === "withdraw" && (
-            <View className="pb-4">
-              <Text className="text-white text-sm font-semibold mb-2">
-                Delivery Address
-              </Text>
-              <TextInput
-                value={address}
-                onChangeText={setAddress}
-                placeholder="Enter delivery address"
-                placeholderTextColor="rgba(255,255,255,0.4)"
-                className="rounded-2xl bg-[#4a4a28] px-4 py-6 text-white"
-                multiline
-                numberOfLines={2}
-              />
-            </View>
-          )}
-
           {/* Grams */}
           <Text className="text-white text-sm font-semibold mb-3">
-            {txType === "sell"
-              ? "Sell Grams"
-              : txType === "withdraw"
-              ? "Withdraw Grams"
-              : "Buy Grams"}
+            {txType === "sell" ? "Sell Grams" : "Buy Grams"}
           </Text>
 
           <View
@@ -214,18 +169,12 @@ export default function BuyGold() {
           title="Continue"
           variant="primary"
           onPress={() => {
-            if ((txType === "buy" || txType === "sell") && amountRaw < 50000) {
-              Alert.alert("Minimum amount", "Minimum amount is ₦50,000");
-              return;
-            }
+            const min = txType === "buy" ? minBuy : minSell;
 
-            if (
-              txType === "withdraw" &&
-              (amountRaw < 100 || address.trim().length <= 3)
-            ) {
+            if (amountRaw < min) {
               Alert.alert(
-                "Missing details",
-                "Enter a valid amount and delivery address."
+                "Minimum amount",
+                `Minimum amount is ₦${min.toLocaleString()}`
               );
               return;
             }
@@ -233,11 +182,10 @@ export default function BuyGold() {
             router.push({
               pathname: "/gold/confirm-payment",
               params: {
-                amount, 
-                amountRaw: String(amountRaw), 
+                amount,
+                amountRaw: String(amountRaw),
                 grams,
                 type: txType,
-                delivery_address: txType === "withdraw" ? address : undefined,
               },
             });
           }}

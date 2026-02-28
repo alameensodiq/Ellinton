@@ -8,8 +8,10 @@ import {
   fetchUserLoans,
   fetchLoanById,
   sendLoanDisbursementWebhook,
+  confirmLoanConsent, // ✅ added
   Loan,
   LoanProduct,
+  LoanStatus,
 } from "../thunks/loansThunks";
 
 interface LoansState {
@@ -67,7 +69,6 @@ const loansSlice = createSlice({
       .addCase(
         fetchUserLoans.fulfilled,
         (state, action: PayloadAction<Loan[]>) => {
-          // ✅ now correct because thunk returns the array
           state.loans = action.payload;
         }
       )
@@ -88,7 +89,34 @@ const loansSlice = createSlice({
       })
       .addCase(applyForLoan.fulfilled, (state, action: PayloadAction<Loan>) => {
         state.loans.unshift(action.payload);
-      });
+      })
+
+      // ✅ CONFIRM LOAN CONSENT
+      .addCase(
+        confirmLoanConsent.fulfilled,
+        (state, action: PayloadAction<{ id: string; status: LoanStatus }>) => {
+          const { id, status } = action.payload;
+
+          // update loan in list
+          const idx = state.loans.findIndex((l) => l.id === id);
+          if (idx !== -1) {
+            state.loans[idx] = {
+              ...state.loans[idx],
+              status,
+              consent_approved: true,
+            };
+          }
+
+          // update selectedLoan if it matches
+          if (state.selectedLoan?.id === id) {
+            state.selectedLoan = {
+              ...state.selectedLoan,
+              status,
+              consent_approved: true,
+            };
+          }
+        }
+      );
 
     builder
       .addMatcher(
@@ -100,7 +128,8 @@ const loansSlice = createSlice({
           calculateLoan.pending,
           runCreditCheck.pending,
           applyForLoan.pending,
-          sendLoanDisbursementWebhook.pending
+          sendLoanDisbursementWebhook.pending,
+          confirmLoanConsent.pending // ✅ added
         ),
         (state) => {
           state.isLoading = true;
@@ -116,7 +145,8 @@ const loansSlice = createSlice({
           calculateLoan.fulfilled,
           runCreditCheck.fulfilled,
           applyForLoan.fulfilled,
-          sendLoanDisbursementWebhook.fulfilled
+          sendLoanDisbursementWebhook.fulfilled,
+          confirmLoanConsent.fulfilled // ✅ added
         ),
         (state) => {
           state.isLoading = false;
@@ -131,7 +161,8 @@ const loansSlice = createSlice({
           calculateLoan.rejected,
           runCreditCheck.rejected,
           applyForLoan.rejected,
-          sendLoanDisbursementWebhook.rejected
+          sendLoanDisbursementWebhook.rejected,
+          confirmLoanConsent.rejected 
         ),
         (state, action) => {
           state.isLoading = false;

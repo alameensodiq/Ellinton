@@ -297,9 +297,11 @@ export const applyForLoan = createAsyncThunk<
           "Loan application failed"
       );
     }
+    console.log(data.data)
 
     return data.data;
   } catch (err: any) {
+    console.log("❌ LOAN APPLICATION ERROR:", err);
     return rejectWithValue(err.message || "Apply loan error");
   }
 });
