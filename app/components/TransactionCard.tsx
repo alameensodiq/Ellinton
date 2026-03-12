@@ -11,15 +11,25 @@ export default function TransactionCard({ transaction }: Props) {
 
   const amountInNaira = transaction.Amount / 100;
 
+  const formattedDate = transaction.CurrentDate
+    ? new Date(transaction.CurrentDate).toLocaleString("en-NG", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
   return (
     <View className="bg-primary-400 rounded-xl p-4 mb-3 flex-row justify-between items-center">
       <View className="flex-1 mr-3">
         <Text className="text-white text-sm font-medium">
-          {transaction.Narration.toUpperCase()}
+          {transaction.Narration?.toUpperCase()}
         </Text>
-        <Text className="text-white/60 text-xs mt-1">
-          {transaction.TransactionDateString}
-        </Text>
+
+        <Text className="text-white/60 text-xs mt-1">{formattedDate}</Text>
       </View>
 
       <Text
@@ -28,7 +38,9 @@ export default function TransactionCard({ transaction }: Props) {
         }`}
       >
         {isDebit ? "-" : "+"}₦
-        {amountInNaira.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        {amountInNaira.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+        })}
       </Text>
     </View>
   );
