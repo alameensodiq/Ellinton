@@ -1,17 +1,33 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useDispatch } from "react-redux";
 import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { trackRegistrationCompleted } from "@/app/lib/analytics/appsflyer";
 
 const RegistrationSuccessScreen = () => {
   const router = useRouter();
+  const { userId } = useLocalSearchParams<{ userId?: string }>();
   const dispatch = useDispatch();
   const user = useAppSelector((state) => state.auth.user);
+
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    trackRegistrationCompleted({
+      userId,
+      registrationMethod: "mobile_app",
+      status: "completed",
+    }).catch((error) => {
+      console.warn("Failed to track registration completion:", error);
+    });
+  }, [userId]);
 
   const goToLogin = async () => {
     if (user) {

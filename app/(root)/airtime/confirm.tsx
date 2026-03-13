@@ -40,7 +40,7 @@ const handleContinue = () => {
     params: {
       provider: provider?.toString() || "",
       phone: Array.isArray(phone) ? phone[0] : phone || "",
-      amount: rawAmount,
+      amount: finalAmount.toString(),
       fee: fee.toString(),
       totalDebit: totalDebit.toString(),
 

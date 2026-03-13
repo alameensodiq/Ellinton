@@ -14,7 +14,18 @@
       "bundleIdentifier": "com.ellingtonmfb.app",
       "buildNumber": "21",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserTrackingUsageDescription": "This identifier will be used to deliver more relevant ads and measure campaign performance.",
+        "NSAdvertisingAttributionReportEndpoint": "https://appsflyer-skadnetwork.com/",
+        "AdAttributionKit": "https://appsflyer-skadnetwork.com/",
+        "SKAdNetworkItems": [
+          {
+            "SKAdNetworkIdentifier": "v9wttpbfk9.skadnetwork"
+          },
+          {
+            "SKAdNetworkIdentifier": "n38lu8286q.skadnetwork"
+          }
+        ]
       }
     },
 
@@ -61,6 +72,12 @@
           }
         }
       ],
+      [
+        "react-native-appsflyer",
+        {
+          "preferAppsFlyerBackupRules": false
+        }
+      ],
       "./plugins/withAppsFlyerPreinstall"
     ],
 
@@ -69,6 +86,10 @@
     },
 
     "extra": {
+      "appsflyer": {
+        "devKey": "hegvhjRZ9QU8ckb6hxgt28",
+        "iosAppId": "6742980740"
+      },
       "router": {},
       "eas": {
         "projectId": "2cb6bacc-1e05-4771-81c3-6a9934f26c7d"
