@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ScrollView, View, RefreshControl } from "react-native"; 
+import { ScrollView, View, RefreshControl } from "react-native";
 import SliderCard from "@/app/components/SliderCard";
 import BottomMenu from "@/app/components/BottomMenu";
 import HomeHeader from "@/app/components/HomeHeader";
@@ -20,7 +20,7 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 const HomeScreen = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [refreshing, setRefreshing] = useState(false); 
+  const [refreshing, setRefreshing] = useState(false);
 
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -63,6 +63,7 @@ const HomeScreen = () => {
         }
       >
         <SliderCard onOpenAccounts={() => setModalVisible(true)} />
+
         {showKycBanner && (
           <InfoBanner
             title="Complete your KYC verification"

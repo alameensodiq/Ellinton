@@ -4,22 +4,31 @@ import {
   performInterBankTransfer,
   fetchAccountTransactions,
   AccountTransaction,
+  fetchSingleTransactionReceipt,
+  TransactionReceipt,
 } from "../thunks/transferThunks";
 
 export interface TransferResult {
   transactionReference?: string;
+  reference?: string;
+  ReferenceID?: string;
   amount?: number;
   currency?: string;
+  sender?: string;
+  senderBank?: string;
   beneficiaryAccount?: string;
+  beneficiaryBankName?: string;
   status?: string;
   beneficiaryName?: string;
   remark?: string;
   date?: string;
+  TransactionDate?: string;
 }
 
 export interface TransferState {
   transferResult: TransferResult | null;
   transactions: AccountTransaction[]; // ✅ ADDED
+  transactionReceipt: TransactionReceipt | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -27,6 +36,7 @@ export interface TransferState {
 const initialState: TransferState = {
   transferResult: null,
   transactions: [], // ✅ ADDED
+  transactionReceipt: null,
   isLoading: false,
   error: null,
 };
@@ -43,6 +53,9 @@ const transferSlice = createSlice({
     },
     clearTransactions: (state) => {
       state.transactions = [];
+    },
+    clearTransactionReceipt: (state) => {
+      state.transactionReceipt = null;
     },
   },
 
@@ -95,6 +108,26 @@ const transferSlice = createSlice({
           typeof action.payload === "string"
             ? action.payload
             : "Failed to fetch transactions";
+      })
+      .addCase(fetchSingleTransactionReceipt.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.transactionReceipt = null;
+      })
+      .addCase(
+        fetchSingleTransactionReceipt.fulfilled,
+        (state, action: PayloadAction<TransactionReceipt>) => {
+          state.isLoading = false;
+          state.transactionReceipt = action.payload;
+          state.error = null;
+        }
+      )
+      .addCase(fetchSingleTransactionReceipt.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error =
+          typeof action.payload === "string"
+            ? action.payload
+            : "Failed to fetch transaction receipt";
       });
 
     /** -----------------------------------------
@@ -125,7 +158,12 @@ const transferSlice = createSlice({
   },
 });
 
-export const { clearError, clearTransfer, clearTransactions } =
+export const {
+  clearError,
+  clearTransfer,
+  clearTransactions,
+  clearTransactionReceipt,
+} =
   transferSlice.actions;
 
 export default transferSlice.reducer;

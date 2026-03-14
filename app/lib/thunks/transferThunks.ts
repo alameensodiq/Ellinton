@@ -1,5 +1,10 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { TRANSFER_SAME_BANK, TRANSFER_OTHER_BANK, FETCH_ACCOUNT_TRANSACTIONS } from "../api";
+import {
+  TRANSFER_SAME_BANK,
+  TRANSFER_OTHER_BANK,
+  FETCH_ACCOUNT_TRANSACTIONS,
+  FETCH_SINGLE_ACCOUNT_TRANSACTION,
+} from "../api";
 
 export interface TransferPayload {
   beneficiaryAccountNumber: string;
@@ -26,13 +31,19 @@ export interface InterBankTransferPayload extends TransferPayload {
 
 export interface TransferResult {
   transactionReference?: string;
+  reference?: string;
+  ReferenceID?: string;
   amount?: number;
   currency?: string;
+  sender?: string;
+  senderBank?: string;
   beneficiaryAccount?: string;
+  beneficiaryBankName?: string;
   status?: string;
   beneficiaryName?: string;
   remark?: string;
   date?: string;
+  TransactionDate?: string;
 }
 
 interface ApiResponse<T = any> {
@@ -41,30 +52,44 @@ interface ApiResponse<T = any> {
   data?: T;
 }
 export interface AccountTransaction {
-  Id: number;
+  Id?: number;
   CurrentDate: string;
   IsReversed: boolean;
-  ReversalReferenceNo: string | null;
-  WithdrawableAmount: number;
-  UniqueIdentifier: string;
-  InstrumentNo: string;
-  TransactionDate: string;
-  TransactionDateString: string;
-  ReferenceID: string;
+  ReversalReferenceNo?: string | null;
+  WithdrawableAmount?: number;
+  UniqueIdentifier?: string;
+  InstrumentNo?: string;
+  TransactionDate?: string;
+  TransactionDateString?: string;
+  ReferenceID: string | null;
   Narration: string;
-  Amount: number;
-  AmountInNaira: string;
-  OpeningBalance: number;
-  Balance: number;
-  BalanceInNaira: string;
-  PostingType: string;
+  Amount?: number;
+  AmountInNaira?: string;
+  OpeningBalance?: number;
+  Balance?: number;
+  BalanceInNaira?: string;
+  PostingType?: string;
   Debit: string;
   Credit: string;
-  IsCardTransation: boolean;
-  AccountNumber: string | null;
-  ServiceCode: string;
+  IsCardTransation?: boolean;
+  AccountNumber?: string | null;
+  ServiceCode?: string;
   RecordType: "Debit" | "Credit";
-  ProductInfo: any;
+  ProductInfo?: any;
+}
+
+export interface TransactionReceipt {
+  senderName: string;
+  amount: number;
+  status: string;
+  date: string;
+  narration: string;
+  reference: string;
+  senderBank: string;
+  receiverBank: string;
+  receiverName: string;
+  receiverAccount: string;
+  senderAccount: string;
 }
 
 
@@ -170,6 +195,37 @@ export const fetchAccountTransactions = createAsyncThunk<
       return result.data || [];
     } catch (err: any) {
       return rejectWithValue(err.message || "Failed to fetch transactions");
+    }
+  }
+);
+
+export const fetchSingleTransactionReceipt = createAsyncThunk<
+  TransactionReceipt,
+  string
+>(
+  "transfers/fetchSingleTransactionReceipt",
+  async (reference, { rejectWithValue, getState }) => {
+    try {
+      const token = (getState() as any).auth.token;
+
+      const response = await fetch(FETCH_SINGLE_ACCOUNT_TRANSACTION(reference), {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        return rejectWithValue(extractError(result, response.status));
+      }
+
+      return result.data;
+    } catch (err: any) {
+      return rejectWithValue(
+        err.message || "Failed to fetch transaction receipt"
+      );
     }
   }
 );

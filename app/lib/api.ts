@@ -55,6 +55,8 @@ const BANKS_ENDPOINT = `${BASE_URL}/utilities/banks`;
 const TRANSFER_SAME_BANK = `${BASE_URL}/transfers/intra-bank`;
 const TRANSFER_OTHER_BANK = `${BASE_URL}/transfers/inter-bank`;
 export const FETCH_ACCOUNT_TRANSACTIONS = `${BASE_URL}/transactions/account`;
+export const FETCH_SINGLE_ACCOUNT_TRANSACTION = (reference: string) =>
+  `${BASE_URL}/transactions/${reference}/single`;
 
 //cards
 const CARD_INITIATE_PAYMENT_ENDPOINT = `${BASE_URL}/cards/initiate-payment`;

@@ -5,7 +5,6 @@ import { Ionicons } from "@expo/vector-icons";
 import AmountCard from "@/app/components/home/cards/AmountCard";
 import Button from "@/app/components/Button";
 import { SafeAreaView } from "react-native-safe-area-context";
-import CustomText from "@/app/components/CustomText";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/app/lib/store";
 import { clearValidation } from "@/app/lib/slices/accountSlice";
@@ -94,13 +93,13 @@ export default function TransferSuccess() {
   const router = useRouter();
 
   const amount = params.amount as string;
-  const receiverName = params.receiverName || "recipient";
+  const receiverName = (params.receiverName as string) || "recipient";
 
-  let transferResult;
+  let receiptData;
   try {
-    transferResult = JSON.parse(params.transferResult as string);
+    receiptData = JSON.parse(params.receiptData as string);
   } catch {
-    transferResult = null;
+    receiptData = null;
   }
 
   const handleDone = () => {
@@ -109,11 +108,11 @@ export default function TransferSuccess() {
   };
 
   const handleShareReceipt = () => {
-    if (!transferResult) return;
+    if (!receiptData) return;
     router.replace({
       pathname: "/(root)/transfer/receipt-details",
       params: {
-        transferResult: JSON.stringify(transferResult),
+        receiptData: JSON.stringify(receiptData),
       },
     });
   };

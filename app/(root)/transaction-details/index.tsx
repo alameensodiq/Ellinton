@@ -1,185 +1,149 @@
-// app/(root)/transactions/[id].tsx
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import React, { useEffect } from "react";
+import { Text, View, StatusBar, ScrollView, TouchableOpacity } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import TransactionReceiptView, {
+  ReceiptViewData,
+} from "@/app/components/TransactionReceiptView";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { clearTransactionReceipt } from "@/app/lib/slices/transferSlice";
+import { fetchSingleTransactionReceipt } from "@/app/lib/thunks/transferThunks";
 
-interface Transaction {
-  id: string;
-  type: "transfer" | "airtime" | "received" | "sent";
-  name: string;
-  number: string;
-  amount: number;
-  date: string; // ISO date string
-  status?: "successful" | "pending" | "failed";
-  remark?: string;
-  fee?: number;
-  sender?: string;
-  senderBank?: string;
-  beneficiary?: string;
-  beneficiaryAccount?: string;
-  beneficiaryBank?: string;
-  reference?: string;
-}
+const ReceiptDetailsSkeleton = ({ onBack }: { onBack: () => void }) => (
+  <SafeAreaView className="flex-1 bg-primary-100">
+    <StatusBar barStyle="light-content" />
 
-// Mock full transaction data (in real app, fetch by id)
-const getTransactionById = (id: string): Transaction => {
-  // Simulate fetch; use the mock from previous
-  return {
-    id,
-    type: "airtime",
-    name: "Sarah Doe",
-    number: "08123456789",
-    amount: 5500,
-    date: "2025-11-29T10:30:00",
-    status: "successful",
-    remark: "School fees",
-    fee: 0,
-    sender: "Sandra John",
-    senderBank: "Ellington Bank",
-    beneficiary: "Ibrahim Shittu",
-    beneficiaryAccount: "5372915793",
-    beneficiaryBank: "GT Bank",
-    reference: "6353hdte9347u4",
-  };
-};
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: 24 }}
+    >
+      <TouchableOpacity
+        onPress={onBack}
+        className="w-10 h-10 rounded-full items-center justify-center bg-primary-400 mt-2"
+      >
+        <Ionicons name="chevron-back" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      <View className="w-[100px] h-[100px] mt-4 rounded-2xl bg-white/10 self-start" />
+
+      <View className="bg-primary-400 rounded-2xl p-6 mt-4">
+        <View className="h-5 w-28 rounded-full bg-white/10 mb-5" />
+        <View className="h-5 w-36 rounded-full bg-white/10 mb-5" />
+        <View className="h-5 w-24 rounded-full bg-white/10 mb-5" />
+        <View className="h-5 w-40 rounded-full bg-white/10 mb-5" />
+        <View className="h-5 w-32 rounded-full bg-white/10 mb-5" />
+        <View className="h-5 w-44 rounded-full bg-white/10 mb-5" />
+        <View className="h-5 w-52 rounded-full bg-white/10 mb-5" />
+        <View className="h-5 w-40 rounded-full bg-white/10" />
+      </View>
+
+      <View className="h-12 rounded-2xl bg-white/10 mt-6 mb-8" />
+    </ScrollView>
+  </SafeAreaView>
+);
 
 export default function TransactionDetails() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{
+    reference?: string;
+    recordType?: string;
+    fallbackReceiptData?: string;
+  }>();
   const router = useRouter();
-  const transaction = getTransactionById(id || "1");
-  const absAmount = Math.abs(transaction.amount);
+  const dispatch = useAppDispatch();
+  const { transactionReceipt, isLoading, error } = useAppSelector(
+    (state) => state.transfers
+  );
+  const user = useAppSelector((state) => state.auth.user);
+  const reference = Array.isArray(params.reference)
+    ? params.reference[0]
+    : params.reference;
+  const recordType = Array.isArray(params.recordType)
+    ? params.recordType[0]
+    : params.recordType;
+  const fallbackReceiptDataParam = Array.isArray(params.fallbackReceiptData)
+    ? params.fallbackReceiptData[0]
+    : params.fallbackReceiptData;
+  let fallbackReceiptData: ReceiptViewData | null = null;
 
-  const statusColor =
-    transaction.status === "successful" ? "bg-green-500" : "bg-yellow-500"; 
+  try {
+    fallbackReceiptData = fallbackReceiptDataParam
+      ? JSON.parse(fallbackReceiptDataParam)
+      : null;
+  } catch {
+    fallbackReceiptData = null;
+  }
+
+  useEffect(() => {
+    if (!reference) return;
+
+    dispatch(fetchSingleTransactionReceipt(reference));
+
+    return () => {
+      dispatch(clearTransactionReceipt());
+    };
+  }, [dispatch, reference]);
+
+  if (!reference) {
+    return (
+      <View className="flex-1 items-center justify-center bg-primary-100 px-6">
+        <Text className="text-white text-center">
+          No transaction reference was provided.
+        </Text>
+      </View>
+    );
+  }
+
+  if (isLoading) {
+    return <ReceiptDetailsSkeleton onBack={() => router.back()} />;
+  }
+
+  if (!transactionReceipt && !fallbackReceiptData && error) {
+    return (
+      <View className="flex-1 items-center justify-center bg-primary-100 px-6">
+        <Text className="text-white text-center">{error}</Text>
+      </View>
+    );
+  }
+
+  if (!transactionReceipt && !fallbackReceiptData) {
+    return (
+      <View className="flex-1 items-center justify-center bg-primary-100 px-6">
+        <Text className="text-white text-center">
+          No receipt was found for this transaction.
+        </Text>
+      </View>
+    );
+  }
+
+  const receiptData: ReceiptViewData = transactionReceipt
+    ? {
+        amount: transactionReceipt.amount,
+        type: recordType || "Debit",
+        status: transactionReceipt.status,
+        sender: transactionReceipt.senderName || user?.first_name || "",
+        beneficiary: transactionReceipt.receiverName || "",
+        beneficiaryAccount: transactionReceipt.receiverAccount || "",
+        beneficiaryBank: transactionReceipt.receiverBank || "",
+        date: transactionReceipt.date
+          ? new Date(transactionReceipt.date).toLocaleString()
+          : new Date().toLocaleString(),
+        referenceNo: transactionReceipt.reference,
+      }
+    : {
+        ...fallbackReceiptData!,
+        sender: fallbackReceiptData?.sender || user?.first_name || "",
+        type: fallbackReceiptData?.type || recordType || "Debit",
+        date: fallbackReceiptData?.date
+          ? new Date(fallbackReceiptData.date).toLocaleString()
+          : new Date().toLocaleString(),
+      };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary-100">
-      <View className="p-4">
-        <TouchableOpacity onPress={() => router.back()} className="mb-4">
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
-
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View className="bg-primary-400 rounded-xl p-6 mb-6">
-            <Text className="text-3xl font-bold text-white mb-2">
-              ₦{absAmount.toLocaleString()}
-            </Text>
-            <Text className="text-white/70 text-sm mb-4">
-              {new Date(transaction.date).toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </Text>
-            <View
-              className={`px-3 py-1 rounded-full inline-flex ${statusColor}`}
-            >
-              <Text className="text-white font-medium">
-                {transaction.status?.toUpperCase()}
-              </Text>
-            </View>
-          </View>
-
-          <View className="bg-primary-400 rounded-xl p-4 mb-4">
-            <Text className="text-white font-semibold mb-2">
-              {transaction.name}
-            </Text>
-            <Text className="text-white/70 mb-2">{transaction.number}</Text>
-            <View className="flex-row items-center">
-              <Ionicons
-                name="receipt-outline"
-                size={16}
-                color="white/70"
-                className="mr-2"
-              />
-              <Text className="text-white/70 text-sm">
-                Reference: {transaction.reference}
-              </Text>
-            </View>
-          </View>
-
-          <View className="space-y-4 mb-6">
-            <View className="flex-row justify-between">
-              <Text className="text-white/70">Type</Text>
-              <Text className="text-white capitalize">{transaction.type}</Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-white/70">Fee</Text>
-              <Text className="text-white">₦{transaction.fee || 0}</Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-white/70">Total debit</Text>
-              <Text className="text-white">₦{absAmount.toLocaleString()}</Text>
-            </View>
-          </View>
-
-          <View className="space-y-4 mb-6">
-            <Text className="text-white font-semibold mb-2">Sender</Text>
-            <View className="flex-row justify-between">
-              <Text className="text-white/70">Name</Text>
-              <Text className="text-white">{transaction.sender}</Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-white/70">Bank</Text>
-              <Text className="text-white">{transaction.senderBank}</Text>
-            </View>
-
-            <Text className="text-white font-semibold mt-4 mb-2">
-              Beneficiary
-            </Text>
-            <View className="flex-row justify-between">
-              <Text className="text-white/70">Name</Text>
-              <Text className="text-white">{transaction.beneficiary}</Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-white/70">Account</Text>
-              <Text className="text-white">
-                {transaction.beneficiaryAccount}
-              </Text>
-            </View>
-            <View className="flex-row justify-between">
-              <Text className="text-white/70">Bank</Text>
-              <Text className="text-white">{transaction.beneficiaryBank}</Text>
-            </View>
-          </View>
-
-          {transaction.remark && (
-            <View className="bg-primary-400 rounded-xl p-4 mb-6">
-              <Text className="text-white/70 mb-1">Remark</Text>
-              <Text className="text-white">{transaction.remark}</Text>
-            </View>
-          )}
-
-          <View className="flex-row space-x-2">
-            <TouchableOpacity className="flex-1 bg-primary-500 rounded-lg p-3 items-center">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="share-outline"
-                  size={20}
-                  color="white"
-                  className="mr-2"
-                />
-                <Text className="text-white">Share receipt</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity className="flex-1 bg-primary-500 rounded-lg p-3 items-center">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name="download-outline"
-                  size={20}
-                  color="white"
-                  className="mr-2"
-                />
-                <Text className="text-white">Download</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+    <TransactionReceiptView
+      receiptData={receiptData}
+      onBack={() => router.back()}
+    />
   );
 }

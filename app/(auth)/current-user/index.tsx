@@ -54,7 +54,13 @@ export default function CurrentUser() {
   };
 
   useEffect(() => {
-    if (passcode.length === 6) {
+    if (!isRestoring && !user) {
+      router.replace("/(auth)/login");
+    }
+  }, [isRestoring, user, router]);
+
+  useEffect(() => {
+    if (passcode.length === 6 && !isLoading) {
       const t = setTimeout(async () => {
         try {
           if (!email) {
@@ -70,8 +76,8 @@ export default function CurrentUser() {
             loginUser({ email, passcode })
           ).unwrap();
 
-          setPasscode(""); // Clear passcode after successful login
-          router.push({
+          setPasscode("");
+          router.replace({
             pathname: "/(root)/(tabs)",
             params: params,
           });
@@ -84,7 +90,7 @@ export default function CurrentUser() {
 
       return () => clearTimeout(t);
     }
-  }, [passcode, dispatch, email, router, params]); // Removed isLoading from dependencies
+  }, [passcode, dispatch, email, router, params, isLoading]);
 
   const userName = user?.full_name || user?.name || "User";
   const userAvatar = user?.passport;
@@ -139,7 +145,11 @@ export default function CurrentUser() {
               )}
             </View>
 
-            <Numpad onPress={handleNumberPress} onDelete={handleDelete} />
+            <Numpad
+              onPress={(num) => !isLoading && handleNumberPress(num)}
+              onDelete={() => !isLoading && handleDelete()}
+              disabled={isLoading}
+            />
             <TouchableOpacity>
               <Text
                 onPress={() => router.push("/(auth)/forget-password")}
@@ -151,7 +161,7 @@ export default function CurrentUser() {
             <InfoText
               text="Not you?"
               actionText="Back to login"
-              onPress={() => router.push("/(auth)/login")}
+              onPress={() => router.replace("/(auth)/login")}
             />
           </View>
           <Loading visible={isLoading} />
