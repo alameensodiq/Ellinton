@@ -15,6 +15,10 @@ import Button from "@/app/components/Button";
 import { captureRef } from "react-native-view-shot";
 import BottomSheet from "@/app/components/BottomSheet";
 import * as Sharing from "expo-sharing";
+import {
+  manipulateAsync,
+  SaveFormat,
+} from "expo-image-manipulator";
 
 export interface ReceiptViewData {
   amount?: number | string;
@@ -39,11 +43,55 @@ function escapePdfText(value: string) {
     .replace(/\)/g, "\\)");
 }
 
-function buildReceiptPdf(lines: string[]) {
+function base64ToHex(base64: string) {
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let buffer = 0;
+  let bits = 0;
+  let hex = "";
+
+  for (const char of base64.replace(/\s+/g, "")) {
+    if (char === "=") break;
+
+    const value = chars.indexOf(char);
+    if (value < 0) continue;
+
+    buffer = (buffer << 6) | value;
+    bits += 6;
+
+    while (bits >= 8) {
+      bits -= 8;
+      const byte = (buffer >> bits) & 0xff;
+      hex += byte.toString(16).padStart(2, "0").toUpperCase();
+    }
+  }
+
+  return hex;
+}
+
+function buildReceiptPdf(
+  lines: string[],
+  logo?: {
+    hex: string;
+    width: number;
+    height: number;
+  }
+) {
+  const imageWidth = 180;
+  const imageHeight = logo ? (logo.height / logo.width) * imageWidth : 0;
+  const textStartY = logo ? 700 : 780;
   const contentLines = [
+    ...(logo
+      ? [
+          "q",
+          `${imageWidth} 0 0 ${imageHeight.toFixed(2)} 50 740 cm`,
+          "/Im1 Do",
+          "Q",
+        ]
+      : []),
     "BT",
     "/F1 12 Tf",
-    "50 780 Td",
+    `50 ${textStartY} Td`,
     "16 TL",
     ...lines.map((line, index) =>
       index === 0 ? `(${escapePdfText(line)}) Tj` : `T* (${escapePdfText(line)}) Tj`
@@ -55,9 +103,16 @@ function buildReceiptPdf(lines: string[]) {
   const objects = [
     "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
     "2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\nendobj\n",
-    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
+    `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >>${
+      logo ? " /XObject << /Im1 5 0 R >>" : ""
+    } >> /Contents ${logo ? "6" : "5"} 0 R >>\nendobj\n`,
     "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
-    `5 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}endstream\nendobj\n`,
+    ...(logo
+      ? [
+          `5 0 obj\n<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter [/ASCIIHexDecode /DCTDecode] /Length ${logo.hex.length + 1} >>\nstream\n${logo.hex}>\nendstream\nendobj\n`,
+          `6 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}endstream\nendobj\n`,
+        ]
+      : [`5 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}endstream\nendobj\n`]),
   ];
 
   let pdf = "%PDF-1.4\n";
@@ -173,7 +228,27 @@ export default function TransactionReceiptView({
         `Reference No: ${toAscii(receiptData.referenceNo)}`,
       ].filter((line) => !line.endsWith(": "));
 
-      const pdfContents = buildReceiptPdf(pdfLines);
+      const logoAsset = Image.resolveAssetSource(require("../assets/logo1.png"));
+      const logoImage = await manipulateAsync(
+        logoAsset.uri,
+        [{ resize: { width: 224 } }],
+        {
+          compress: 1,
+          format: SaveFormat.JPEG,
+          base64: true,
+        }
+      );
+
+      const pdfContents = buildReceiptPdf(
+        pdfLines,
+        logoImage.base64
+          ? {
+              hex: base64ToHex(logoImage.base64),
+              width: logoImage.width,
+              height: logoImage.height,
+            }
+          : undefined
+      );
       const filePath = `${RNFS.CachesDirectoryPath}/transfer-receipt-${Date.now()}.pdf`;
 
       await RNFS.writeFile(filePath, pdfContents, "ascii");
