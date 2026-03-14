@@ -20,6 +20,12 @@ import { clearError } from "@/app/lib/slices/billsSlice";
 const getParam = (param?: string | string[]) =>
   Array.isArray(param) ? param[0] : param ?? "";
 
+const parseAmountParam = (param?: string | string[]) => {
+  const value = getParam(param).replace(/[^\d]/g, "");
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
 export default function AuthorizePayment() {
   const params = useLocalSearchParams();
   const router = useRouter();
@@ -27,8 +33,7 @@ export default function AuthorizePayment() {
 
   const provider = getParam(params.provider);
   const phone = getParam(params.phone);
-  const amount = Number(getParam(params.amount));
-  console.log(provider,phone,amount)
+  const amount = parseAmountParam(params.amount);
 
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState<string | null>(null);

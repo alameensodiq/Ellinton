@@ -13,6 +13,7 @@ import { store } from "./lib/store";
 import AuthWrapper from "./(root)/AuthWrapper";
 import { logout } from "./lib/slices/authSlice";
 import { useEffect } from "react";
+import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,6 +23,12 @@ export default function RootLayout() {
     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),
     OutfitBold: require("./assets/fonts/Outfit-Bold.ttf"),
   });
+  useEffect(() => {
+    initializeAppsFlyer().catch((error) => {
+      console.warn("Failed to initialize AppsFlyer:", error);
+    });
+  }, []);
+
   useEffect(() => {
     const originalFetch = (global as any).fetch;
 
