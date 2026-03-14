@@ -25,8 +25,9 @@ import {
 import {
   validateEllingtonAccount,
   fetchBanks,
+  validateNipAccount,
 } from "@/app/lib/thunks/accountThunks";
-import { clearValidation } from "@/app/lib/slices/accountSlice";
+import { clearError, clearValidation } from "@/app/lib/slices/accountSlice";
 
 interface Beneficiary {
   id: number;
@@ -72,6 +73,9 @@ export default function TransferScreen() {
   const accountsLoading = useSelector(
     (state: RootState) => state.accounts.isLoading
   );
+  const validationError = useSelector(
+    (state: RootState) => state.accounts.error
+  );
 
   const beneficiaries: Beneficiary[] = useMemo(() => {
     if (!beneficiariesData) return [];
@@ -91,6 +95,7 @@ export default function TransferScreen() {
 
   useEffect(() => {
     dispatch(clearValidation());
+    dispatch(clearError());
     dispatch(fetchBeneficiaries());
     dispatch(fetchBanks());
   }, [dispatch]);
@@ -99,6 +104,8 @@ export default function TransferScreen() {
       dispatch(validateEllingtonAccount({ accountNumber }));
     } else {
       dispatch(clearValidation());
+      dispatch(clearError());
+      setSelectedBank("");
     }
   }, [accountNumber, dispatch]);
 
@@ -124,25 +131,43 @@ export default function TransferScreen() {
       });
     }, 1200);
   };
-  const handleBankSelect = (bankName: string) => {
+  const handleBankSelect = async (bankName: string) => {
     setBankSheetOpen(false);
-    setTimeout(() => {
+    setSelectedBank(bankName);
+    dispatch(clearValidation());
+    dispatch(clearError());
+
+    const bankObj = banks?.find((b) => b.name === bankName);
+    const bankCode = bankObj?.code || "";
+
+    if (!bankCode || accountNumber.length !== 10) {
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const validation = await dispatch(
+        validateNipAccount({ accountNumber, bankCode })
+      ).unwrap();
+
       setSelectedBank(bankName);
-      const bankObj = banks?.find((b) => b.name === bankName);
-      const bankCode = bankObj?.code || "";
       router.push({
         pathname: "/(root)/transfer/details",
         params: {
           accountNumber,
           bank: bankName,
           bankCode,
+          accountName: validation.accountName,
           ...(incomingGift && { gift: "true" }),
           ...(incomingAmount && { amount: incomingAmount }),
           ...(incomingAmountGrams && { amount_grams: incomingAmountGrams }),
           ...(incomingRemark && { remark: incomingRemark }),
         },
       });
-    }, 300);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEllingtonSelect = () => {
@@ -206,19 +231,29 @@ export default function TransferScreen() {
                 <Ionicons name="chevron-forward" size={20} color="#fff" />
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity
-                onPress={() => setBankSheetOpen(true)}
-                className="bg-[#4a4a28] rounded-3xl px-5 py-5 flex-row justify-between items-center"
-              >
-                <Text className={selectedBank ? "text-white" : "text-white/40"}>
-                  {selectedBank || "Select bank"}
-                </Text>
-                <Ionicons
-                  name="chevron-down"
-                  size={20}
-                  color="rgba(255,255,255,0.5)"
-                />
-              </TouchableOpacity>
+              <View>
+                <TouchableOpacity
+                  onPress={() => setBankSheetOpen(true)}
+                  className="bg-[#4a4a28] rounded-3xl px-5 py-5 flex-row justify-between items-center"
+                >
+                  <Text
+                    className={selectedBank ? "text-white" : "text-white/40"}
+                  >
+                    {selectedBank || "Select bank"}
+                  </Text>
+                  <Ionicons
+                    name="chevron-down"
+                    size={20}
+                    color="rgba(255,255,255,0.5)"
+                  />
+                </TouchableOpacity>
+
+                {!!selectedBank && !!validationError && (
+                  <Text className="text-red-300 text-sm mt-2 px-1">
+                    {validationError}
+                  </Text>
+                )}
+              </View>
             )}
           </View>
         )}
@@ -264,30 +299,36 @@ export default function TransferScreen() {
         )}
       </ScrollView>
       <Sheet visible={bankSheetOpen} onClose={() => setBankSheetOpen(false)}>
-        <Text className="text-lg font-semibold mb-4 text-white">
-          Select Bank
-        </Text>
-        <View className="bg-[#4a4a28] rounded-2xl px-4 py-4 flex-row items-center mb-4">
-          <Ionicons name="search" size={18} color="#666" />
-          <TextInput
-            value={bankSearch}
-            onChangeText={setBankSearch}
-            placeholder="Search banks"
-            placeholderTextColor="#999"
-            className="ml-3 flex-1 text-white"
-          />
+        <View style={{ height: 560 }}>
+          <Text className="text-lg font-semibold mb-4 text-white">
+            Select Bank
+          </Text>
+          <View className="bg-[#4a4a28] rounded-2xl px-4 py-4 flex-row items-center mb-4">
+            <Ionicons name="search" size={18} color="#666" />
+            <TextInput
+              value={bankSearch}
+              onChangeText={setBankSearch}
+              placeholder="Search banks"
+              placeholderTextColor="#999"
+              className="ml-3 flex-1 text-white"
+            />
+          </View>
+          <ScrollView
+            style={{ flex: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {filteredBanks.map((bank) => (
+              <TouchableOpacity
+                key={`${bank.name}-${bank.code ?? "no-code"}`}
+                onPress={() => handleBankSelect(bank.name)}
+                className="py-4 "
+              >
+                <Text className="text-base text-white">{bank.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </View>
-        <ScrollView style={{ maxHeight: 400 }}>
-          {filteredBanks.map((bank) => (
-            <TouchableOpacity
-              key={`${bank.name}-${bank.code ?? "no-code"}`}
-              onPress={() => handleBankSelect(bank.name)}
-              className="py-4 "
-            >
-              <Text className="text-base text-white">{bank.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
       </Sheet>
     </SafeAreaView>
   );
