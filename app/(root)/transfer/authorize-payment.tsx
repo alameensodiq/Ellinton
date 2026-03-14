@@ -4,7 +4,6 @@ import {
   Text,
   StatusBar,
   TouchableOpacity,
-  Vibration,
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -34,6 +33,7 @@ export default function AuthorizePayment() {
   const [isVerifying, setIsVerifying] = useState(false);
 
   const hasHandledResponse = useRef(false);
+  const uniqueReferenceRef = useRef<string | null>(null);
 
   const {
     isLoading,
@@ -55,16 +55,41 @@ export default function AuthorizePayment() {
       hasHandledResponse.current = true;
       setIsVerifying(false);
 
-      const transferResultString = JSON.stringify(transferResult);
-      console.log(transferData)
+      const receiptPayload = {
+        amount: transferResult.amount ?? transferData.amount,
+        status: transferResult.status ?? "SUCCESSFUL",
+        sender: transferResult.sender,
+        senderBank: transferResult.senderBank ?? "Ellington Bank",
+        beneficiaryName:
+          transferResult.beneficiaryName ?? transferData.receiverName,
+        beneficiaryAccount:
+          transferResult.beneficiaryAccount ?? transferData.accountNumber,
+        beneficiaryBankName: transferResult.beneficiaryBankName ?? transferData.bank,
+        remark:
+          transferResult.remark ??
+          transferData.remark ??
+          transferData.narration ??
+          "transfer",
+        transactionReference:
+          transferResult.transactionReference ??
+          transferResult.reference ??
+          transferResult.ReferenceID ??
+          uniqueReferenceRef.current,
+        date:
+          transferResult.date ??
+          transferResult.TransactionDate ??
+          new Date().toISOString(),
+        currency: transferResult.currency ?? "NGN",
+      };
 
       router.replace({
         pathname: "/(root)/transfer/transfer-success",
         params: {
           amount: transferData.amount,
-          receiver: transferData.receiverName,
+          receiverName: transferData.receiverName,
           accountNumber: transferData.accountNumber,
-          transferResult: transferResultString, // Pass the full API response
+          receiptData: JSON.stringify(receiptPayload),
+          transferResult: JSON.stringify(transferResult),
         },
       });
     }
@@ -92,6 +117,9 @@ export default function AuthorizePayment() {
           return;
         }
 
+        const uniqueReference = `TXN_${Date.now()}`;
+        uniqueReferenceRef.current = uniqueReference;
+
         const payloadBase: any = {
           beneficiaryAccountNumber: transferData.accountNumber,
           amount: transferData.amount,
@@ -99,7 +127,7 @@ export default function AuthorizePayment() {
           ...(transferData.amount_grams && { amount_grams: transferData.amount_grams }),
           ...(transferData.gift && { gift: true }),
           transactionPin: passcode,
-          uniqueReference: `TXN_${Date.now()}`,
+          uniqueReference,
           isScheduled: transferData.isScheduled || false,
           saveBeneficiary: transferData.addAsBeneficiary || false,
         };

@@ -16,34 +16,48 @@ const signature = () => {
   const [currentPath, setCurrentPath] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const viewShotRef = useRef<ViewShot>(null);
+  const pathsRef = useRef<string[]>([]);
+  const currentPathRef = useRef("");
   const dispatch = useDispatch<any>();
   const router = useRouter();
+
+  const commitCurrentPath = () => {
+    if (!currentPathRef.current) return;
+
+    const nextPaths = [...pathsRef.current, currentPathRef.current];
+    pathsRef.current = nextPaths;
+    setPaths(nextPaths);
+    currentPathRef.current = "";
+    setCurrentPath("");
+  };
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: (event) => {
         const locationX = event.nativeEvent.locationX;
         const locationY = event.nativeEvent.locationY;
-        setCurrentPath(`M${locationX},${locationY}`);
+        const nextPath = `M${locationX},${locationY}`;
+        currentPathRef.current = nextPath;
+        setCurrentPath(nextPath);
       },
       onPanResponderMove: (event) => {
         const locationX = event.nativeEvent.locationX;
         const locationY = event.nativeEvent.locationY;
-        setCurrentPath((prev) => `${prev} L${locationX},${locationY}`);
+        currentPathRef.current = `${currentPathRef.current} L${locationX},${locationY}`;
+        setCurrentPath(currentPathRef.current);
       },
-      onPanResponderRelease: () => {
-        if (currentPath) {
-          setPaths([...paths, currentPath]);
-          setCurrentPath("");
-        }
-      },
+      onPanResponderRelease: commitCurrentPath,
+      onPanResponderTerminate: commitCurrentPath,
     })
   ).current;
 
   const handleClear = () => {
+    pathsRef.current = [];
     setPaths([]);
+    currentPathRef.current = "";
     setCurrentPath("");
   };
 

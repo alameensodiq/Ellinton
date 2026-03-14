@@ -43,7 +43,9 @@ export default function AuthWrapper() {
     if (!ready) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const inRootGroup = segments[0] === "(root)";
     const isOnLogin = segments.join("/") === "(auth)/login";
+    const isOnCurrentUser = segments.join("/") === "(auth)/current-user";
 
     const errors = [
       authError,
@@ -59,11 +61,24 @@ export default function AuthWrapper() {
       (error) =>
         typeof error === "string" &&
         (error.toLowerCase().includes("session") ||
-          error.toLowerCase().includes("invalid token"))
+          error.toLowerCase().includes("invalid token") ||
+          error.toLowerCase().includes("token expired") ||
+          error.toLowerCase().includes("unauthorized") ||
+          error.toLowerCase().includes("401"))
     );
 
-    if (hasSessionError && !inAuthGroup && !isOnLogin) {
-      router.replace("/(auth)/login");
+    if (isAuthenticated && (isOnLogin || isOnCurrentUser)) {
+      router.replace("/(root)/(tabs)");
+      return;
+    }
+
+    if (!isAuthenticated && inRootGroup) {
+      router.replace(user ? "/(auth)/current-user" : "/(auth)/login");
+      return;
+    }
+
+    if (hasSessionError && !inAuthGroup && !isOnLogin && !isOnCurrentUser) {
+      router.replace(user ? "/(auth)/current-user" : "/(auth)/login");
     }
   }, [
     ready,

@@ -108,6 +108,8 @@ const authSlice = createSlice({
       state.requiresPasscodeSetup = undefined;
       state.pendingUserId = null;
       state.isAuthenticated = false;
+      state.isLoading = false;
+      state.isRestoring = false;
       state.error = null;
     },
     clearError: (state) => {
