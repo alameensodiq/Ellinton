@@ -52,6 +52,15 @@ interface User {
   is_email_verified?: boolean;
   created_at?: string;
   kyc_level?: number;
+
+   firebaseUid?: string;
+  firebaseUser?: {
+    uid: string;
+    email: string | null;
+    emailVerified: boolean;
+    displayName?: string | null;
+    photoURL?: string | null;
+  };
   [key: string]: any;
 }
 

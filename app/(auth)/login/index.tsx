@@ -9,7 +9,7 @@ import {
   Keyboard,
   ScrollView,
   KeyboardAvoidingView,
-  Pressable,
+  Pressable
 } from "react-native";
 import { useState, useEffect } from "react";
 import TextInputField from "@/app/components/inputs/TextInputField";
@@ -25,6 +25,8 @@ import images from "@/app/assets/images";
 import { loginUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import notificationService from "@/app/lib/notification.service";
+
 
 const Login = () => {
   const [pin, setPin] = useState("");
@@ -69,13 +71,42 @@ const Login = () => {
     }
   }, [isAuthenticated]);
 
+    useEffect(() => {
+    const handleAuthSuccess = async () => {
+      if (isAuthenticated) {
+        try {
+          // Register device with backend after successful login
+          await notificationService.registerDeviceWithBackend();
+          console.log("✅ Device registered after login");
+          
+          // Navigate based on user status
+          if (user?.status === "otp_verified") {
+            router.replace("/(auth)/profile-update");
+          } else if (user?.status === "bvn_verified") {
+            router.replace("/(auth)/facial-verification");
+          } else if (requiresPasscodeSetup) {
+            router.replace("/(auth)/create-passcode");
+          } else {
+            router.replace("/(root)/(tabs)");
+          }
+        } catch (error) {
+          console.error("❌ Error in post-login setup:", error);
+          // Still navigate even if device registration fails
+          router.replace("/(root)/(tabs)");
+        }
+      }
+    };
+
+    handleAuthSuccess();
+  }, [isAuthenticated, user, requiresPasscodeSetup, router]);
+
   const handleLogin = async () => {
     if (!email || !pin) return;
 
     await dispatch(
       loginUser({
         email: email.trim().toLowerCase(),
-        passcode: pin,
+        passcode: pin
       })
     );
   };
@@ -103,7 +134,7 @@ const Login = () => {
             contentContainerStyle={{
               flexGrow: 1,
               paddingHorizontal: 16,
-              justifyContent: inputFocused ? "flex-start" : "space-between",
+              justifyContent: inputFocused ? "flex-start" : "space-between"
             }}
             keyboardShouldPersistTaps="handled"
           >
