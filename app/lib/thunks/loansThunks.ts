@@ -25,25 +25,43 @@ interface ApiResponse<T = any> {
    TYPES (MATCH YOUR API)
 ========================= */
 export interface LoanProduct {
-  id: string;
-  institutionCode: string;
+  id: string | number;
+  code?: string;
   name: string;
-  productCode: string;
+  category?: string;
+  interest_rate?: number;
+  tenure?: number;
+  min_amount?: string;
+  max_amount?: string;
+  starter_amount?: string;
+  tenor_options?: number[];
+  max_installments?: number;
+  requires_savings?: boolean;
+  down_payment_pct?: string | null;
+  hold_down_payment?: boolean;
+  description?: string;
+  status?: string;
+  institutionCode?: string;
+  productCode?: string;
 }
 
 export interface LoanSchedule {
-  emi: number;
-  fee: number;
-  total: number;
-  interest: number;
-  principal: number;
-  paymentType: string | null;
-  repaymentDate: string;
-  paymentDueDate: string;
-  cumulativeTotal: number;
-  cumulativePrincipal: number;
-  outstandingPricipal: number;
-  repaymentAmountInNaira: number;
+  emi?: number;
+  fee?: number | string;
+  fees?: number | string;
+  total?: number | string;
+  amount?: number | string;
+  interest?: number | string;
+  principal?: number | string;
+  paymentType?: string | null;
+  repaymentDate?: string;
+  paymentDueDate?: string;
+  dueDate?: string;
+  cumulativeTotal?: number;
+  cumulativePrincipal?: number;
+  outstandingPricipal?: number;
+  repaymentAmountInNaira?: number | string;
+  status?: string;
 }
 
 export type LoanStatus =
@@ -106,11 +124,6 @@ export interface FetchLoansResponse {
 /* =========================
    PAYLOADS
 ========================= */
-export interface CreditCheckPayload {
-  networkProvider: string;
-  productCode: string;
-}
-
 export interface CalculateLoanPayload {
   loanAmount: number;
   tenureInDays: number;
@@ -120,19 +133,21 @@ export interface CalculateLoanPayload {
 
 export interface ApplyLoanPayload {
   productCode: string;
-  productName: string; // ✅ was number (wrong)
   loanAmount: number;
-  tenureInDays: number; // ✅ was string (wrong)
-  loanTenure: number;
+  tenorInDays: number;
   repaymentFrequency: string;
-  totalRepaymentExpected: number;
-  networkProvider: string;
-  loanDetails: string;
-  recoveryConsentApproved: boolean;
-  transactionPin: string;
-  consentApproved: boolean;
-  preferredRepaymentBankCBNCode: string;
-  preferredRepaymentAccount:string;
+  address: {
+    address: string;
+    state: string;
+    lga: string;
+  };
+  account: {
+    bankName: string;
+    accountNumber: string;
+    accountName: string;
+  };
+  accountNumber: string;
+  bankCode: string;
 }
 
 export interface LoanDisbursementWebhookPayload {
@@ -165,7 +180,6 @@ export const fetchLoanProducts = createAsyncThunk<
     if (!res.ok || !data.success || !data.data) {
       return rejectWithValue(data?.message || "Failed to fetch loan products");
     }
-    console.log(data)
 
     return data.data;
   } catch (err: any) {
@@ -193,8 +207,6 @@ export const fetchLoanBanks = createAsyncThunk<
     if (!res.ok || !data.success || !data.data) {
       return rejectWithValue(data?.message || "Failed to fetch banks");
     }
-    console.log(data.data)
-
     return data.data;
   } catch (err: any) {
     return rejectWithValue(err.message || "Fetch banks error");
@@ -206,19 +218,17 @@ export const fetchLoanBanks = createAsyncThunk<
 ========================= */
 export const runCreditCheck = createAsyncThunk<
   any,
-  CreditCheckPayload,
+  void,
   { rejectValue: string }
->("loans/creditCheck", async (payload, { getState, rejectWithValue }) => {
+>("loans/creditCheck", async (_, { getState, rejectWithValue }) => {
   try {
     const token = (getState() as any).auth.token;
 
     const res = await fetch(LOAN_CREDIT_CHECK_ENDPOINT, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(payload),
     });
 
     const data = (await res.json()) as ApiResponse<any>;
@@ -226,11 +236,8 @@ export const runCreditCheck = createAsyncThunk<
     if (!res.ok || !data.success) {
       return rejectWithValue(data?.message || "Credit check failed");
     }
-
-    console.log("✅ CREDIT CHECK RESPONSE:", data);
     return data.data;
   } catch (err: any) {
-    console.log("❌ CREDIT CHECK ERROR:", err);
     return rejectWithValue(err.message || "Credit check error");
   }
 });
@@ -297,11 +304,9 @@ export const applyForLoan = createAsyncThunk<
           "Loan application failed"
       );
     }
-    console.log(data.data)
 
     return data.data;
   } catch (err: any) {
-    console.log("❌ LOAN APPLICATION ERROR:", err);
     return rejectWithValue(err.message || "Apply loan error");
   }
 });

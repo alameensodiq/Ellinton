@@ -32,6 +32,7 @@ const Step4 = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const params = useLocalSearchParams<Record<string, string>>();
+  const user = useAppSelector((s: any) => s.auth?.user);
 
   const banks = useAppSelector((s: any) => s.loans?.banks || []);
   const banksLoading = useAppSelector((s: any) => s.loans?.banksLoading);
@@ -41,9 +42,13 @@ const Step4 = () => {
 
   const [selectedBank, setSelectedBank] = useState<BankItem | null>(null);
   const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState(
+    user?.full_name || user?.name || `${user?.first_name || ""} ${user?.last_name || ""}`.trim()
+  );
 
   const [bankError, setBankError] = useState("");
   const [accountError, setAccountError] = useState("");
+  const [accountNameError, setAccountNameError] = useState("");
 
   useEffect(() => {
     dispatch(fetchLoanBanks());
@@ -52,8 +57,12 @@ const Step4 = () => {
   const bankList = useMemo(() => (banks || []) as BankItem[], [banks]);
 
   const canContinue = useMemo(() => {
-    return !!selectedBank && accountNumber.trim().length === 10;
-  }, [selectedBank, accountNumber]);
+    return (
+      !!selectedBank &&
+      accountNumber.trim().length === 10 &&
+      accountName.trim().length > 0
+    );
+  }, [selectedBank, accountNumber, accountName]);
 
   const validate = () => {
     let ok = true;
@@ -63,6 +72,13 @@ const Step4 = () => {
       ok = false;
     } else {
       setBankError("");
+    }
+
+    if (!accountName.trim()) {
+      setAccountNameError("Enter account name");
+      ok = false;
+    } else {
+      setAccountNameError("");
     }
 
     const acc = accountNumber.trim();
@@ -83,11 +99,13 @@ const Step4 = () => {
     if (!validate()) return;
 
     router.push({
-      pathname: "/(root)/loans/credit-check",
+      pathname: "/(root)/loans/step5",
       params: {
         ...params,
-        preferredRepaymentBankCBNCode: selectedBank!.cbnCode,
-        preferredRepaymentAccount: accountNumber.trim(),
+        bankCode: selectedBank!.cbnCode,
+        bankName: selectedBank!.institutionName,
+        accountNumber: accountNumber.trim(),
+        accountName: accountName.trim(),
       },
     });
   };
@@ -155,6 +173,17 @@ const Step4 = () => {
               />
             </View>
           </Pressable>
+
+          <TextInputField
+            label="Account Name"
+            value={accountName}
+            onChangeText={(t) => {
+              setAccountName(t);
+              setAccountNameError("");
+            }}
+            placeholder="Enter account name"
+            error={accountNameError}
+          />
 
           {/* Account Number */}
           <TextInputField

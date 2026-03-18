@@ -59,11 +59,16 @@ const LoanDetails = () => {
   const loan = selectedLoan;
 
   const status = String(loan?.status || "active");
+  const normalizedStatus = status.toLowerCase();
   const statusLabel =
-    status === "active"
+    normalizedStatus === "active"
       ? "Active"
-      : status === "pending_disbursement"
-      ? "Pending"
+      : normalizedStatus === "pending_disbursement"
+      ? "Pending disbursement"
+      : normalizedStatus === "completed"
+      ? "Completed"
+      : normalizedStatus === "overdue"
+      ? "Overdue"
       : status;
 
   const productName = loan?.product_name || loan?.product_name || "Payday loan";
@@ -79,16 +84,19 @@ const LoanDetails = () => {
     : [];
 
   const dueDate =
+    schedules?.[0]?.dueDate ||
     schedules?.[0]?.paymentDueDate ||
     schedules?.[0]?.repaymentDate ||
     (loan as any)?.updated_at;
 
   const appliedDate = (loan as any)?.created_at;
 
-  const bankName = "Ellington Bank";
+  const bankName =
+    (loan as any)?.preferred_repayment_bank_code || "Not provided";
 
   const isLoanCompleted =
-    String(loan?.status || "").toLowerCase() === "completed";
+    normalizedStatus === "completed";
+  const firstPaidDate = schedules?.[0]?.updated_at || schedules?.[0]?.paid_at;
 
   const SkeletonLine = ({ w = "w-24" }: { w?: string }) => (
     <View className={`${w} h-4 rounded-full bg-white/10`} />
@@ -203,7 +211,7 @@ const LoanDetails = () => {
 
       <Header
         title="Loan details"
-        rightIconName="time-outline"
+        rightIconName="refresh-outline"
         onRightPress={() => router.push("/(root)/loans/loan-history")}
       />
 
@@ -224,100 +232,91 @@ const LoanDetails = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Top card */}
-          <View className="rounded-3xl mt-4 overflow-hidden">
-            <LinearGradient
-              colors={["#333419", "#333419"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{ padding: 20 }}
-            >
-              <View className="flex-row items-center justify-between">
-                <CustomText size="sm" className="text-white/70">
+          <View className="rounded-3xl mt-4 bg-[#27280F] px-4 py-5">
+            <View className="flex-row items-start justify-between">
+              <View>
+                <CustomText size="sm" className="text-white/70 mb-1">
                   Active loan
                 </CustomText>
-
-                <View className="bg-green-500/20 px-3 py-1 rounded-full">
-                  <CustomText size="xs" className="text-green-300">
-                    {statusLabel}
+                <View className="flex-row items-center">
+                  <CustomText weight="bold" size="xl" className="text-white mb-0">
+                    {hideAmount ? "****" : `₦${amount}`}
                   </CustomText>
-                </View>
-              </View>
 
-              <View className="flex-row items-center mt-2">
-                <CustomText weight="bold" size="xl" className="text-white">
-                  {hideAmount ? "****" : `₦${amount}`}
+                  <TouchableOpacity
+                    className="ml-2"
+                    onPress={() => setHideAmount((p) => !p)}
+                  >
+                    <Ionicons
+                      name={hideAmount ? "eye-off-outline" : "eye-outline"}
+                      size={18}
+                      color="white"
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                <CustomText size="sm" className="text-white/70 mt-1 mb-0">
+                  {productName}
                 </CustomText>
-
-                <TouchableOpacity
-                  className="ml-3"
-                  onPress={() => setHideAmount((p) => !p)}
-                >
-                  <Ionicons
-                    name={hideAmount ? "eye-off-outline" : "eye-outline"}
-                    size={18}
-                    color="white"
-                  />
-                </TouchableOpacity>
               </View>
 
-              <CustomText size="sm" className="text-white/70 mt-1">
-                {productName}
+              <View className="bg-green-500/20 px-3 py-1 rounded-full">
+                <CustomText size="xs" className="text-green-300 mb-0">
+                  {statusLabel}
+                </CustomText>
+              </View>
+            </View>
+
+            <View className="mt-8">
+              <View className="flex-row justify-between">
+                <View className="flex-1 pr-4">
+                  <CustomText size="xs" className="text-white/60 mb-1">
+                    Interest Rate
+                  </CustomText>
+                  <CustomText weight="bold" className="text-white mb-0">
+                    {interestRate}%
+                  </CustomText>
+                </View>
+
+                <View className="flex-1 items-end">
+                  <CustomText size="xs" className="text-white/60 mb-1">
+                    Total Repayment
+                  </CustomText>
+                  <CustomText weight="bold" className="text-white mb-0">
+                    ₦{totalExpected}
+                  </CustomText>
+                </View>
+              </View>
+
+              <View className="flex-row justify-between mt-6">
+                <View className="flex-1 pr-4">
+                  <CustomText size="xs" className="text-white/60 mb-1">
+                    Bank
+                  </CustomText>
+                  <CustomText weight="bold" className="text-white mb-0">
+                    {bankName}
+                  </CustomText>
+                </View>
+
+                <View className="flex-1 items-end">
+                  <CustomText size="xs" className="text-white/60 mb-1">
+                    Applied
+                  </CustomText>
+                  <CustomText weight="bold" className="text-white mb-0">
+                    {formatDate(appliedDate)}
+                  </CustomText>
+                </View>
+              </View>
+
+              <View className="h-[1px] bg-white/10 my-4" />
+
+              <CustomText size="xs" className="text-white/60 mb-1">
+                Due date
               </CustomText>
-
-              {/* details grid */}
-              <View className="mt-5">
-                <View className="flex-row justify-between">
-                  <View className="flex-1 pr-4">
-                    <CustomText size="xs" className="text-white/60">
-                      Interest Rate
-                    </CustomText>
-                    <CustomText weight="bold" className="text-white mt-1">
-                      {interestRate}%
-                    </CustomText>
-                  </View>
-
-                  <View className="flex-1 items-end">
-                    <CustomText size="xs" className="text-white/60">
-                      Total Repayment
-                    </CustomText>
-                    <CustomText weight="bold" className="text-white mt-1">
-                      ₦{totalExpected}
-                    </CustomText>
-                  </View>
-                </View>
-
-                <View className="h-[1px] bg-white/10 my-4" />
-
-                <View className="flex-row justify-between">
-                  <View className="flex-1 pr-4">
-                    <CustomText size="xs" className="text-white/60">
-                      Bank
-                    </CustomText>
-                    <CustomText weight="bold" className="text-white mt-1">
-                      {bankName}
-                    </CustomText>
-                  </View>
-
-                  <View className="flex-1 items-end">
-                    <CustomText size="xs" className="text-white/60">
-                      Applied
-                    </CustomText>
-                    <CustomText weight="bold" className="text-white mt-1">
-                      {formatDate(appliedDate)}
-                    </CustomText>
-                  </View>
-                </View>
-
-                <View className="mt-4">
-                  <CustomText size="xs" className="text-white/60">
-                    Due date
-                  </CustomText>
-                  <CustomText weight="bold" className="text-white mt-1">
-                    {formatDate(dueDate)}
-                  </CustomText>
-                </View>
-              </View>
-            </LinearGradient>
+              <CustomText weight="bold" className="text-white mb-0">
+                {formatDate(dueDate)}
+              </CustomText>
+            </View>
           </View>
 
           {/* Repayment schedule */}
@@ -327,48 +326,72 @@ const LoanDetails = () => {
                 Repayment Schedule
               </CustomText>
 
-              {schedules.map((sch: any, idx: number) => {
-                const amountToPay = Number(
-                  sch?.repaymentAmountInNaira ?? sch?.total ?? 0
-                );
-                const due = sch?.paymentDueDate || sch?.repaymentDate;
+              <View className="bg-primary-400/80 rounded-3xl px-4 py-4">
+                {schedules.map((sch: any, idx: number) => {
+                  const amountToPay = Number(
+                    sch?.amount ?? sch?.repaymentAmountInNaira ?? sch?.total ?? 0
+                  );
+                  const due =
+                    sch?.dueDate || sch?.paymentDueDate || sch?.repaymentDate;
+                  const scheduleStatus = String(sch?.status || "").toLowerCase();
+                  const isPaid = isLoanCompleted || scheduleStatus === "paid";
 
-                const isPaid = isLoanCompleted;
-                const isPending = !isPaid;
-
-                return (
-                  <View
-                    key={`${idx}`}
-                    className="flex-row bg-primary-500 rounded-3xl p-5 border border-white/5 mb-3"
-                  >
-                    <View className="flex-1">
-                      <View className="flex-row items-center justify-between">
-                        <CustomText weight="bold" className="text-white">
-                          ₦{formatMoney(amountToPay)}
-                        </CustomText>
-
-                        {isPaid ? (
-                          <View className="bg-[#21D1841A] px-3 py-1 rounded-full">
-                            <CustomText size="xs" className="text-[#21D184]">
-                              Paid
-                            </CustomText>
-                          </View>
-                        ) : (
-                          <View className="bg-[#FBCD58] px-3 py-1 rounded-full">
-                            <CustomText size="xs" className="text-yellow-300">
-                              {isPending ? "Pending" : "Pending"}
-                            </CustomText>
-                          </View>
+                  return (
+                    <View key={`${idx}`} className="flex-row">
+                      <View className="items-center mr-4">
+                        <View
+                          className={`w-8 h-8 rounded-full items-center justify-center border ${
+                            isPaid
+                              ? "bg-primary-200 border-primary-200"
+                              : "bg-primary-300/60 border-white/20"
+                          }`}
+                        >
+                          <Ionicons
+                            name={isPaid ? "checkmark" : "time-outline"}
+                            size={16}
+                            color="white"
+                          />
+                        </View>
+                        {idx !== schedules.length - 1 && (
+                          <View className="w-[1px] flex-1 bg-white/15 min-h-16" />
                         )}
                       </View>
 
-                      <CustomText size="xs" className="text-white/60 mt-1">
-                        Due: {formatDate(due)}
-                      </CustomText>
+                      <View className="flex-1 pb-6">
+                        <View className="flex-row items-center justify-between">
+                          <CustomText weight="bold" className="text-white mb-0">
+                            ₦{formatMoney(amountToPay)}
+                          </CustomText>
+
+                          <View
+                            className={`px-3 py-1 rounded-full ${
+                              isPaid ? "bg-green-500/20" : "bg-[#FBCD58]"
+                            }`}
+                          >
+                            <CustomText
+                              size="xs"
+                              className={`${isPaid ? "text-green-300" : "text-[#7A5B00]"} mb-0`}
+                            >
+                              {isPaid ? "Paid" : "Pending"}
+                            </CustomText>
+                          </View>
+                        </View>
+
+                        <CustomText size="sm" className="text-white/80 mt-2 mb-0">
+                          Due: {formatDate(due)}
+                        </CustomText>
+
+                        {isPaid && (
+                          <CustomText size="xs" className="text-white/50 mt-1 mb-0">
+                            Paid: {formatDate(firstPaidDate || due)}
+                          </CustomText>
+                        )}
+
+                      </View>
                     </View>
-                  </View>
-                );
-              })}
+                  );
+                })}
+              </View>
             </View>
           )}
         </ScrollView>

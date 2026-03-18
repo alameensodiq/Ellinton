@@ -8,9 +8,16 @@ import AmountCard from "@/app/components/home/cards/AmountCard";
 
 const LoanSuccess = () => {
   const router = useRouter();
-  const { amount } = useLocalSearchParams<{ amount?: string }>();
+  const { amount, status, message } = useLocalSearchParams<{
+    amount?: string;
+    status?: string;
+    message?: string;
+  }>();
 
   const rawAmount = Array.isArray(amount) ? amount[0] : amount || "0";
+  const rawStatus = Array.isArray(status) ? status[0] : status || "success";
+  const rawMessage = Array.isArray(message) ? message[0] : message || "";
+  const isFailed = rawStatus.toLowerCase() === "failed";
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-6">
@@ -21,23 +28,33 @@ const LoanSuccess = () => {
       </View>
 
       <View className="flex-1 justify-center space-y-6">
-        <AmountCard amount={rawAmount} description="Loan disbursed" />
-        <Text className="text-8xl text-center mt-10">🎉</Text>
+        <AmountCard
+          amount={rawAmount}
+          description={isFailed ? "Loan application" : "Loan application"}
+        />
+        <Text className="text-8xl text-center mt-10">
+          {isFailed ? "×" : "🎉"}
+        </Text>
 
         <Text className="text-3xl font-bold text-white leading-normal text-center mt-4">
-          Loan successful
+          {isFailed ? "Loan failed" : "Loan successful"}
         </Text>
 
         <Text className="text-accent-100 text-center text-base leading-relaxed mt-4">
-          Your loan of ₦{rawAmount} has been disbursed successfully.
+          {rawMessage ||
+            (isFailed
+              ? `Your loan application for ₦${rawAmount} could not be completed.`
+              : `Your loan application for ₦${rawAmount} was submitted successfully.`)}
         </Text>
       </View>
 
       <View className="pb-6">
         <Button
-          title="Done"
+          title={isFailed ? "Back to loans" : "Done"}
           variant="primary"
-          onPress={() => router.replace("/(root)/(tabs)")}
+          onPress={() =>
+            router.replace(isFailed ? "/(root)/loans/step1" : "/(root)/(tabs)")
+          }
         />
       </View>
     </SafeAreaView>
