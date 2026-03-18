@@ -255,26 +255,48 @@ const Loans = () => {
   const productName = activeLoan.product_name || "Payday loan";
   const amount = formatMoney(activeLoan.amount);
   const status = activeLoan.status || "active";
+  const normalizedStatus = String(status).toLowerCase();
   const statusLabel =
-    status === "active"
+    normalizedStatus === "active"
       ? "Active"
-      : status === "pending_disbursement"
-      ? "Pending"
+      : normalizedStatus === "pending_disbursement"
+      ? "Pending disbursement"
+      : normalizedStatus === "completed"
+      ? "Completed"
+      : normalizedStatus === "overdue"
+      ? "Overdue"
       : status;
 
   const totalExpected = Number(activeLoan.total_repayment_expected || 0);
-  const paid = 0;
-  const remaining = totalExpected > 0 ? totalExpected - paid : 0;
-
-  const progressPct =
-    totalExpected > 0 ? Math.round((paid / totalExpected) * 100) : 0;
-
   const schedules = Array.isArray(activeLoan?.schedules)
     ? activeLoan.schedules
     : [];
+  const totalPaid =
+    normalizedStatus === "completed" ? totalExpected : 0;
+  const remaining = Math.max(totalExpected - totalPaid, 0);
+  const nextSchedule = schedules[0];
+  const nextDueDate =
+    nextSchedule?.dueDate ||
+    nextSchedule?.paymentDueDate ||
+    nextSchedule?.repaymentDate;
+  const nextRepaymentAmount = Number(
+    nextSchedule?.amount ??
+      nextSchedule?.repaymentAmountInNaira ??
+      nextSchedule?.total ??
+      0
+  );
+  const showRepaymentProgress = normalizedStatus !== "pending_disbursement";
+  const offerAmount =
+    Number(activeLoan.amount || 0) > 0
+      ? Number(activeLoan.amount)
+      : Number(activeLoan.total_repayment_expected || 0);
+  const offerInterest = Number(activeLoan.interest_rate || 0);
+
+  const progressPct =
+    totalExpected > 0 ? Math.round((totalPaid / totalExpected) * 100) : 0;
 
   const isLoanCompleted =
-    String(activeLoan?.status || "").toLowerCase() === "completed";
+    normalizedStatus === "completed";
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-4">
@@ -283,7 +305,7 @@ const Loans = () => {
       <Header
         showClose
         title="Loan"
-        rightIconName="time-outline"
+        rightIconName="refresh-outline"
         onRightPress={() => router.push("/(root)/loans/loan-history")}
       />
 
@@ -292,150 +314,132 @@ const Loans = () => {
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Top card (Gradient) */}
-        <View className="rounded-3xl mt-4 overflow-hidden">
-          <LinearGradient
-            colors={["#333419", "#333419"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ padding: 20 }}
-          >
-            <View className="flex-row items-center justify-between">
-              <CustomText size="sm" className="text-white/70">
+        <View className="rounded-3xl mt-4 bg-[#27280F] px-4 py-5 pb-10">
+          <View className="flex-row items-start justify-between">
+            <View>
+              <CustomText size="sm" className="text-white/70 mb-1">
                 Active loan
               </CustomText>
+              <View className="flex-row items-center">
+                <CustomText weight="bold" size="xl" className="text-white mb-0">
+                  {hideAmount ? "****" : `₦${amount}`}
+                </CustomText>
 
-              <View className="flex-row items-center space-x-2">
-                <View className="bg-green-500/20 px-3 py-1 rounded-full">
-                  <CustomText size="xs" className="text-green-300">
-                    {statusLabel}
-                  </CustomText>
-                </View>
+                <TouchableOpacity
+                  className="ml-2"
+                  onPress={() => setHideAmount((p) => !p)}
+                >
+                  <Ionicons
+                    name={hideAmount ? "eye-off-outline" : "eye-outline"}
+                    size={18}
+                    color="white"
+                  />
+                </TouchableOpacity>
               </View>
-            </View>
-
-            <View className="flex-row items-center mt-2">
-              <CustomText weight="bold" size="xl" className="text-white">
-                {hideAmount ? "****" : `₦${amount}`}
+              <CustomText size="sm" className="text-white/70 mt-1 mb-0">
+                {productName}
               </CustomText>
-
-              <TouchableOpacity
-                className="ml-3"
-                onPress={() => setHideAmount((p) => !p)}
-              >
-                <Ionicons
-                  name={hideAmount ? "eye-off-outline" : "eye-outline"}
-                  size={18}
-                  color="white"
-                />
-              </TouchableOpacity>
             </View>
 
-            <CustomText size="sm" className="text-white/70 mt-1">
-              {productName}
+            <View className="bg-green-500/20 px-3 py-1 rounded-full">
+              <CustomText size="xs" className="text-green-300 mb-0">
+                {statusLabel}
+              </CustomText>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={() =>
+              router.push({
+                pathname: "/(root)/loans/loan-details",
+                params: { id: String(activeLoan.id) },
+              })
+            }
+            className="mt-12 bg-[#313214] rounded-full py-4 items-center"
+          >
+            <CustomText weight="medium" className="text-white mb-0">
+              View details
             </CustomText>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() =>
-                router.push({
-                  pathname: "/(root)/loans/loan-details",
-                  params: { id: String(activeLoan.id) },
-                })
-              }
-              className="mt-5 bg-primary-300/40 rounded-full py-3 items-center"
-            >
-              <CustomText className="text-white">View details</CustomText>
-            </TouchableOpacity>
+          <View className="mt-6">
+            <View className="flex-row justify-between items-center mb-2">
+              <CustomText size="sm" className="text-white/80 mb-0">
+                Repayment progress
+              </CustomText>
+              <CustomText size="sm" className="text-white/80 mb-0">
+                {showRepaymentProgress ? `${progressPct}%` : "0%"}
+              </CustomText>
+            </View>
 
-            {/* Progress */}
-            <View className="mt-6">
-              <View className="flex-row justify-between mb-2">
-                <CustomText size="sm" className="text-white/70">
-                  Repayment progress
+            <View className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+              <View
+                className="h-full bg-primary-200"
+                style={{ width: `${showRepaymentProgress ? progressPct : 0}%` }}
+              />
+            </View>
+
+            <View className="flex-row justify-between mt-4">
+              <View>
+                <CustomText size="sm" className="text-white/70 mb-1">
+                  Total paid
                 </CustomText>
-                <CustomText size="sm" className="text-white/70">
-                  {progressPct}%
+                <CustomText weight="bold" className="text-white mb-0">
+                  ₦{formatMoney(totalPaid)}
                 </CustomText>
               </View>
 
-              <View className="h-2 rounded-full bg-white/10 overflow-hidden">
-                <View
-                  className="h-full bg-accent-100"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </View>
-
-              <View className="flex-row justify-between mt-4">
-                <View>
-                  <CustomText size="xs" className="text-white/60">
-                    Total paid
-                  </CustomText>
-                  <CustomText weight="bold" className="text-white mt-1">
-                    ₦{formatMoney(paid)}
-                  </CustomText>
-                </View>
-
-                <View className="items-end">
-                  <CustomText size="xs" className="text-white/60">
-                    Remaining
-                  </CustomText>
-                  <CustomText weight="bold" className="text-white mt-1">
-                    ₦{formatMoney(remaining)}
-                  </CustomText>
-                </View>
+              <View className="items-end">
+                <CustomText size="sm" className="text-white/70 mb-1">
+                  Remaining
+                </CustomText>
+                <CustomText weight="bold" className="text-white mb-0">
+                  ₦
+                  {formatMoney(
+                    remaining || nextRepaymentAmount || totalExpected
+                  )}
+                </CustomText>
               </View>
             </View>
-          </LinearGradient>
+          </View>
         </View>
 
-        {schedules.length > 0 && (
-          <View className=" mt-4">
-            <CustomText weight="bold" className="text-white mb-4">
-              Repayment Schedule
+        <View className="-mt-5 bg-[#575823] rounded-3xl px-5 py-5">
+          <View className="flex-row items-start">
+            <View className="w-6 h-6 rounded-full border border-white/40 items-center justify-center mr-3 mt-1">
+              <Ionicons
+                name="information-circle-outline"
+                size={14}
+                color="white"
+              />
+            </View>
+
+            <CustomText
+              size="sm"
+              className="text-white/90 flex-1 leading-6 mb-0"
+            >
+              Complete your current loan and get higher offer on your next loan
             </CustomText>
-
-            {schedules.map((sch: any, idx: number) => {
-              const amountToPay = Number(
-                sch?.repaymentAmountInNaira ?? sch?.total ?? 0
-              );
-              const due = sch?.paymentDueDate || sch?.repaymentDate;
-              const isPaid = isLoanCompleted;
-
-              return (
-                <View
-                  key={`${idx}`}
-                  className="flex-row bg-primary-500 rounded-3xl p-5  border border-white/5"
-                >
-                  <View className="flex-1 ">
-                    <View className="flex-row items-center justify-between">
-                      <CustomText weight="bold" className="text-white">
-                        ₦{formatMoney(amountToPay)}
-                      </CustomText>
-
-                      {isPaid ? (
-                        <View className="bg-[#21D1841A] px-3 py-1 rounded-full">
-                          <CustomText size="xs" className="text-[#21D184]">
-                            Paid
-                          </CustomText>
-                        </View>
-                      ) : (
-                        <View className="bg-[#FBCD58] px-3 py-1 rounded-full">
-                          <CustomText size="xs" className="text-yellow-300">
-                            Pending
-                          </CustomText>
-                        </View>
-                      )}
-                    </View>
-
-                    <CustomText size="xs" className="text-white/60 mt-1">
-                      Due: {formatDate(due)}
-                    </CustomText>
-                  </View>
-                </View>
-              );
-            })}
           </View>
-        )}
+
+          <View className="mt-5 flex-row items-end justify-between">
+            <View>
+              <CustomText size="sm" className="text-white/70 mb-2">
+                Next loan offer
+              </CustomText>
+              <CustomText weight="bold" size="xl" className="text-white mb-1">
+                ₦{formatMoney(offerAmount)}
+              </CustomText>
+              <CustomText weight="bold" size="sm" className="text-white mb-0">
+                {offerInterest}%
+              </CustomText>
+            </View>
+
+            <View className="w-12 h-12 rounded-full border border-white/20 items-center justify-center">
+              <svgIcons.loanCondtion1 width={20} height={20} />
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

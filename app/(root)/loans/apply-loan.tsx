@@ -4,10 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/app/components/header-back";
 import CustomText from "@/app/components/CustomText";
 import Button from "@/app/components/Button";
+import Loading from "@/app/components/Loading";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { svgIcons } from "@/app/assets/icons/icons";
 
-import { calculateLoan } from "@/app/lib/thunks/loansThunks";
+import { applyForLoan, calculateLoan } from "@/app/lib/thunks/loansThunks";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 
 const ApplyLoan = () => {
@@ -26,6 +27,7 @@ const ApplyLoan = () => {
 
   const [calc, setCalc] = useState<any[] | null>(null);
   const [calcLoading, setCalcLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // creditCheck comes as a string
   const creditCheck = useMemo(() => {
@@ -36,16 +38,20 @@ const ApplyLoan = () => {
     }
   }, [params.creditCheck]);
 
+  const assessment = creditCheck?.assessment ?? creditCheck?.data?.assessment;
+  const creditCheckMessage =
+    creditCheck?.message ?? creditCheck?.data?.message ?? "Loan offer details";
+
   // values from credit check
-  const offer = creditCheck?.data?.loanOffer ?? "Loan offer details";
-  const amount = creditCheck?.data?.approvedLoanAmount ?? 0;
-  const tenure = creditCheck?.data?.loanTenure ?? 0;
-  const interest = creditCheck?.data?.interestRate ?? 0;
-  const annualInterest = creditCheck?.data?.annualInterestRate ?? 0;
-  const repaymentFrequency = creditCheck?.data?.repaymentFrequency ?? "";
+  const offer = creditCheckMessage;
+  const amount = assessment?.maxLoanLimit ?? 0;
+  const tenure = assessment?.tenorDays ?? 0;
+  const interest = assessment?.interestRatePerMonth ?? 0;
+  const annualInterest = Number(interest) * 12;
+  const repaymentFrequency = assessment?.repaymentFrequency ?? "";
 
   useEffect(() => {
-    if (!creditCheck?.data) return;
+    if (!assessment) return;
 
     const payload = {
       loanAmount: Number(amount),
@@ -66,7 +72,7 @@ const ApplyLoan = () => {
       });
   }, [
     dispatch,
-    creditCheck?.data,
+    assessment,
     amount,
     tenure,
     interest,
@@ -120,10 +126,65 @@ const ApplyLoan = () => {
 
   const canAccept = !calcLoading && !!calc?.length && totalRepayment > 0;
 
+  const handleAcceptOffer = async () => {
+    if (!canAccept || submitting) return;
+
+    const payload = {
+      productCode: String(params.productCode ?? ""),
+      loanAmount: Number(amount),
+      tenorInDays: Number(tenure),
+      repaymentFrequency: String(repaymentFrequency),
+      address: {
+        address: String(params.address ?? ""),
+        state: String(params.state ?? "").toLowerCase(),
+        lga: String(params.lga ?? "").toLowerCase(),
+      },
+      account: {
+        bankName: String(params.bankName ?? ""),
+        accountNumber: String(params.accountNumber ?? ""),
+        accountName: String(params.accountName ?? ""),
+      },
+      accountNumber: String(params.accountNumber ?? ""),
+      bankCode: String(params.bankCode ?? ""),
+    };
+
+    setSubmitting(true);
+
+    try {
+      const res: any = await dispatch(applyForLoan(payload)).unwrap();
+      router.replace({
+        pathname: "/(root)/loans/success",
+        params: {
+          status: String(res?.status ?? res?.data?.status ?? "pending_disbursement"),
+          amount: String(res?.amount ?? res?.data?.amount ?? amount),
+          message: "Loan application submitted successfully.",
+        },
+      });
+    } catch (error: any) {
+      const message =
+        error?.data?.message ||
+        error?.message ||
+        error?.payload ||
+        "Loan application failed.";
+
+      router.replace({
+        pathname: "/(root)/loans/success",
+        params: {
+          status: "failed",
+          amount: String(amount),
+          message: String(message),
+        },
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
       <StatusBar barStyle="light-content" />
       <Header title="Loan offer" />
+      <Loading visible={submitting} />
 
       <ScrollView
         className="flex-1"
@@ -318,19 +379,10 @@ const ApplyLoan = () => {
           {/* Buttons */}
           <View className="mt-6">
             <Button
-              title={calcLoading ? "Loading..." : "Accept offer"}
-              onPress={() =>
-                router.push({
-                  pathname: "/(root)/loans/authorize",
-                  params: {
-                    ...params,
-                    calc: JSON.stringify(calc ?? []),
-                    creditCheck: params.creditCheck,
-                  },
-                })
-              }
+              title={submitting ? "Submitting..." : "Accept offer"}
+              onPress={handleAcceptOffer}
               variant="primary"
-              disabled={!canAccept}
+              disabled={!canAccept || submitting}
             />
 
             <View className="mt-3">
