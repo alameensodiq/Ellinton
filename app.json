@@ -8,10 +8,10 @@
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "buildNumber": "21",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -28,22 +28,23 @@
         ]
       }
     },
-
     "android": {
       "package": "com.ellingtonmfb.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./app/assets/Logo2.png",
         "backgroundColor": "#3F401B"
       },
-      "permissions": ["com.google.android.gms.permission.AD_ID"]
+      "permissions": [
+        "com.google.android.gms.permission.AD_ID",
+        "POST_NOTIFICATIONS"
+      ]
     },
-
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./app/assets/logo.png"
     },
-
     "plugins": [
       "expo-router",
       [
@@ -64,6 +65,10 @@
       [
         "expo-build-properties",
         {
+          "ios": {
+            "useFrameworks": "static",
+               "deploymentTarget": "15.1"
+          },
           "android": {
             "ndkVersion": "26.1.10909125",
             "compileSdkVersion": 35,
@@ -78,13 +83,12 @@
           "preferAppsFlyerBackupRules": false
         }
       ],
-      "./plugins/withAppsFlyerPreinstall"
+      "expo-notifications",
+      "expo-secure-store"
     ],
-
     "experiments": {
       "typedRoutes": true
     },
-
     "extra": {
       "appsflyer": {
         "devKey": "hegvhjRZ9QU8ckb6hxgt28",

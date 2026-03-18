@@ -14,6 +14,8 @@ import AuthWrapper from "./(root)/AuthWrapper";
 import { logout } from "./lib/slices/authSlice";
 import { useEffect } from "react";
 import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
+import firebaseService from "./lib/firebase.service";
+import authListenerService from "./lib/auth-listener.service";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -21,12 +23,25 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts({
     Outfit: require("./assets/fonts/Outfit-Bold.ttf"),
     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),
-    OutfitBold: require("./assets/fonts/Outfit-Bold.ttf"),
+    OutfitBold: require("./assets/fonts/Outfit-Bold.ttf")
   });
   useEffect(() => {
     initializeAppsFlyer().catch((error) => {
       console.warn("Failed to initialize AppsFlyer:", error);
     });
+    const initialize = async () => {
+      // Initialize Firebase (which also initializes notifications)
+      await firebaseService.initialize();
+
+      // Start listening to auth changes
+      authListenerService.startListening();
+    };
+
+    initialize();
+
+    return () => {
+      authListenerService.stopListening();
+    };
   }, []);
 
   useEffect(() => {

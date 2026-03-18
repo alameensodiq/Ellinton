@@ -7,7 +7,7 @@ import {
   View,
   TouchableOpacity,
   PanResponder,
-  Animated,
+  Animated
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -16,33 +16,36 @@ import CustomText from "./components/CustomText";
 import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { auth } from "./firebase";
+import notificationService from "./lib/notification.service";
+import { signOut } from "firebase/auth";
 
 const backgrounds = [
   {
     image: require("./assets/landing-bg1.png"),
     title: "Do more with Ellington MFB.",
-    subtitle: "Your goals, backed by smart banking.",
+    subtitle: "Your goals, backed by smart banking."
   },
   {
     image: require("./assets/landing-bg2.png"),
     title: "Smart spending. Bigger rewards",
-    subtitle: "Our debit card works harder for you",
+    subtitle: "Our debit card works harder for you"
   },
   {
     image: require("./assets/landing-bg3.png"),
     title: "Instant loans, zero hassle.",
-    subtitle: "Track, repay, and grow with Ellington.",
+    subtitle: "Track, repay, and grow with Ellington."
   },
   {
     image: require("./assets/landing-bg4.png"),
     title: "Send Money. Anytime, anywhere",
-    subtitle: "Fast easy transfer to friends and family.",
+    subtitle: "Fast easy transfer to friends and family."
   },
   {
     image: require("./assets/landing-bg5.png"),
     title: "Pay bills. Earn Rewards",
-    subtitle: "Recharge, shop, and stream—all in one place",
-  },
+    subtitle: "Recharge, shop, and stream—all in one place"
+  }
 ];
 
 export default function Index() {
@@ -51,6 +54,19 @@ export default function Index() {
   const [checkingStorage, setCheckingStorage] = useState(true);
   const pan = useRef(new Animated.ValueXY()).current;
   const dispatch = useDispatch();
+
+  useEffect(() => {
+    console.log("Current user:", auth.currentUser?.email);
+
+    // Fix: await the Promise
+    const getToken = async () => {
+      const token = await notificationService.getStoredToken();
+      console.log("Push token:", token);
+    };
+
+    getToken();
+  }, []);
+
   useEffect(() => {
     // Show landing page on app startup
     setCheckingStorage(false);
@@ -74,13 +90,14 @@ export default function Index() {
         } else if (gestureState.dx < -50) {
           setBackgroundIndex((prev) => (prev + 1) % backgrounds.length);
         }
-      },
+      }
     })
   ).current;
 
   if (checkingStorage) return null;
   const handleAuthNavigation = (path: string) => {
     dispatch(logout());
+    signOut(auth);
     dispatch(clearError());
     router.push(path as any);
   };

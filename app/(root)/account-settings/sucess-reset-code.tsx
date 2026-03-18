@@ -9,6 +9,8 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { logoutUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
+import { signOut } from "firebase/auth";
+import { auth } from "@/app/firebase";
 
 const Success = () => {
   const router = useRouter();
@@ -18,6 +20,7 @@ const Success = () => {
   const handleClose = async () => {
     try {
         await dispatch(logoutUser()).unwrap();
+          await signOut(auth);
         clearError()
     } catch (error) {
     } finally {

@@ -8,7 +8,7 @@ import {
   Dimensions,
   Image,
   Animated,
-  Platform,
+  Platform
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
@@ -24,6 +24,8 @@ import CustomText from "./CustomText";
 import { requestStatement } from "../lib/thunks/statementsThunks";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
 
 interface MenuItem {
   id: string;
@@ -50,7 +52,7 @@ interface BottomMenuProps {
 const UserProfileSection: React.FC<UserProfile> = ({
   name,
   email,
-  avatar = "https://i.pravatar.cc/100",
+  avatar = "https://i.pravatar.cc/100"
 }) => (
   <View className="flex-row items-center mb-10 py-4 gap-3">
     <View className="w-12 h-12 rounded-full overflow-hidden bg-red-500">
@@ -79,7 +81,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   onClose,
   user,
   items = [],
-  version = "2.0.0",
+  version = "2.0.0"
 }) => {
   const screenHeight = Dimensions.get("window").height;
   const [slideAnim] = useState(new Animated.Value(screenHeight));
@@ -107,13 +109,13 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       id: "2",
       label: "Account settings",
       icon: "cog",
-      onPress: () => router.push("/(root)/account-settings"),
+      onPress: () => router.push("/(root)/account-settings")
     },
     {
       id: "overdraft",
       label: "Overdraft",
       icon: "bank-transfer",
-      onPress: () => router.push("/(root)/overdraft"),
+      onPress: () => router.push("/(root)/overdraft")
     },
     {
       id: "3",
@@ -122,8 +124,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       onPress: () => {
         onClose();
         setTimeout(() => setStatementSheetOpen(true), 200);
-      },
-    },
+      }
+    }
   ];
 
   const displayListItems = items.length > 0 ? items : defaultListItems;
@@ -133,7 +135,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: true
       }).start();
     } else {
       slideAnim.setValue(screenHeight);
@@ -148,6 +150,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
+
+      await signOut(auth);
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -206,7 +210,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
 
       const payload = {
         startDate: formatDate(startDateObj!),
-        endDate: formatDate(endDateObj!),
+        endDate: formatDate(endDateObj!)
       };
 
       await dispatch(requestStatement(payload)).unwrap();
@@ -242,7 +246,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
                 className="bg-primary-100 rounded-t-[32px] overflow-hidden"
                 style={{
                   transform: [{ translateY: slideAnim }],
-                  height: screenHeight * 0.9,
+                  height: screenHeight * 0.9
                 }}
               >
                 <View className="rounded-t-[32px] px-6 py-4">

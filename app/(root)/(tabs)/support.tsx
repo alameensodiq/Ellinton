@@ -2,7 +2,7 @@ import { Linking, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect } from "react";
 
-const CUSTOMER_CARE_NUMBER = "2347047007086"; 
+const CUSTOMER_CARE_NUMBER = "2347042678421"; 
 export default function ProfileScreen() {
   useEffect(() => {
     const openWhatsApp = async () => {
