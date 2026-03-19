@@ -33,7 +33,8 @@ const formatMoney = (n: any) => {
 // ✅ add savingsTotal param
 export const getCardsData = (
   accountInfo?: AccountInfo | null,
-  savingsTotal: number = 0
+  savingsTotal: number = 0,
+  pointBalance: number = 0
 ): CardData[] => {
   const firstCardBalance =
     accountInfo?.accountBalance !== undefined &&
@@ -92,7 +93,7 @@ export const getCardsData = (
     {
       id: 3,
       title: "Point wallets",
-      balance: "0.00",
+      balance: formatMoney(pointBalance),
       gradientColors: ["#333419", "#18180C"],
       imagePosition: "top-right",
       image: Images.landing_balance_card3,

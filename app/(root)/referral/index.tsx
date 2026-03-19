@@ -16,7 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { Share } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import Button from "@/app/components/Button";
 import CustomText from "@/app/components/CustomText";
 import Sheet from "@/app/components/Sheet";
@@ -34,6 +34,7 @@ import {
 
 const ReferralScreen = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ tab?: string }>();
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState("home");
   const [transferSheetOpen, setTransferSheetOpen] = useState(false);
@@ -75,6 +76,17 @@ Download on Android: ${androidAppLink}`;
   useEffect(() => {
     dispatch(fetchBonusWalletBalance());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (params.tab === "details") {
+      setActiveTab("details");
+      return;
+    }
+
+    if (params.tab === "home") {
+      setActiveTab("home");
+    }
+  }, [params.tab]);
 
   const copyToClipboard = async () => {
     if (!referralCode) return;

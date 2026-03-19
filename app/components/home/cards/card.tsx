@@ -114,6 +114,11 @@ export default function Card({
                         onOpenAccounts?.();
                       } else if (action.label === "Transfer") {
                         router.push("/transfer");
+                      } else if (action.label === "Wallet") {
+                        router.push({
+                          pathname: "/(root)/referral",
+                          params: { tab: "details" },
+                        });
                       } else if (action.label === "View plans") {
                         router.push("/(root)/savings/my-plans");
                       } else if (action.label === "Create Plan") {
