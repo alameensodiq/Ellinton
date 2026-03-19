@@ -12,6 +12,7 @@ import statementsReducer from "./slices/statementsSlice";
 import goldReducer from "./slices/goldSlice";
 import savingsReducer from "./slices/savingsSlice";
 import overdraftReducer from "./slices/overdraftSlice";
+import walletReducer from "./slices/walletSlice";
 
 
 export const store = configureStore({
@@ -28,7 +29,8 @@ export const store = configureStore({
     statements: statementsReducer,
     gold: goldReducer,
     savings: savingsReducer,
-    overdraft: overdraftReducer, 
+    overdraft: overdraftReducer,
+    wallet: walletReducer,
   },
 });
 

@@ -27,6 +27,7 @@ import BasicSavings from  "./basic-savings.svg"
 import TargetSavings from  "./target-savings.svg"
 import GroupSavings from "./group-savings.svg"
 import loans from "./loans.svg"
+import gift from "./gift.svg"
 import loanfail from "./loan-fail.svg"
 import loanApprove from "./loan-approved.svg"
 import loanCondtion1 from "./loan-condition1.svg"
@@ -79,6 +80,7 @@ export const svgIcons = {
   target_savings: TargetSavings,
   group_savings: GroupSavings,
   loans: loans,
+  gift,
   glo: require("./glo.jpg"),
   ninemobile: require("./9mobile.jpg"),
   loanfail,
