@@ -61,8 +61,11 @@ class NotificationService {
   private tokenRefreshListener: Notifications.Subscription | null = null;
   private apiUrl: string;
 
+  // const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+
   constructor() {
-    this.apiUrl = Constants.expoConfig?.extra?.apiUrl || "https://your-backend-api.com";
+    this.apiUrl =
+      Constants.expoConfig?.extra?.apiUrl || "https://stagingapi.ellingtonbank.com";
   }
 
   async initialize(): Promise<boolean> {
@@ -112,7 +115,8 @@ class NotificationService {
   }
 
   private async getPermissions(): Promise<boolean> {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
     if (existingStatus !== "granted") {
@@ -142,7 +146,9 @@ class NotificationService {
       const { eas } = Constants.expoConfig?.extra || {};
       if (!eas?.projectId) throw new Error("EAS project ID not found");
 
-      const token = await Notifications.getExpoPushTokenAsync({ projectId: eas.projectId });
+      const token = await Notifications.getExpoPushTokenAsync({
+        projectId: eas.projectId
+      });
       this.pushToken = token.data;
       await SecureStore.setItemAsync(this.tokenKey, this.pushToken);
       console.log("Push token obtained:", this.pushToken);
@@ -154,28 +160,29 @@ class NotificationService {
   }
 
   // ✅ FIXED: Get or create persistent device ID (no null issues)
-private async getDeviceId(): Promise<string> {
-  // Try to get existing device ID
-  let deviceId = await SecureStore.getItemAsync(this.deviceIdKey);
-  
-  if (!deviceId) {
-    // Handle null case for Constants.deviceId
-    const constantDeviceId = Constants.deviceId;
-    
-    // Create a new device ID (guaranteed to be a string)
-    const newDeviceId = constantDeviceId || 
-      `${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-    
-    // Store it
-    await SecureStore.setItemAsync(this.deviceIdKey, newDeviceId);
-    
-    // Return the new ID
-    return newDeviceId;
+  private async getDeviceId(): Promise<string> {
+    // Try to get existing device ID
+    let deviceId = await SecureStore.getItemAsync(this.deviceIdKey);
+
+    if (!deviceId) {
+      // Handle null case for Constants.deviceId
+      const constantDeviceId = Constants.deviceId;
+
+      // Create a new device ID (guaranteed to be a string)
+      const newDeviceId =
+        constantDeviceId ||
+        `${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+
+      // Store it
+      await SecureStore.setItemAsync(this.deviceIdKey, newDeviceId);
+
+      // Return the new ID
+      return newDeviceId;
+    }
+
+    // If we have an existing ID, return it (TypeScript now knows it's a string)
+    return deviceId;
   }
-  
-  // If we have an existing ID, return it (TypeScript now knows it's a string)
-  return deviceId;
-}
 
   // Register device with backend (sends deviceId + pushToken)
   async registerDeviceWithBackend(): Promise<boolean> {
@@ -195,8 +202,8 @@ private async getDeviceId(): Promise<string> {
       const deviceId = await this.getDeviceId();
 
       const payload = {
-        deviceId: deviceId,      // This is what your backend needs
-        pushToken: pushToken,     // Expo push token
+        deviceId: deviceId, // This is what your backend needs
+        pushToken: pushToken, // Expo push token
         platform: Platform.OS,
         appVersion: Constants.expoConfig?.version || "1.0.0"
       };
@@ -204,17 +211,19 @@ private async getDeviceId(): Promise<string> {
       console.log("Registering device with backend:", payload);
 
       // UNCOMMENT WHEN BACKEND IS READY
-      // const response = await fetch(`${this.apiUrl}/api/devices/register`, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     Authorization: `Bearer ${appToken}`
-      //   },
-      //   body: JSON.stringify(payload)
-      // });
-      // 
-      // if (!response.ok) throw new Error("Failed to register device");
-      // console.log("Device registered successfully");
+      const response = await fetch(`${this.apiUrl}/users/push-tokens`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${appToken}`
+        },
+        body: JSON.stringify({
+          token: appToken
+        })
+      });
+
+      if (!response.ok) throw new Error("Failed to register device");
+      console.log("Device registered successfully");
 
       return true;
     } catch (error) {
@@ -232,11 +241,11 @@ private async getDeviceId(): Promise<string> {
       const deviceId = await this.getDeviceId();
 
       // UNCOMMENT WHEN BACKEND IS READY
-      // const response = await fetch(`${this.apiUrl}/api/devices/register`, {
-      //   method: "DELETE",
-      //   headers: { Authorization: `Bearer ${appToken}` },
-      //   body: JSON.stringify({ deviceId })
-      // });
+      const response = await fetch(`${this.apiUrl}/users/push-tokens/delete`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${appToken}` },
+        body: JSON.stringify({ token: appToken })
+      });
 
       await SecureStore.deleteItemAsync(this.tokenKey);
       this.pushToken = null;
@@ -258,25 +267,29 @@ private async getDeviceId(): Promise<string> {
     switch (data.type) {
       case "transaction":
         if (data.transactionId) {
-        //   router.push({
-        //     pathname: "/transaction-details",
-        //     params: { transactionId: data.transactionId }
-        //   });
+          router.push("/");
+          //   router.push({
+          //     pathname: "/transaction-details",
+          //     params: { transactionId: data.transactionId }
+          //   });
         }
         break;
       case "security":
+        router.push("/");
         // router.push("/security-alerts");
         break;
       case "promotion":
         if (data.url) {
+          router.push("/");
           // router.push(data.url);
         }
         break;
       case "account_update":
+        router.push("/");
         // router.push("/accounts");
         break;
       default:
-        // router.push("/");
+        router.push("/");
     }
   }
 
@@ -289,24 +302,25 @@ private async getDeviceId(): Promise<string> {
     );
 
     // When user taps on notification
-    this.responseListener = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+    this.responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
         const { data } = response.notification.request.content;
         this.handleNotificationNavigation(data as NotificationData);
-      }
-    );
+      });
 
     // When push token is refreshed
-    this.tokenRefreshListener = Notifications.addPushTokenListener(async (token) => {
-      console.log("Push token refreshed");
-      this.pushToken = token.data;
-      await SecureStore.setItemAsync(this.tokenKey, token.data);
+    this.tokenRefreshListener = Notifications.addPushTokenListener(
+      async (token) => {
+        console.log("Push token refreshed");
+        this.pushToken = token.data;
+        await SecureStore.setItemAsync(this.tokenKey, token.data);
 
-      const appToken = await AsyncStorage.getItem("authToken");
-      if (appToken) {
-        await this.registerDeviceWithBackend();
+        const appToken = await AsyncStorage.getItem("authToken");
+        if (appToken) {
+          await this.registerDeviceWithBackend();
+        }
       }
-    });
+    );
   }
 
   removeNotificationListeners(): void {
