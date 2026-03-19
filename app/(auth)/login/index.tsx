@@ -26,7 +26,8 @@ import { loginUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import notificationService from "@/app/lib/notification.service";
-
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/app/firebase";
 
 const Login = () => {
   const [pin, setPin] = useState("");
@@ -71,27 +72,26 @@ const Login = () => {
     }
   }, [isAuthenticated]);
 
-    useEffect(() => {
+  // Handle post-authentication navigation
+  useEffect(() => {
     const handleAuthSuccess = async () => {
       if (isAuthenticated) {
         try {
           // Register device with backend after successful login
           await notificationService.registerDeviceWithBackend();
           console.log("✅ Device registered after login");
-          
-          // Navigate based on user status
-          if (user?.status === "otp_verified") {
-            router.replace("/(auth)/profile-update");
-          } else if (user?.status === "bvn_verified") {
-            router.replace("/(auth)/facial-verification");
-          } else if (requiresPasscodeSetup) {
-            router.replace("/(auth)/create-passcode");
-          } else {
-            router.replace("/(root)/(tabs)");
-          }
         } catch (error) {
-          console.error("❌ Error in post-login setup:", error);
-          // Still navigate even if device registration fails
+          console.error("❌ Error registering device:", error);
+        }
+
+        // Navigate based on user status
+        if (user?.status === "otp_verified") {
+          router.replace("/(auth)/profile-update");
+        } else if (user?.status === "bvn_verified") {
+          router.replace("/(auth)/facial-verification");
+        } else if (requiresPasscodeSetup) {
+          router.replace("/(auth)/create-passcode");
+        } else {
           router.replace("/(root)/(tabs)");
         }
       }
@@ -103,12 +103,40 @@ const Login = () => {
   const handleLogin = async () => {
     if (!email || !pin) return;
 
-    await dispatch(
-      loginUser({
-        email: email.trim().toLowerCase(),
-        passcode: pin
-      })
-    );
+    try {
+      // 1. First login to YOUR app
+      await dispatch(
+        loginUser({
+          email: email.trim().toLowerCase(),
+          passcode: pin
+        })
+      ).unwrap();
+
+      console.log("✅ App login successful");
+
+      // 2. THEN login to Firebase (to get Firebase token)
+      try {
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email.trim().toLowerCase(),
+          pin // Your PIN is used as Firebase password
+        );
+        console.log("✅ Firebase login successful:", userCredential.user.email);
+
+        // Store Firebase user info if needed
+        const firebaseToken = await userCredential.user.getIdToken();
+        await AsyncStorage.setItem("firebaseToken", firebaseToken);
+      } catch (firebaseError: any) {
+        // Don't block login if Firebase fails
+        console.log("⚠️ Firebase login failed:", firebaseError.code);
+        // You might want to handle specific errors
+        if (firebaseError.code === "auth/user-not-found") {
+          console.log("User needs to be created in Firebase first");
+        }
+      }
+    } catch (error) {
+      console.error("❌ Login failed:", error);
+    }
   };
 
   const handleEmailChange = (text: string) => {

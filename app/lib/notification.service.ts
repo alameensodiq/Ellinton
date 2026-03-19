@@ -5,6 +5,7 @@ import { Platform, Alert, Linking } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getAuth } from "firebase/auth";
 import {
   NotificationData,
   AndroidChannelConfig
@@ -60,13 +61,14 @@ class NotificationService {
   private responseListener: Notifications.Subscription | null = null;
   private tokenRefreshListener: Notifications.Subscription | null = null;
   private apiUrl: string;
-
-  // const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+  private auth = getAuth();
 
   constructor() {
     this.apiUrl =
       Constants.expoConfig?.extra?.apiUrl || "https://stagingapi.ellingtonbank.com";
   }
+
+  // const BASE_URL = "https://api.ellingtonbank.com/api/v2";
 
   async initialize(): Promise<boolean> {
     try {
@@ -159,32 +161,20 @@ class NotificationService {
     }
   }
 
-  // ✅ FIXED: Get or create persistent device ID (no null issues)
   private async getDeviceId(): Promise<string> {
-    // Try to get existing device ID
     let deviceId = await SecureStore.getItemAsync(this.deviceIdKey);
-
     if (!deviceId) {
-      // Handle null case for Constants.deviceId
       const constantDeviceId = Constants.deviceId;
-
-      // Create a new device ID (guaranteed to be a string)
       const newDeviceId =
         constantDeviceId ||
         `${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
-
-      // Store it
       await SecureStore.setItemAsync(this.deviceIdKey, newDeviceId);
-
-      // Return the new ID
       return newDeviceId;
     }
-
-    // If we have an existing ID, return it (TypeScript now knows it's a string)
     return deviceId;
   }
 
-  // Register device with backend (sends deviceId + pushToken)
+  // 🔥 REGISTER - Firebase token ONLY in body
   async registerDeviceWithBackend(): Promise<boolean> {
     try {
       const appToken = await AsyncStorage.getItem("authToken");
@@ -193,65 +183,70 @@ class NotificationService {
         return false;
       }
 
-      const pushToken = await this.getStoredToken();
-      if (!pushToken) {
-        console.log("No push token available");
+      const user = this.auth.currentUser;
+      if (!user) {
+        console.log("No Firebase user logged in");
         return false;
       }
+      
+      const firebaseToken = await user.getIdToken();
+      console.log("Firebase token obtained for registration");
 
-      const deviceId = await this.getDeviceId();
-
-      const payload = {
-        deviceId: deviceId, // This is what your backend needs
-        pushToken: pushToken, // Expo push token
-        platform: Platform.OS,
-        appVersion: Constants.expoConfig?.version || "1.0.0"
-      };
-
-      console.log("Registering device with backend:", payload);
-
-      // UNCOMMENT WHEN BACKEND IS READY
       const response = await fetch(`${this.apiUrl}/users/push-tokens`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${appToken}`
+          "Authorization": `Bearer ${appToken}`
         },
         body: JSON.stringify({
-          token: appToken
+          token: firebaseToken  // 🔥 ONLY Firebase token
         })
       });
 
-      if (!response.ok) throw new Error("Failed to register device");
-      console.log("Device registered successfully");
-
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to register device: ${response.status} ${errorText}`);
+      }
+      
+      console.log("✅ Device registered successfully");
       return true;
     } catch (error) {
-      console.error("Error registering device:", error);
+      console.error("❌ Error registering device:", error);
       return false;
     }
   }
 
-  // Unregister device from backend
+  // 🔥 UNREGISTER - Firebase token ONLY in body
   async unregisterDeviceFromBackend(): Promise<boolean> {
     try {
       const appToken = await AsyncStorage.getItem("authToken");
       if (!appToken) return false;
 
-      const deviceId = await this.getDeviceId();
+      const user = this.auth.currentUser;
+      if (!user) return false;
+      
+      const firebaseToken = await user.getIdToken();
 
-      // UNCOMMENT WHEN BACKEND IS READY
       const response = await fetch(`${this.apiUrl}/users/push-tokens/delete`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${appToken}` },
-        body: JSON.stringify({ token: appToken })
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${appToken}` 
+        },
+        body: JSON.stringify({
+          token: firebaseToken  // 🔥 ONLY Firebase token
+        })
       });
 
-      await SecureStore.deleteItemAsync(this.tokenKey);
-      this.pushToken = null;
-      return true;
+      if (response.ok) {
+        await SecureStore.deleteItemAsync(this.tokenKey);
+        this.pushToken = null;
+        console.log("✅ Device unregistered successfully");
+        return true;
+      }
+      return false;
     } catch (error) {
-      console.error("Error unregistering device:", error);
+      console.error("❌ Error unregistering device:", error);
       return false;
     }
   }
@@ -260,55 +255,25 @@ class NotificationService {
     return await SecureStore.getItemAsync(this.tokenKey);
   }
 
-  // Handle navigation when notification is tapped
   private handleNotificationNavigation(data: NotificationData): void {
     if (!data) return;
-
-    switch (data.type) {
-      case "transaction":
-        if (data.transactionId) {
-          router.push("/");
-          //   router.push({
-          //     pathname: "/transaction-details",
-          //     params: { transactionId: data.transactionId }
-          //   });
-        }
-        break;
-      case "security":
-        router.push("/");
-        // router.push("/security-alerts");
-        break;
-      case "promotion":
-        if (data.url) {
-          router.push("/");
-          // router.push(data.url);
-        }
-        break;
-      case "account_update":
-        router.push("/");
-        // router.push("/accounts");
-        break;
-      default:
-        router.push("/");
-    }
+    console.log("Navigating with data:", data);
+    router.push("/");
   }
 
   private addNotificationListeners(): void {
-    // When notification is received while app is open
     this.notificationListener = Notifications.addNotificationReceivedListener(
       (notification) => {
         console.log("Notification received:", notification);
       }
     );
 
-    // When user taps on notification
     this.responseListener =
       Notifications.addNotificationResponseReceivedListener((response) => {
         const { data } = response.notification.request.content;
         this.handleNotificationNavigation(data as NotificationData);
       });
 
-    // When push token is refreshed
     this.tokenRefreshListener = Notifications.addPushTokenListener(
       async (token) => {
         console.log("Push token refreshed");
@@ -338,7 +303,6 @@ class NotificationService {
     }
   }
 
-  // For testing
   async scheduleLocalNotification(
     title: string,
     body: string,
@@ -359,8 +323,5 @@ class NotificationService {
     });
   }
 }
-
-// ✅ FIXED: Helper function for device ID (using class method instead)
-// Removed duplicate getDeviceId function at bottom
 
 export default new NotificationService();

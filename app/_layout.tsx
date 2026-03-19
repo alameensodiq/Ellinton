@@ -16,6 +16,7 @@ import { useEffect } from "react";
 import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
 import firebaseService from "./lib/firebase.service";
 import authListenerService from "./lib/auth-listener.service";
+import notificationService from "./lib/notification.service";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -59,6 +60,7 @@ export default function RootLayout() {
           }
 
           // update redux state
+              await notificationService.unregisterDeviceFromBackend();
           store.dispatch(logout());
 
           // mark session expired so other parts of the app can react

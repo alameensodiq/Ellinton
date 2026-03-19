@@ -8,6 +8,9 @@ import { useDispatch } from "react-redux";
 import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { trackRegistrationCompleted } from "@/app/lib/analytics/appsflyer";
+import notificationService from "@/app/lib/notification.service";
+import { signOut } from "firebase/auth";
+import { auth } from "@/app/firebase";
 
 const RegistrationSuccessScreen = () => {
   const router = useRouter();
@@ -29,14 +32,35 @@ const RegistrationSuccessScreen = () => {
     });
   }, [userId]);
 
-  const goToLogin = async () => {
+const goToLogin = async () => {
+  try {
+    // ✅ 1. Unregister device from backend FIRST
+    await notificationService.unregisterDeviceFromBackend();
+    console.log("✅ Device unregistered");
+    
+    // ✅ 2. Sign out from Firebase
+    await signOut(auth);
+    console.log("✅ Firebase logout");
+    
+    // ✅ 3. Clear Redux state
     if (user) {
       dispatch(clearError());
       dispatch(logout());
     }
-
+    
+    // ✅ 4. Navigate to login
     router.replace("/(auth)/login");
-  };
+    
+  } catch (error) {
+    console.error("❌ Logout error:", error);
+    // Still logout app even if unregister fails
+    if (user) {
+      dispatch(clearError());
+      dispatch(logout());
+    }
+    router.replace("/(auth)/login");
+  }
+};
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-6">

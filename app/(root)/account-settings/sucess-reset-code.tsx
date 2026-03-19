@@ -11,22 +11,37 @@ import { logoutUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/firebase";
+import notificationService from "@/app/lib/notification.service";
 
 const Success = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const firstname = useAppSelector((state) => state.auth.user?.first_name);
 
-  const handleClose = async () => {
-    try {
-        await dispatch(logoutUser()).unwrap();
-          await signOut(auth);
-        clearError()
-    } catch (error) {
-    } finally {
-      router.replace("/(auth)/current-user");
-    }
-  };
+
+const handleClose = async () => {
+  try {
+    // 1. Logout from your backend
+    await dispatch(logoutUser()).unwrap();
+    
+    // 2. Unregister device from backend
+    await notificationService.unregisterDeviceFromBackend();
+    
+    // 3. Sign out from Firebase
+    await signOut(auth);
+    
+    // 4. Clear Redux error (dispatch it!)
+    dispatch(clearError());
+    
+    console.log("✅ Logout successful");
+    
+  } catch (error) {
+    console.error("❌ Logout error:", error);
+  } finally {
+    // Always navigate away
+    router.replace("/(auth)/current-user");
+  }
+};
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-6">
