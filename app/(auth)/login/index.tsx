@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import TextInputField from "@/app/components/inputs/TextInputField";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Button from "@/app/components/Button";
+import ErrorModal from "@/app/components/ErrorModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InfoText from "@/app/components/InfoText";
 import { useRouter } from "expo-router";
@@ -32,6 +33,7 @@ const Login = () => {
   const [pin, setPin] = useState("");
   const [email, setEmail] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -100,6 +102,10 @@ const Login = () => {
     handleAuthSuccess();
   }, [isAuthenticated, user, requiresPasscodeSetup, router]);
 
+  useEffect(() => {
+    setShowErrorModal(Boolean(error));
+  }, [error]);
+
   const handleLogin = async () => {
     if (!email || !pin) return;
 
@@ -123,6 +129,11 @@ const Login = () => {
     if (error) {
       dispatch(clearError());
     }
+  };
+
+  const handleDismissError = () => {
+    setShowErrorModal(false);
+    dispatch(clearError());
   };
 
   return (
@@ -192,10 +203,6 @@ const Login = () => {
                 onFocus={() => setInputFocused(true)}
                 onBlur={() => setInputFocused(false)}
               />
-
-              {error && (
-                <Text className="text-red-500 text-sm mt-3">{error}</Text>
-              )}
             </View>
 
             <View className="mb-10 mt-6">
@@ -221,6 +228,13 @@ const Login = () => {
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
+
+        <ErrorModal
+          visible={showErrorModal}
+          title="Login Error"
+          message={error || "We could not complete your login, give it another shot"}
+          onDismiss={handleDismissError}
+        />
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );

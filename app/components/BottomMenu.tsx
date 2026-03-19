@@ -20,6 +20,8 @@ import Sheet from "./Sheet";
 import TextInputField from "./inputs/TextInputField";
 import Button from "./Button";
 import CustomText from "./CustomText";
+import ErrorModal from "./ErrorModal";
+import SuccessModal from "./SuccessModal";
 
 import { requestStatement } from "../lib/thunks/statementsThunks";
 
@@ -103,6 +105,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   const [endErr, setEndErr] = useState("");
   const [requestErr, setRequestErr] = useState("");
   const [requesting, setRequesting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const defaultListItems: MenuItem[] = [
     {
@@ -222,6 +225,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       setStartErr("");
       setEndErr("");
       setRequestErr("");
+      setShowSuccessModal(true);
     } catch (err: any) {
       setRequestErr(
         typeof err === "string" ? err : err?.message || "Request failed"
@@ -393,10 +397,6 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
           </View>
         </Pressable>
 
-        {!!requestErr && (
-          <Text className="text-red-500 text-sm mb-4">{requestErr}</Text>
-        )}
-
         <Button
           title={requesting ? "Requesting..." : "Request statement"}
           variant="primary"
@@ -460,6 +460,23 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
           </View>
         )}
       </Sheet>
+
+      <ErrorModal
+        visible={!!requestErr}
+        title="Statement Request Error"
+        message={
+          requestErr ||
+          "We could not request your statement, give it another shot"
+        }
+        onDismiss={() => setRequestErr("")}
+      />
+
+      <SuccessModal
+        visible={showSuccessModal}
+        title="Statement Requested"
+        message="Your bank statement request was submitted successfully."
+        onDismiss={() => setShowSuccessModal(false)}
+      />
     </>
   );
 };

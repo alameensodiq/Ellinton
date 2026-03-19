@@ -47,7 +47,15 @@ const ReferralScreen = () => {
   const walletError = useAppSelector((state) => state.wallet.error);
   const totalEarned = Number(bonusBalance?.balance ?? 0);
   const referralCode = bonusBalance?.walletNumber || "";
-  const inviteMessage = `Join me on [App Name] and use my referral code ${referralCode} to get started! Earn free ₦300.`;
+  const appName = "Ellington MFB Personal";
+  const iosAppLink =
+    "https://apps.apple.com/us/app/ellington-mfb-personal/id6742980740";
+  const androidAppLink =
+    "https://play.google.com/store/apps/details?id=com.ellingtonmfb.app";
+  const inviteMessage = `Join me on ${appName} and use my referral code ${referralCode} to get started! Earn free ₦300.
+
+Download on iPhone: ${iosAppLink}
+Download on Android: ${androidAppLink}`;
   const tabs: Tab[] = [
     { label: "Home", value: "home" },
     { label: "Details", value: "details" },
