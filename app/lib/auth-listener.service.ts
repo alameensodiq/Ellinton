@@ -46,7 +46,7 @@ class AuthListenerService {
           }));
 
           await AsyncStorage.setItem('firebaseToken', firebaseToken);
-          await notificationService.registerTokenWithBackend();
+          await notificationService.registerDeviceWithBackend();
 
           console.log('✅ Firebase user synced with Redux');
         } else {

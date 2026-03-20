@@ -5,7 +5,8 @@ import { Platform, Alert, Linking } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getAuth } from "firebase/auth";
+import { getAuth, Auth } from "firebase/auth";
+import { app } from "../firebase"; // Import your initialized Firebase app
 import {
   NotificationData,
   AndroidChannelConfig
@@ -61,14 +62,20 @@ class NotificationService {
   private responseListener: Notifications.Subscription | null = null;
   private tokenRefreshListener: Notifications.Subscription | null = null;
   private apiUrl: string;
-  private auth = getAuth();
+  private auth: Auth | null = null; // 🔥 Initialize as null
 
   constructor() {
     this.apiUrl =
       Constants.expoConfig?.extra?.apiUrl || "https://stagingapi.ellingtonbank.com";
   }
 
-  // const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+  // 🔥 Get auth instance lazily (only when needed)
+  private getAuth(): Auth {
+    if (!this.auth) {
+      this.auth = getAuth(app); // Get auth from your initialized Firebase app
+    }
+    return this.auth;
+  }
 
   async initialize(): Promise<boolean> {
     try {
@@ -183,7 +190,8 @@ class NotificationService {
         return false;
       }
 
-      const user = this.auth.currentUser;
+      const auth = this.getAuth(); // 🔥 Get auth instance
+      const user = auth.currentUser;
       if (!user) {
         console.log("No Firebase user logged in");
         return false;
@@ -222,7 +230,8 @@ class NotificationService {
       const appToken = await AsyncStorage.getItem("authToken");
       if (!appToken) return false;
 
-      const user = this.auth.currentUser;
+      const auth = this.getAuth(); // 🔥 Get auth instance
+      const user = auth.currentUser;
       if (!user) return false;
       
       const firebaseToken = await user.getIdToken();

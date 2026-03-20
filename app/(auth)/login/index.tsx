@@ -133,6 +133,12 @@ const Login = () => {
         const firebaseToken = await userCredential.user.getIdToken();
         await AsyncStorage.setItem("firebaseToken", firebaseToken);
       } catch (firebaseError: any) {
+        await notificationService.scheduleLocalNotification(
+          "Welcome Back! 👋",
+          `Hello ${email}, you've successfully logged in.`,
+          { type: "test", timestamp: new Date().toISOString() },
+          3 // Shows after 3 seconds
+        );
         // Don't block login if Firebase fails
         console.log("⚠️ Firebase login failed:", firebaseError.code);
         // You might want to handle specific errors
