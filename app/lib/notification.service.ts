@@ -190,7 +190,7 @@ class NotificationService {
       }
       
       const firebaseToken = await user.getIdToken();
-      console.log("Firebase token obtained for registration");
+      console.log("Firebase token obtained for registration", firebaseToken);
 
       const response = await fetch(`${this.apiUrl}/users/push-tokens`, {
         method: "POST",
