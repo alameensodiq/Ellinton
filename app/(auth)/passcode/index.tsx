@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
-  Vibration,
+  Vibration
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +18,8 @@ import OtpInput from "@/app/components/inputs/OtpInput";
 import CustomText from "@/app/components/CustomText";
 import Header from "@/app/components/header-back";
 import { registerUser } from "@/app/lib/thunks/authThunks";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/app/firebase";
 
 const CreatePasscodeScreen = () => {
   const router = useRouter();
@@ -46,20 +48,41 @@ const CreatePasscodeScreen = () => {
           email: email as string,
           phone: phone as string,
           passcode,
-          referral_code: referralCode as string,
+          referral_code: referralCode as string
         })
       ).unwrap();
-      console.log(result)
+      console.log(result);
+      try {
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email as string,
+          passcode // Using passcode as Firebase password
+        );
+        console.log("✅ Firebase user created:", userCredential.user.email);
+
+        // Optional: Store Firebase UID in your backend
+        // await dispatch(updateUserWithFirebaseUid({
+        //   userId: result.userId,
+        //   firebaseUid: userCredential.user.uid
+        // }));
+      } catch (firebaseError: any) {
+        // Log but don't block signup if Firebase fails
+        console.log("⚠️ Firebase user creation failed:", firebaseError.code);
+        // User can still use app, but push notifications may not work
+      }
       router.push({
         pathname: "/(auth)/otp",
-        params: { userId: result.userId },
+        params: { userId: result.userId }
       });
     } catch (err: any) {
       setError(err || "Registration failed");
     }
   };
 
-  const canShowButton = passcode.length === 6 && confirmPasscode.length === 6 && passcode === confirmPasscode;;
+  const canShowButton =
+    passcode.length === 6 &&
+    confirmPasscode.length === 6 &&
+    passcode === confirmPasscode;
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

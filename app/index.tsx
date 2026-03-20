@@ -95,12 +95,29 @@ export default function Index() {
   ).current;
 
   if (checkingStorage) return null;
-  const handleAuthNavigation = (path: string) => {
+const handleAuthNavigation = async (path: string) => {
+  try {
+    // 1. Unregister device first
+    await notificationService.unregisterDeviceFromBackend();
+    
+    // 2. Sign out from Firebase
+    await signOut(auth);
+    
+    // 3. Clear Redux state
     dispatch(logout());
-    signOut(auth);
+    dispatch(clearError());
+    
+    // 4. Navigate
+    router.push(path as any);
+    
+  } catch (error) {
+    console.error("Logout error:", error);
+    // Still clear state and navigate even if unregister fails
+    dispatch(logout());
     dispatch(clearError());
     router.push(path as any);
-  };
+  }
+};
   return (
     <Animated.View style={{ flex: 1 }} {...panResponder.panHandlers}>
       <ImageBackground
