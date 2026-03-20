@@ -1,7 +1,5 @@
-// const BASE_URL = "http://3.220.216.48:3005/api/v2";
-// const BASE_URL = "https://unvenial-uncomplaining-von.ngrok-free.dev/api/v2";
-const BASE_URL = "https://api.ellingtonbank.com/api/v2";
-// const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
+// const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
@@ -85,9 +83,9 @@ const VIRTUAL_CARD_UNFREEZE_ENDPOINT = (id: string) =>
 // loans
 const LOAN_PRODUCTS_ENDPOINT = `${BASE_URL}/loans/products`;
 const LOAN_COMMERCIAL_BANKS_ENDPOINT = `${BASE_URL}/loans/commercial-banks`;
-const LOAN_CREDIT_CHECK_ENDPOINT = `${BASE_URL}/loans/credit-check`;
+const LOAN_CREDIT_CHECK_ENDPOINT = `${BASE_URL}/loans/crc-credit-check`;
 const LOAN_CALCULATE_ENDPOINT = `${BASE_URL}/loans/calculate`;
-const LOAN_APPLY_ENDPOINT = `${BASE_URL}/loans/apply`;
+const LOAN_APPLY_ENDPOINT = `${BASE_URL}/loans/mida-execute`;
 const FETCH_USER_LOANS_ENDPOINT = `${BASE_URL}/loans`;
 const FETCH_SINGLE_LOAN_ENDPOINT = (id: string) => `${BASE_URL}/loans/${id}`;
 
@@ -132,6 +130,10 @@ const SAVINGS_TRANSACTIONS_ENDPOINT = `${BASE_URL}/savings/transactions`;
 const OVERDRAFT_APPLY_ENDPOINT = `${BASE_URL}/overdrafts/apply`;
 const OVERDRAFT_ACCOUNT_ENDPOINT = `${BASE_URL}/overdrafts/account`;
 const OVERDRAFT_POSITION_ENDPOINT = `${BASE_URL}/overdrafts/account/position`;
+
+// wallet
+const WALLET_BONUS_BALANCE_ENDPOINT = `${BASE_URL}/wallet/balance/bonus`;
+const WALLET_WITHDRAW_ENDPOINT = `${BASE_URL}/wallet/withdraw`;
 
 export {
   BASE_URL,
@@ -219,4 +221,6 @@ export {
   OVERDRAFT_ACCOUNT_ENDPOINT,
   OVERDRAFT_POSITION_ENDPOINT,
   LOAN_CONFIRM_CONSENT_ENDPOINT,
+  WALLET_BONUS_BALANCE_ENDPOINT,
+  WALLET_WITHDRAW_ENDPOINT,
 };

@@ -25,20 +25,18 @@ export default function AuthorizeLoan() {
 
   // ✅ pull primitive params out (don’t depend on the whole params object)
   const productCode = String(params.productCode ?? "");
-  const productName = String(params.name ?? "");
-  const provider = String(params.provider ?? "");
-  const preferredRepaymentAccount = String(
-    params.preferredRepaymentAccount ?? ""
-  );
-  const preferredRepaymentBankCBNCode = String(
-    params.preferredRepaymentBankCBNCode ?? ""
-  );
+  const bankCode = String(params.bankCode ?? "");
+  const bankName = String(params.bankName ?? "");
+  const accountNumber = String(params.accountNumber ?? "");
+  const accountName = String(params.accountName ?? "");
+  const address = String(params.address ?? "");
+  const state = String(params.state ?? "");
+  const lga = String(params.lga ?? "");
   const creditCheckStr = String(params.creditCheck ?? "");
   const calcStr = String(params.calc ?? "");
 
   const creditCheck = useMemo(() => {
     try {
-      console.log(creditCheckStr);
       return creditCheckStr ? JSON.parse(creditCheckStr) : null;
     } catch {
       return null;
@@ -80,11 +78,12 @@ export default function AuthorizeLoan() {
 
     setLoading(true);
 
-    const loanAmount = Number(creditCheck?.data?.approvedLoanAmount ?? 0);
-    const interestRate = Number(creditCheck?.data?.interestRate ?? 0);
-    const tenureInDays = Number(creditCheck?.data?.loanTenure ?? 0);
+    const assessment = creditCheck?.assessment ?? creditCheck?.data?.assessment;
+    const loanAmount = Number(assessment?.maxLoanLimit ?? 0);
+    const interestRate = Number(assessment?.interestRatePerMonth ?? 0);
+    const tenureInDays = Number(assessment?.tenorDays ?? 0);
     const repaymentFrequency = String(
-      creditCheck?.data?.repaymentFrequency ?? ""
+      assessment?.repaymentFrequency ?? ""
     );
 
     const lastSchedule =
@@ -111,39 +110,38 @@ export default function AuthorizeLoan() {
 
     const payload = {
       productCode,
-      productName,
       loanAmount,
       interestRate,
-      tenureInDays,
-      loanTenure: tenureInDays,
+      tenorInDays: tenureInDays,
       repaymentFrequency,
-      totalRepaymentExpected: totalFromCalc,
-      networkProvider: provider,
-      loanDetails: "Business expansion",
-      recoveryConsentApproved: true,
-      preferredRepaymentAccount,
-      preferredRepaymentBankCBNCode,
+      address: {
+        address,
+        state: state.toLowerCase(),
+        lga,
+      },
+      account: {
+        bankName,
+        accountNumber,
+        accountName,
+      },
+      accountNumber,
+      bankCode,
       transactionPin: passcode,
-      loanReference: creditCheck?.loanReference ?? "",
-      mandateReference: creditCheck?.mandateReference ?? "",
     };
 
     dispatch(applyForLoan(payload as any))
       .unwrap()
       .then((res: any) => {
-        // ✅ your earlier sample response had res.data.id/status
         const id = String(res?.data?.id ?? res?.id ?? "");
-        const status = String(res?.data?.status ?? res?.status ?? "");
+        const submittedAmount = String(
+          res?.data?.amount ?? res?.amount ?? loanAmount
+        );
 
         router.replace({
-          pathname: "/(root)/loans/repayment-schedule",
+          pathname: "/(root)/loans/success",
           params: {
-            amount: String(loanAmount),
+            amount: submittedAmount,
             loanId: id,
-            loanStatus: status,
-            calc: calcStr,
-            creditCheck: creditCheckStr,
-            // include any other params you actually need, explicitly
           },
         });
       })
@@ -163,10 +161,13 @@ export default function AuthorizeLoan() {
     dispatch,
     router,
     productCode,
-    productName,
-    provider,
-    preferredRepaymentAccount,
-    preferredRepaymentBankCBNCode,
+    bankCode,
+    bankName,
+    accountNumber,
+    accountName,
+    address,
+    state,
+    lga,
     creditCheckStr,
     calcStr,
   ]);

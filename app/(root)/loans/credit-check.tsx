@@ -35,18 +35,15 @@ const CreditScore = () => {
 
     loop.start();
 
-    dispatch(
-      runCreditCheck({
-        networkProvider: params.provider,
-        productCode: params.productCode,
-      })
-    )
+    dispatch(runCreditCheck())
       .unwrap()
       .then((res) => {
-        console.log("✅ CREDIT CHECK SUCCESS RESPONSE:", res);1
+        if (!res?.assessment) {
+          throw new Error("Credit check returned no assessment");
+        }
 
-        if (res?.data == null) {
-          throw new Error("Credit check returned null data");
+        if (res.assessment.isApproved !== true) {
+          throw new Error(res?.message || "Credit check failed");
         }
 
         loop.stop();
@@ -59,7 +56,6 @@ const CreditScore = () => {
         });
       })
       .catch((err) => {
-
         loop.stop();
         router.replace({
           pathname: "/(root)/loans/credit-check-fail",
@@ -68,7 +64,7 @@ const CreditScore = () => {
       });
 
     return () => loop.stop();
-  }, [dispatch, params.productCode, params.provider, router, progress]);
+  }, [dispatch, params, router, progress]);
 
   const widthInterpolate = progress.interpolate({
     inputRange: [0, 1],
@@ -98,7 +94,7 @@ const CreditScore = () => {
           secondary
           className="text-center text-white/75 mb-8 leading-5"
         >
-          We are assessing your credit worthiness for the salah loan. This may
+          We are assessing your credit worthiness for this loan. This may
           take a few moments
         </CustomText>
 

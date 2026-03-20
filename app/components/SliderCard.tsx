@@ -20,6 +20,7 @@ import PlansContent from "./home/plans/PlansContent";
 
 import { fetchOverdraftPosition } from "../lib/thunks/overdraftThunks";
 import { fetchUserSavings } from "../lib/thunks/savingsThunks";
+import { fetchBonusWalletBalance } from "../lib/thunks/walletThunks";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width - 20;
@@ -51,6 +52,9 @@ export default function BalanceCardSlider({
   const savingsTotal = useSelector(
     (state: RootState) => (state as any).savings?.totals?.overall ?? 0
   );
+  const pointBalance = useSelector(
+    (state: RootState) => (state as any).wallet?.bonusBalance?.balance ?? 0
+  );
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showBalance, setShowBalance] = useState<ShowBalanceState>({});
@@ -60,6 +64,7 @@ export default function BalanceCardSlider({
   useEffect(() => {
     dispatch(fetchAccountInfo());
     dispatch(fetchOverdraftPosition() as any);
+    dispatch(fetchBonusWalletBalance() as any);
 
     // ✅ load all savings types so totals become correct
     ["BASIC", "TARGET", "GROUP", "FIXED"].forEach((type) => {
@@ -68,7 +73,7 @@ export default function BalanceCardSlider({
   }, [dispatch]);
 
   // ✅ pass savingsTotal into your cards builder
-  const cardsData = getCardsData(accountInfo, savingsTotal);
+  const cardsData = getCardsData(accountInfo, savingsTotal, pointBalance);
 
   const toggleBalance = (cardId: number) => {
     setShowBalance((prev) => ({

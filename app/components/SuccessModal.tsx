@@ -5,23 +5,23 @@ import CustomText from "./CustomText";
 
 const { width } = Dimensions.get("window");
 
-interface ErrorModalProps {
+interface SuccessModalProps {
   visible: boolean;
   title?: string;
   message?: string;
   onDismiss: () => void;
 }
 
-const ErrorModal: React.FC<ErrorModalProps> = ({
+const SuccessModal: React.FC<SuccessModalProps> = ({
   visible,
-  title = "Account creation Error",
-  message = "We could not complete your registration, give it another shot",
+  title = "Request Successful",
+  message = "Your request was completed successfully.",
   onDismiss,
 }) => {
   return (
     <Modal
       visible={visible}
-      transparent={true}
+      transparent
       animationType="fade"
       onRequestClose={onDismiss}
     >
@@ -39,7 +39,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
           </CustomText>
 
           <Button
-            title="Try again"
+            title="Done"
             onPress={onDismiss}
             variant="primary"
             className="w-full mt-10"
@@ -50,4 +50,4 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
   );
 };
 
-export default ErrorModal;
+export default SuccessModal;
