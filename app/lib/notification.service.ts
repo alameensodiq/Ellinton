@@ -9,7 +9,7 @@ import { getAuth, Auth } from "firebase/auth";
 import { app } from "../firebase"; // Import your initialized Firebase app
 import {
   NotificationData,
-  AndroidChannelConfig
+  AndroidChannelConfig,
 } from "./types/notification.types";
 
 // Configure notification handler
@@ -22,8 +22,8 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
     shouldShowLockScreen: true,
     shouldPlaySoundInSilentMode: true,
-    priority: Notifications.AndroidNotificationPriority.HIGH
-  })
+    priority: Notifications.AndroidNotificationPriority.HIGH,
+  }),
 });
 
 // Android channels
@@ -34,7 +34,7 @@ const ANDROID_CHANNELS: AndroidChannelConfig[] = [
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: "#3F401B",
-    sound: "default"
+    sound: "default",
   },
   {
     id: "transactions",
@@ -42,7 +42,7 @@ const ANDROID_CHANNELS: AndroidChannelConfig[] = [
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: "#3F401B",
-    sound: "default"
+    sound: "default",
   },
   {
     id: "security",
@@ -50,8 +50,8 @@ const ANDROID_CHANNELS: AndroidChannelConfig[] = [
     importance: Notifications.AndroidImportance.MAX,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: "#FF0000",
-    sound: "default"
-  }
+    sound: "default",
+  },
 ];
 
 class NotificationService {
@@ -66,7 +66,8 @@ class NotificationService {
 
   constructor() {
     this.apiUrl =
-      Constants.expoConfig?.extra?.apiUrl || "https://stagingapi.ellingtonbank.com";
+      Constants.expoConfig?.extra?.apiUrl ||
+      "https://stagingapi.ellingtonbank.com/api/v2";
   }
 
   // 🔥 Get auth instance lazily (only when needed)
@@ -118,7 +119,8 @@ class NotificationService {
         sound: channel.sound,
         enableVibrate: true,
         bypassDnd: true,
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC
+        lockscreenVisibility:
+          Notifications.AndroidNotificationVisibility.PUBLIC,
       });
     }
   }
@@ -130,7 +132,7 @@ class NotificationService {
 
     if (existingStatus !== "granted") {
       const { status } = await Notifications.requestPermissionsAsync({
-        ios: { allowAlert: true, allowBadge: true, allowSound: true }
+        ios: { allowAlert: true, allowBadge: true, allowSound: true },
       });
       finalStatus = status;
     }
@@ -141,7 +143,7 @@ class NotificationService {
         "Please enable notifications to receive important banking alerts.",
         [
           { text: "Later", style: "cancel" },
-          { text: "Settings", onPress: () => Linking.openSettings() }
+          { text: "Settings", onPress: () => Linking.openSettings() },
         ]
       );
       return false;
@@ -156,7 +158,7 @@ class NotificationService {
       if (!eas?.projectId) throw new Error("EAS project ID not found");
 
       const token = await Notifications.getExpoPushTokenAsync({
-        projectId: eas.projectId
+        projectId: eas.projectId,
       });
       this.pushToken = token.data;
       await SecureStore.setItemAsync(this.tokenKey, this.pushToken);
@@ -174,7 +176,9 @@ class NotificationService {
       const constantDeviceId = Constants.deviceId;
       const newDeviceId =
         constantDeviceId ||
-        `${Platform.OS}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+        `${Platform.OS}-${Date.now()}-${Math.random()
+          .toString(36)
+          .substring(2, 10)}`;
       await SecureStore.setItemAsync(this.deviceIdKey, newDeviceId);
       return newDeviceId;
     }
@@ -185,6 +189,7 @@ class NotificationService {
   async registerDeviceWithBackend(): Promise<boolean> {
     try {
       const appToken = await AsyncStorage.getItem("authToken");
+      console.log(appToken);
       if (!appToken) {
         console.log("User not logged in");
         return false;
@@ -196,26 +201,34 @@ class NotificationService {
         console.log("No Firebase user logged in");
         return false;
       }
-      
+
       const firebaseToken = await user.getIdToken();
       console.log("Firebase token obtained for registration");
+
+      console.log(`${this.apiUrl}/users/push-tokens`);
+      console.log(firebaseToken);
+      console.log(appToken);
 
       const response = await fetch(`${this.apiUrl}/users/push-tokens`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${appToken}`
+          Authorization: `Bearer ${appToken}`,
         },
         body: JSON.stringify({
-          token: firebaseToken  // 🔥 ONLY Firebase token
-        })
+          token: firebaseToken, // 🔥 ONLY Firebase token
+        }),
       });
+
+      console.log(response);
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to register device: ${response.status} ${errorText}`);
+        throw new Error(
+          `Failed to register device: ${response.status} ${errorText}`
+        );
       }
-      
+
       console.log("✅ Device registered successfully");
       return true;
     } catch (error) {
@@ -233,18 +246,18 @@ class NotificationService {
       const auth = this.getAuth(); // 🔥 Get auth instance
       const user = auth.currentUser;
       if (!user) return false;
-      
+
       const firebaseToken = await user.getIdToken();
 
       const response = await fetch(`${this.apiUrl}/users/push-tokens/delete`, {
         method: "DELETE",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${appToken}` 
+          Authorization: `Bearer ${appToken}`,
         },
         body: JSON.stringify({
-          token: firebaseToken  // 🔥 ONLY Firebase token
-        })
+          token: firebaseToken, // 🔥 ONLY Firebase token
+        }),
       });
 
       if (response.ok) {
@@ -323,12 +336,12 @@ class NotificationService {
         title,
         body,
         data: data || { type: "test", timestamp: new Date().toISOString() },
-        sound: "default"
+        sound: "default",
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: seconds
-      }
+        seconds: seconds,
+      },
     });
   }
 }
