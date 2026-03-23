@@ -61,6 +61,7 @@
     "react-native-appwrite": "^0.7.2",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-inactivity": "^0.1.8",
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-pager-view": "^6.9.1",
     "react-native-reanimated": "~4.1.1",

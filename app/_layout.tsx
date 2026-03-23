@@ -11,17 +11,23 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { store } from "./lib/store";
 import AuthWrapper from "./(root)/AuthWrapper";
-import { logout } from "./lib/slices/authSlice";
+import { clearError, logout } from "./lib/slices/authSlice";
 import { useEffect } from "react";
 import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
 import firebaseService from "./lib/firebase.service";
 import authListenerService from "./lib/auth-listener.service";
 import notificationService from "./lib/notification.service";
 import UserInactivityProvider from "./components/UserInactivityProvider";
+import { usePreventScreenCapture } from "expo-screen-capture";
+import ReactNativeInactivity from "react-native-inactivity";
+import { logoutUser } from "./lib/thunks/authThunks";
+import { signOut } from "firebase/auth";
+import { auth } from "./firebase";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  usePreventScreenCapture();
   const [fontsLoaded] = useFonts({
     Outfit: require("./assets/fonts/Outfit-Bold.ttf"),
     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),
@@ -112,6 +118,36 @@ export default function RootLayout() {
     return unsub;
   }, []);
 
+    const handleInactivity = async () => {
+    console.log("⏰ User inactive → logging out");
+    
+    try {
+      // 1. Unregister device from backend
+      await notificationService.unregisterDeviceFromBackend();
+      console.log("✅ Device unregistered");
+
+      // 2. Dispatch logout from Redux
+      await store.dispatch(logoutUser() as any).unwrap();
+      console.log("✅ Redux logout dispatched");
+
+      // 3. Sign out from Firebase
+      await signOut(auth);
+      console.log("✅ Firebase signed out");
+
+      // 4. Clear error state
+      store.dispatch(clearError());
+
+      // 5. Navigate to current-user screen
+      router.replace("/(auth)/current-user");
+      console.log("✅ Navigated to current-user");
+      
+    } catch (error) {
+      console.error("❌ Inactivity logout error:", error);
+      // Even if something fails, still try to navigate
+      router.replace("/(auth)/current-user");
+    }
+  }
+
   if (!fontsLoaded) return null;
 
   SplashScreen.hideAsync();
@@ -125,9 +161,13 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <UserInactivityProvider>
+      <ReactNativeInactivity
+        timeForInactivity={2 * 60 * 1000} // 5 minutes
+        onInactive={handleInactivity}
+        style={{ flex: 1 }}
+      >
         <AuthWrapper />
-      </UserInactivityProvider>
+      </ReactNativeInactivity>
     </Provider>
   );
 }
