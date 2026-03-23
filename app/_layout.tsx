@@ -17,6 +17,7 @@ import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
 import firebaseService from "./lib/firebase.service";
 import authListenerService from "./lib/auth-listener.service";
 import notificationService from "./lib/notification.service";
+import UserInactivityProvider from "./components/UserInactivityProvider";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -60,7 +61,7 @@ export default function RootLayout() {
           }
 
           // update redux state
-              await notificationService.unregisterDeviceFromBackend();
+          await notificationService.unregisterDeviceFromBackend();
           store.dispatch(logout());
 
           // mark session expired so other parts of the app can react
@@ -124,7 +125,9 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <AuthWrapper />
+      <UserInactivityProvider>
+        <AuthWrapper />
+      </UserInactivityProvider>
     </Provider>
   );
 }
