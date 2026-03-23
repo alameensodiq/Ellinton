@@ -77,6 +77,30 @@ export default function CurrentUser() {
           ).unwrap();
 
           setPasscode("");
+
+          if (result.user?.status === "otp_verified") {
+            router.replace("/(auth)/profile-update");
+            return;
+          }
+
+          if (result.user?.status === "bvn_verified") {
+            router.replace("/(auth)/facial-verification");
+            return;
+          }
+
+          if (result.requiresPasscodeSetup) {
+            router.replace("/(auth)/create-passcode");
+            return;
+          }
+
+          if (result.requiresTransactionPinSetup && result.user?.id) {
+            router.replace({
+              pathname: "/(auth)/transacion-pin",
+              params: { userId: result.user.id, source: "login" },
+            });
+            return;
+          }
+
           router.replace({
             pathname: "/(root)/(tabs)",
             params: params,

@@ -248,6 +248,7 @@ export const loginUser = createAsyncThunk(
       const data = (await response.json()) as ApiResponse<{
         access_token: string;
         requires_passcode_setup: boolean;
+        requires_transaction_pin_setup?: boolean;
         user: User;
       }>;
       console.log(data);
@@ -258,11 +259,18 @@ export const loginUser = createAsyncThunk(
       const user = apiData.user;
       const token = apiData.access_token;
       const requiresPasscodeSetup = apiData.requires_passcode_setup;
+      const requiresTransactionPinSetup =
+        apiData.requires_transaction_pin_setup ?? false;
 
       // Persist both user profile and token
       await Promise.all([persistUserProfile(user), persistToken(token)]);
 
-      return { user, token, requiresPasscodeSetup };
+      return {
+        user,
+        token,
+        requiresPasscodeSetup,
+        requiresTransactionPinSetup,
+      };
     } catch (error: any) {
       return rejectWithValue(
         error.data?.message || error.message || "Login error"

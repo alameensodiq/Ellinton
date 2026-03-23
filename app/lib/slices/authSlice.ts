@@ -68,6 +68,7 @@ interface AuthState {
   user: User | null;
   token: string | null;
   requiresPasscodeSetup?: boolean;
+  requiresTransactionPinSetup?: boolean;
   pendingUserId: string | null;
   isLoading: boolean;
   error: string | null;
@@ -107,6 +108,7 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.token = null;
       state.requiresPasscodeSetup = undefined;
+      state.requiresTransactionPinSetup = undefined;
       state.pendingUserId = null;
       state.isAuthenticated = false;
       state.error = null;
@@ -115,6 +117,7 @@ const authSlice = createSlice({
       // Keep user profile; only clear sensitive auth data
       state.token = null;
       state.requiresPasscodeSetup = undefined;
+      state.requiresTransactionPinSetup = undefined;
       state.pendingUserId = null;
       state.isAuthenticated = false;
       state.isLoading = false;
@@ -183,12 +186,15 @@ const authSlice = createSlice({
             user: User;
             token: string;
             requiresPasscodeSetup: boolean;
+            requiresTransactionPinSetup: boolean;
           }>
         ) => {
           state.isLoading = false;
           state.user = action.payload.user;
           state.token = action.payload.token;
           state.requiresPasscodeSetup = action.payload.requiresPasscodeSetup;
+          state.requiresTransactionPinSetup =
+            action.payload.requiresTransactionPinSetup;
           state.pendingUserId = null;
           state.isAuthenticated = true;
           state.error = null;
@@ -311,6 +317,7 @@ const authSlice = createSlice({
       })
       .addCase(createUserTransactionPin.fulfilled, (state) => {
         state.isLoading = false;
+        state.requiresTransactionPinSetup = false;
         state.error = null;
       })
       .addCase(createUserTransactionPin.rejected, (state, action) => {
@@ -439,6 +446,7 @@ const authSlice = createSlice({
         // Keep user profile; only clear sensitive auth data
         state.token = null;
         state.requiresPasscodeSetup = undefined;
+        state.requiresTransactionPinSetup = undefined;
         state.pendingUserId = null;
         state.isAuthenticated = false;
         state.error = null;
@@ -516,6 +524,7 @@ const authSlice = createSlice({
         // All sessions invalidated, so clear auth state but keep user profile
         state.token = null;
         state.requiresPasscodeSetup = undefined;
+        state.requiresTransactionPinSetup = undefined;
         state.isAuthenticated = false;
         state.error = null;
       })

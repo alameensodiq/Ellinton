@@ -39,8 +39,14 @@ const Login = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const { isLoading, error, isAuthenticated, requiresPasscodeSetup, user } =
-    useAppSelector((state) => state.auth);
+  const {
+    isLoading,
+    error,
+    isAuthenticated,
+    requiresPasscodeSetup,
+    requiresTransactionPinSetup,
+    user,
+  } = useAppSelector((state) => state.auth);
 
   // Auto-fill email if user profile is saved
   useEffect(() => {
@@ -60,20 +66,6 @@ const Login = () => {
     loadSavedEmail();
   }, []);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      if (user?.status === "otp_verified") {
-        router.replace("/(auth)/profile-update");
-      } else if (user?.status === "bvn_verified") {
-        router.replace("/(auth)/facial-verification");
-      } else if (requiresPasscodeSetup) {
-        router.replace("/(auth)/create-passcode");
-      } else {
-        router.replace("/(root)/(tabs)");
-      }
-    }
-  }, [isAuthenticated]);
-
   // Handle post-authentication navigation
   useEffect(() => {
     const handleAuthSuccess = async () => {
@@ -86,21 +78,41 @@ const Login = () => {
           console.error("❌ Error registering device:", error);
         }
 
-        // Navigate based on user status
         if (user?.status === "otp_verified") {
           router.replace("/(auth)/profile-update");
-        } else if (user?.status === "bvn_verified") {
-          router.replace("/(auth)/facial-verification");
-        } else if (requiresPasscodeSetup) {
-          router.replace("/(auth)/create-passcode");
-        } else {
-          router.replace("/(root)/(tabs)");
+          return;
         }
+
+        if (user?.status === "bvn_verified") {
+          router.replace("/(auth)/facial-verification");
+          return;
+        }
+
+        if (requiresPasscodeSetup) {
+          router.replace("/(auth)/create-passcode");
+          return;
+        }
+
+        if (requiresTransactionPinSetup && user?.id) {
+          router.replace({
+            pathname: "/(auth)/transacion-pin",
+            params: { userId: user.id, source: "login" },
+          });
+          return;
+        }
+
+        router.replace("/(root)/(tabs)");
       }
     };
 
     handleAuthSuccess();
-  }, [isAuthenticated, user, requiresPasscodeSetup, router]);
+  }, [
+    isAuthenticated,
+    requiresPasscodeSetup,
+    requiresTransactionPinSetup,
+    router,
+    user,
+  ]);
 
   useEffect(() => {
     setShowErrorModal(Boolean(error));

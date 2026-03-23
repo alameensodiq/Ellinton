@@ -14,12 +14,16 @@ import { auth } from "@/app/firebase";
 
 const RegistrationSuccessScreen = () => {
   const router = useRouter();
-  const { userId } = useLocalSearchParams<{ userId?: string }>();
+  const { userId, source } = useLocalSearchParams<{
+    userId?: string;
+    source?: string;
+  }>();
   const dispatch = useDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const isLoginContinuation = source === "login";
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId || isLoginContinuation) {
       return;
     }
 
@@ -30,9 +34,14 @@ const RegistrationSuccessScreen = () => {
     }).catch((error) => {
       console.warn("Failed to track registration completion:", error);
     });
-  }, [userId]);
+  }, [isLoginContinuation, userId]);
 
 const goToLogin = async () => {
+  if (isLoginContinuation) {
+    router.replace("/(root)/(tabs)");
+    return;
+  }
+
   try {
     // ✅ 1. Unregister device from backend FIRST
     await notificationService.unregisterDeviceFromBackend();
@@ -78,12 +87,18 @@ const goToLogin = async () => {
         </Text>
 
         <Text className="text-accent-100 text-center text-base leading-relaxed mt-4">
-          Thank you for completing your registration. Welcome to Ellington Bank.
+          {isLoginContinuation
+            ? "Your transaction PIN has been created successfully."
+            : "Thank you for completing your registration. Welcome to Ellington Bank."}
         </Text>
       </View>
 
       <View className="pb-6">
-        <Button title="Login now" variant="primary" onPress={goToLogin} />
+        <Button
+          title={isLoginContinuation ? "Continue" : "Login now"}
+          variant="primary"
+          onPress={goToLogin}
+        />
       </View>
     </SafeAreaView>
   );

@@ -13,6 +13,8 @@ export default function AuthWrapper() {
   const {
     isAuthenticated,
     isRestoring,
+    requiresPasscodeSetup,
+    requiresTransactionPinSetup,
     error: authError,
   } = useAppSelector((state: RootState) => state.auth);
   const { user } = useAppSelector((state: RootState) => state.auth);
@@ -70,6 +72,29 @@ export default function AuthWrapper() {
     );
 
     if (isAuthenticated && (isOnLogin || isOnCurrentUser)) {
+      if (user?.status === "otp_verified") {
+        router.replace("/(auth)/profile-update");
+        return;
+      }
+
+      if (user?.status === "bvn_verified") {
+        router.replace("/(auth)/facial-verification");
+        return;
+      }
+
+      if (requiresPasscodeSetup) {
+        router.replace("/(auth)/create-passcode");
+        return;
+      }
+
+      if (requiresTransactionPinSetup && user?.id) {
+        router.replace({
+          pathname: "/(auth)/transacion-pin",
+          params: { userId: user.id, source: "login" },
+        });
+        return;
+      }
+
       router.replace("/(root)/(tabs)");
       return;
     }
@@ -93,6 +118,8 @@ export default function AuthWrapper() {
     kycError,
     transferError,
     isAuthenticated,
+    requiresPasscodeSetup,
+    requiresTransactionPinSetup,
     user,
   ]);
 

@@ -24,7 +24,11 @@ const ConfirmTransactionPinScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { isLoading } = useAppSelector((state) => state.auth);
-  const { userId, transactionPin } = useLocalSearchParams();
+  const { userId, transactionPin, source } = useLocalSearchParams<{
+    userId?: string;
+    transactionPin?: string;
+    source?: string;
+  }>();
   const [otp, setOtp] = useState("");
   const [error, setError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -64,11 +68,13 @@ const ConfirmTransactionPinScreen = () => {
     setLoading(true);
 
     try {
-      await dispatch(
-        createUserAccount({
-          userId: userId as string,
-        })
-      ).unwrap();
+      if (source !== "login") {
+        await dispatch(
+          createUserAccount({
+            userId: userId as string,
+          })
+        ).unwrap();
+      }
 
       await dispatch(
         createUserTransactionPin({
@@ -78,12 +84,12 @@ const ConfirmTransactionPinScreen = () => {
       ).unwrap();
       router.push({
         pathname: "/(auth)/transacion-pin/success",
-        params: { userId: userId as string },
+        params: { userId: userId as string, source: source || "signup" },
       });
     } catch (err: any) {
       setError(true);
       setErrorMessage(
-        err.message || "Failed to create account or set PIN. Please try again."
+        err.message || "Failed to set transaction PIN. Please try again."
       );
     } finally {
       setLoading(false);

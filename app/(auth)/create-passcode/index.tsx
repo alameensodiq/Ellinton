@@ -20,7 +20,9 @@ import { setupPasscode } from "@/app/lib/thunks/authThunks";
 const CreatePasscodeScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isLoading } = useAppSelector((state) => state.auth);
+  const { isLoading, requiresTransactionPinSetup, user } = useAppSelector(
+    (state) => state.auth
+  );
 
 
   const [passcode, setPasscode] = useState("");
@@ -42,14 +44,22 @@ const CreatePasscodeScreen = () => {
     }
 
     try {
-      const result = await dispatch(
+      await dispatch(
         setupPasscode({
           passcode,
         })
       ).unwrap();
 
+      if (requiresTransactionPinSetup && user?.id) {
+        router.replace({
+          pathname: "/(auth)/transacion-pin",
+          params: { userId: user.id, source: "login" },
+        });
+        return;
+      }
+
       router.push({
-        pathname: "/(root)/(tabs)", 
+        pathname: "/(root)/(tabs)",
       });
     } catch (err: any) {
       setError(err || "Setup failed");

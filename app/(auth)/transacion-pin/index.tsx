@@ -18,7 +18,10 @@ import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 
 const CreateTransactionPinScreen = () => {
   const router = useRouter();
-  const { userId } = useLocalSearchParams();
+  const { userId, source } = useLocalSearchParams<{
+    userId?: string;
+    source?: string;
+  }>();
   const [otp, setOtp] = useState("");
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,7 +39,11 @@ const CreateTransactionPinScreen = () => {
     if (trimmed.length === 4) {
       router.push({
         pathname: "/(auth)/transacion-pin/confirm",
-        params: { userId: userId as string, transactionPin: trimmed },
+        params: {
+          userId: userId as string,
+          transactionPin: trimmed,
+          source: source || "signup",
+        },
       });
     }
   };
