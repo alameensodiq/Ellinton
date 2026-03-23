@@ -16,8 +16,10 @@ import { getUserProfile } from "@/app/lib/thunks/authThunks";
 import { fetchAccountInfo } from "@/app/lib/thunks/accountThunks";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { usePreventScreenCapture } from "expo-screen-capture";
 
 const HomeScreen = () => {
+    usePreventScreenCapture();
   const [menuVisible, setMenuVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

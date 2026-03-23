@@ -36,6 +36,7 @@ import {
 } from "@/app/lib/thunks/virtualCardsThunks";
 import { RootState, AppDispatch } from "@/app/lib/store";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { usePreventScreenCapture } from "expo-screen-capture";
 
 const EMPTY_ARR: any[] = [];
 
@@ -54,6 +55,7 @@ const selectSelectedVirtualCard = (state: RootState) =>
   state.virtualCards?.selectedCard ?? null;
 
 export default function Card() {
+    usePreventScreenCapture();
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 

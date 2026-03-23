@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { AppDispatch, RootState } from "../lib/store";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
 import { restoreAuth } from "../lib/thunks/authThunks";
+import { usePreventScreenCapture } from "expo-screen-capture";
 
 export default function AuthWrapper() {
   const dispatch = useDispatch<AppDispatch>();
+    usePreventScreenCapture();
 
   const {
     isAuthenticated,

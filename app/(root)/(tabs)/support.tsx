@@ -1,9 +1,11 @@
 import { Linking, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect } from "react";
+import { usePreventScreenCapture } from "expo-screen-capture";
 
 const CUSTOMER_CARE_NUMBER = "2347042678421"; 
 export default function ProfileScreen() {
+    usePreventScreenCapture();
   useEffect(() => {
     const openWhatsApp = async () => {
       const url = `https://wa.me/${CUSTOMER_CARE_NUMBER}`;

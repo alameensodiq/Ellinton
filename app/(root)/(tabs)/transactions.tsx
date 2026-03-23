@@ -9,6 +9,7 @@ import SearchBar from "@/app/components/SearchBar";
 import TransactionCard from "@/app/components/TransactionCard";
 import { AppDispatch, RootState } from "@/app/lib/store";
 import { fetchAccountTransactions } from "@/app/lib/thunks/transferThunks";
+import { usePreventScreenCapture } from "expo-screen-capture";
 
 const groupTransactionsByDate = (transactions: any[]) => {
   const today = new Date();
@@ -63,6 +64,7 @@ const TransactionsLoadingPlaceholder = () => (
 );
 
 export default function TransactionsScreen() {
+    usePreventScreenCapture();
   const dispatch = useDispatch<AppDispatch>();
   const [searchQuery, setSearchQuery] = useState("");
   const [openingReference, setOpeningReference] = useState<string | null>(null);
