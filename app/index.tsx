@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "./firebase";
 import notificationService from "./lib/notification.service";
 import { signOut } from "firebase/auth";
+import { usePreventScreenCapture } from 'expo-screen-capture';
 
 const backgrounds = [
   {
@@ -49,6 +50,7 @@ const backgrounds = [
 ];
 
 export default function Index() {
+    usePreventScreenCapture();
   const router = useRouter();
   const [backgroundIndex, setBackgroundIndex] = useState(0);
   const [checkingStorage, setCheckingStorage] = useState(true);
