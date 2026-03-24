@@ -103,7 +103,7 @@ const handleAuthNavigation = async (path: string) => {
     await notificationService.unregisterDeviceFromBackend();
     
     // 2. Sign out from Firebase
-    await signOut(auth);
+    // await signOut(auth);
     
     // 3. Clear Redux state
     dispatch(logout());

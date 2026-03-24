@@ -118,6 +118,10 @@ const Login = () => {
     setShowErrorModal(Boolean(error));
   }, [error]);
 
+  useEffect(() => {
+    notificationService.initialize();
+  }, []);
+
   const handleLogin = async () => {
     if (!email || !pin) return;
 
@@ -137,33 +141,6 @@ const Login = () => {
       ).unwrap();
 
       console.log("✅ App login successful");
-
-      // 2. THEN login to Firebase (to get Firebase token)
-      try {
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email.trim().toLowerCase(),
-          pin // Your PIN is used as Firebase password
-        );
-        console.log("✅ Firebase login successful:", userCredential.user.email);
-
-        // Store Firebase user info if needed
-        const firebaseToken = await userCredential.user.getIdToken();
-        await AsyncStorage.setItem("firebaseToken", firebaseToken);
-      } catch (firebaseError: any) {
-        // await notificationService.scheduleLocalNotification(
-        //   "Welcome Back! 👋",
-        //   `Hello ${email}, you've successfully logged in.`,
-        //   { type: "test", timestamp: new Date().toISOString() },
-        //   3 // Shows after 3 seconds
-        // );
-        // Don't block login if Firebase fails
-        console.log("⚠️ Firebase login failed:", firebaseError.code);
-        // You might want to handle specific errors
-        if (firebaseError.code === "auth/user-not-found") {
-          console.log("User needs to be created in Firebase first");
-        }
-      }
     } catch (error) {
       console.error("❌ Login failed:", error);
     }
