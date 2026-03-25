@@ -19,7 +19,7 @@ export default function GeneralBillPayment() {
     useState("event_tickets");
   const [selectedService, setSelectedService] = useState("africkets");
   const [selectedProduct, setSelectedProduct] = useState("africkets_orders");
-  const [email, setEmail] = useState("sarah.doe@gmail.com");
+  const [email, setEmail] = useState("");
   const [amount, setAmount] = useState("5500");
   const router = useRouter();
 

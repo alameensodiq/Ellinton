@@ -501,7 +501,7 @@ Download on Android: ${androidAppLink}`;
                   {accountInfo?.accountName ||
                     user?.full_name ||
                     user?.name ||
-                    "Sarah John"}
+                    ""}
                 </CustomText>
                 <CustomText size="sm" className="text-white/60 mb-0">
                   Ellington Bank • {accountInfo?.accountNumber || "5372915793"}

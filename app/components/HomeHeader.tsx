@@ -12,8 +12,8 @@ interface HeaderProps {
 
 const HomeHeader: React.FC<HeaderProps> = ({
   onMenuPress,
-  username = "Sarah",
-  avatar = "https://i.pravatar.cc/100",
+  username = "",
+  avatar = "",
 }) => {
   return (
     <View className="w-full h-20 px-4 flex-row items-center justify-between bg-[#3F401B]">
