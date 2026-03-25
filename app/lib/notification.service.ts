@@ -827,7 +827,7 @@ class NotificationService {
 
       // Get project ID from Constants
       const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? 
-                       Constants?.easConfig?.projectId;
+                       Constants?.easConfig?.projectId ?? "2cb6bacc-1e05-4771-81c3-6a9934f26c7d";
       
       if (!projectId) {
         this.handleRegistrationError('Project ID not found');
@@ -965,10 +965,12 @@ class NotificationService {
         },
         body: JSON.stringify({
           token: token,
-          platform: Platform.OS,
-          deviceType: Device.deviceName || Platform.OS,
+          // platform: Platform.OS,
+          // deviceType: Device.deviceName || Platform.OS,
         })
       });
+
+      console.log(response)
 
       if (response.ok) {
         console.log("✅ Device registered successfully");
