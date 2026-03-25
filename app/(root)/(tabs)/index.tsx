@@ -103,7 +103,7 @@ const HomeScreen = () => {
         user={{
           name: user?.full_name || user?.name || "User",
           email: user?.email || "",
-          avatar: user?.passport || "https://i.pravatar.cc/100",
+          avatar: user?.passport || "",
         }}
       />
 
