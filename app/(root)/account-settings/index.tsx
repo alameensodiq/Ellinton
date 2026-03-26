@@ -161,12 +161,13 @@ const AccountSettings = () => {
   const renderPersonalTab = () => (
     <ScrollView className="flex-1 px-2" showsVerticalScrollIndicator={false}>
       <View className="items-center mb-4 mt-6">
-        <Pressable className="mb-2">
+        <Pressable className="mb-2 w-24 h-24 rounded-full overflow-hidden bg-[#FF4D00]">
           <Image
             source={{
-              uri: user?.passport || "https://i.pravatar.cc/100",
+              uri: user?.passport || "",
             }}
-            className="w-24 h-24 rounded-full"
+            className="w-full h-full"
+            resizeMode="cover"
           />
         </Pressable>
         <Text className="text-accent-100 text-sm">Tap to change picture</Text>

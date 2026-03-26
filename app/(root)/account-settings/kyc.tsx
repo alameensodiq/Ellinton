@@ -6,18 +6,13 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import CustomText from "@/app/components/CustomText";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { getKycUpgradeRoute } from "@/app/lib/kyc";
 
 const kyc = () => {
   const { user } = useAppSelector((state) => state.auth);
   const handleKycPress = () => {
-    // Handle KYC verification navigation or action here
-    if (user?.kyc_level === 1) {
-      //navigate to kyc level 2
-      router.push("/kyc");
-    } else if (user?.kyc_level === 2) {
-      router.push("/kyc/utility-bills");
-      return;
-    }
+    const upgradeRoute = getKycUpgradeRoute(user?.kyc_level);
+    if (upgradeRoute) router.push(upgradeRoute);
   };
   return (
     <SafeAreaView className="bg-primary-100 flex-1 px-2">

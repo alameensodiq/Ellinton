@@ -14,7 +14,9 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { verifyUserFacial } from "@/app/lib/thunks/authThunks";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
-import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import { prepareImageForUpload } from "@/app/lib/imageUpload";
+
+const MAX_SELFIE_BYTES = 220 * 1024;
 
 const FacialVerificationScreen = () => {
   const router = useRouter();
@@ -24,6 +26,7 @@ const FacialVerificationScreen = () => {
   const [showCamera, setShowCamera] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<any>(null);
+  const resolvedUserId = (userId as string) || (user?.id as string) || "";
 
   const handleBack = () => {
     if (showCamera) {
@@ -44,33 +47,47 @@ const FacialVerificationScreen = () => {
   const capturePhoto = async () => {
     if (cameraRef.current) {
       try {
+        if (!resolvedUserId) {
+          Alert.alert("Error", "Unable to identify this user. Please try again.");
+          return;
+        }
+
         const photo = await cameraRef.current.takePictureAsync({
           quality: 0.5,
           base64: false,
         });
 
-        const manipulatedImage = await manipulateAsync(
+        const preparedImage = await prepareImageForUpload(
           photo.uri,
-          [{ resize: { width: 800 } }],
           {
-            compress: 0.6,
-            format: SaveFormat.JPEG,
-            base64: true,
+            maxBytes: MAX_SELFIE_BYTES,
+            startWidth: 720,
+            minWidth: 420,
+            initialCompress: 0.55,
+            minCompress: 0.2,
           }
         );
+
+        if (preparedImage.size > MAX_SELFIE_BYTES) {
+          Alert.alert(
+            "Image Too Large",
+            "Selfie is still too large. Please retake it in better light and try again."
+          );
+          return;
+        }
 
         try {
           await dispatch(
             verifyUserFacial({
-              userId: (userId as string) || (user?.id as string),
-              selfie: `data:image/jpeg;base64,${manipulatedImage.base64}`,
+              userId: resolvedUserId,
+              selfie: preparedImage.dataUri,
             })
           ).unwrap();
 
           setShowCamera(false);
           router.push({
             pathname: "/(auth)/transacion-pin",
-            params: { userId: (userId as string) || user?.id },
+            params: { userId: resolvedUserId },
           });
         } catch (err: any) {
           Alert.alert(

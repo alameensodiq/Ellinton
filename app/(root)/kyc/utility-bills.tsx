@@ -10,13 +10,10 @@ import Button from "@/app/components/Button";
 import Loading from "@/app/components/Loading";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import * as ImagePicker from "expo-image-picker";
-import * as ImageManipulator from "expo-image-manipulator";
-import * as FileSystem from "expo-file-system/legacy";
 import { uploadUtilityBill, submitTier3 } from "@/app/lib/thunks/kycThunks";
+import { prepareImageForUpload } from "@/app/lib/imageUpload";
 
-const MAX_BYTES = 800 * 1024; // 800KB target (base64 still increases size)
-const START_WIDTH = 720;
-const MIN_WIDTH = 420;
+const MAX_BYTES = 300 * 1024;
 
 const kycUtility = () => {
   const router = useRouter();
@@ -44,43 +41,11 @@ const kycUtility = () => {
     setError("");
   };
 
-  const compressUntilSmall = async (uri: string) => {
-    let width = START_WIDTH;
-    let compress = 0.35;
-
-    let out = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width } }],
-      { compress, format: ImageManipulator.SaveFormat.JPEG }
-    );
-
-    let info = await FileSystem.getInfoAsync(out.uri);
-    let size = (info as any)?.size ?? 0;
-
-    while (size > MAX_BYTES && width > MIN_WIDTH) {
-      width = Math.floor(width * 0.85);
-      compress = Math.max(0.2, compress - 0.05);
-
-      out = await ImageManipulator.manipulateAsync(
-        uri,
-        [{ resize: { width } }],
-        { compress, format: ImageManipulator.SaveFormat.JPEG }
-      );
-
-      info = await FileSystem.getInfoAsync(out.uri);
-      size = (info as any)?.size ?? 0;
-    }
-
-    return { uri: out.uri, size };
-  };
-
   const pickImage = async () => {
     setError("");
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [4, 3],
       quality: 1,
     });
 
@@ -89,7 +54,17 @@ const kycUtility = () => {
     const uri = result.assets[0].uri;
 
     try {
-      const { uri: compressedUri, size } = await compressUntilSmall(uri);
+      const {
+        uri: compressedUri,
+        size,
+        dataUri,
+      } = await prepareImageForUpload(uri, {
+        maxBytes: MAX_BYTES,
+        startWidth: 1080,
+        minWidth: 600,
+        initialCompress: 0.65,
+        minCompress: 0.22,
+      });
 
       if (size > MAX_BYTES) {
         clearImage();
@@ -100,12 +75,7 @@ const kycUtility = () => {
       }
 
       setImageUri(compressedUri);
-
-      const base64Data = await FileSystem.readAsStringAsync(compressedUri, {
-        encoding: "base64",
-      });
-
-      setBase64(`data:image/jpeg;base64,${base64Data}`);
+      setBase64(dataUri);
     } catch (err) {
       console.error(err);
       setError("Error processing image.");

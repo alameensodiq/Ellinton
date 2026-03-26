@@ -24,6 +24,11 @@ import Loading from "@/app/components/Loading";
 import { validateNipAccount } from "@/app/lib/thunks/accountThunks";
 import { clearValidation } from "@/app/lib/slices/accountSlice";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import {
+  getKycUpgradeRoute,
+  getTierLabel,
+  getTransferTierLimit,
+} from "@/app/lib/kyc";
 
 interface Beneficiary {
   id: number;
@@ -107,8 +112,19 @@ export default function TransferDetails() {
   const balanceStr = String(accountInfo?.accountBalance || "0");
   const balance = parseFloat(balanceStr.replace(/,/g, ""));
   const amountNum = parseFloat(amount.replace(/,/g, "")) || 0;
-
-  const canContinue = amountNum >= 100 && amountNum <= balance;
+  const transferTierLimit = getTransferTierLimit(user?.kyc_level);
+  const hasUnlimitedTierLimit = transferTierLimit == null;
+  const exceedsTierLimit =
+    !hasUnlimitedTierLimit && amountNum > transferTierLimit;
+  const kycUpgradeRoute = getKycUpgradeRoute(user?.kyc_level);
+  const canContinueToConfirmation =
+    amountNum >= 100 && amountNum <= balance && !exceedsTierLimit;
+  const canUpgradeKyc =
+    amountNum >= 100 &&
+    amountNum <= balance &&
+    exceedsTierLimit &&
+    !!kycUpgradeRoute;
+  const canPressButton = canContinueToConfirmation || canUpgradeKyc;
 
   let validationMessage = "Enter an amount above ₦100";
   if (amountNum > 0) {
@@ -116,30 +132,43 @@ export default function TransferDetails() {
       validationMessage = "Enter an amount above ₦100";
     } else if (amountNum > balance) {
       validationMessage = `Enter an amount less than or equal to your balance (₦${balance.toLocaleString()})`;
+    } else if (exceedsTierLimit && transferTierLimit != null) {
+      validationMessage = `${getTierLabel(
+        user?.kyc_level
+      )} accounts can transfer up to ₦${transferTierLimit.toLocaleString()}. Complete your KYC to increase your limit.`;
+    } else if (transferTierLimit != null) {
+      validationMessage = `${getTierLabel(
+        user?.kyc_level
+      )} transfer limit: ₦${transferTierLimit.toLocaleString()}. Available balance: ₦${balance.toLocaleString()}`;
     } else {
       validationMessage = `Minimum amount is ₦100. Available balance: ₦${balance.toLocaleString()}`;
     }
   }
 
   const handleContinue = () => {
-    if (canContinue) {
-      router.push({
-        pathname: "/(root)/transfer/confirm-transfer",
-        params: {
-          accountNumber: receiverAccountNumber,
-          bank: receiverBank,
-          bankCode,
-          receiverName:
-            receiverName !== `Account • ${accountNumber}` ? receiverName : "",
-          ...(beneficiary && { beneficiary: JSON.stringify(beneficiary) }),
-          amount,
-          addAsBeneficiary: addAsBeneficiary.toString(),
-          ...(incomingGift && { gift: "true" }),
-          ...(incomingAmountGrams && { amount_grams: incomingAmountGrams }),
-          ...(params?.remark && { remark: params.remark }),
-        },
-      });
+    if (canUpgradeKyc && kycUpgradeRoute) {
+      router.push(kycUpgradeRoute);
+      return;
     }
+
+    if (!canContinueToConfirmation) return;
+
+    router.push({
+      pathname: "/(root)/transfer/confirm-transfer",
+      params: {
+        accountNumber: receiverAccountNumber,
+        bank: receiverBank,
+        bankCode,
+        receiverName:
+          receiverName !== `Account • ${accountNumber}` ? receiverName : "",
+        ...(beneficiary && { beneficiary: JSON.stringify(beneficiary) }),
+        amount,
+        addAsBeneficiary: addAsBeneficiary.toString(),
+        ...(incomingGift && { gift: "true" }),
+        ...(incomingAmountGrams && { amount_grams: incomingAmountGrams }),
+        ...(params?.remark && { remark: params.remark }),
+      },
+    });
   };
 
   return (
@@ -195,12 +224,12 @@ export default function TransferDetails() {
             </Text>
           </View>
             <Button
-              title="Continue"
+              title={canUpgradeKyc ? "Upgrade KYC" : "Continue"}
               variant="primary"
               onPress={handleContinue}
-              disabled={!canContinue}
+              disabled={!canPressButton}
               className={`mt-6 w-full ${
-                canContinue ? "bg-[#5a5a35]" : "bg-[#4a4a28] opacity-50"
+                canPressButton ? "bg-[#5a5a35]" : "bg-[#4a4a28] opacity-50"
               }`}
             />
         </ScrollView>

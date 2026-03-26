@@ -98,6 +98,25 @@ interface ApiResponse<T = any> {
   message?: string;
 }
 
+const getResponseErrorMessage = async (
+  response: Response,
+  fallback: string
+) => {
+  if (response.status === 413) {
+    return "Uploaded image is too large. Please try a smaller image.";
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const errorData = await response.json().catch(() => null);
+    return errorData?.data?.message || errorData?.message || fallback;
+  }
+
+  const errorText = await response.text().catch(() => "");
+  return errorText?.trim() || fallback;
+};
+
 export const getKycStatus = createAsyncThunk(
   "kyc/getStatus",
   async (_, { rejectWithValue, getState }) => {
@@ -351,11 +370,11 @@ export const uploadUtilityBill = createAsyncThunk(
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
         return rejectWithValue(
-          errorData?.data?.message ||
-            errorData?.message ||
+          await getResponseErrorMessage(
+            response,
             `Utility bill upload failed (${response.status})`
+          )
         );
       }
 

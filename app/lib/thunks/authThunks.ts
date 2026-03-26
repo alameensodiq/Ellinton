@@ -164,6 +164,25 @@ interface ChangeTransactionPinPayload {
   confirmPin: string;
 }
 
+const getResponseErrorMessage = async (
+  response: Response,
+  fallback: string
+) => {
+  if (response.status === 413) {
+    return "Uploaded image is too large. Please try a smaller image.";
+  }
+
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    const errorData = await response.json().catch(() => null);
+    return errorData?.data?.message || errorData?.message || fallback;
+  }
+
+  const errorText = await response.text().catch(() => "");
+  return errorText?.trim() || fallback;
+};
+
 
 // Helper function to persist user profile
 const persistUserProfile = async (user: User) => {
@@ -390,21 +409,31 @@ export const verifyUserBvn = createAsyncThunk(
 
 export const verifyUserFacial = createAsyncThunk(
   "auth/verifyUserFacial",
-  async (payload: VerifyFacialPayload, { rejectWithValue }) => {
+  async (payload: VerifyFacialPayload, { rejectWithValue, getState }) => {
     try {
+      const state = getState() as any;
+      const token = state.auth.token;
       const url = VERIFY_FACIAL_USERS_ENDPOINT(payload.userId);
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ selfie: payload.selfie }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
         return rejectWithValue(
-          errorData?.data?.message ||
-            errorData?.message ||
+          await getResponseErrorMessage(
+            response,
             `Facial verification failed (${response.status})`
+          )
         );
       }
 
