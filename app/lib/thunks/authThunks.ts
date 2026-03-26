@@ -164,9 +164,35 @@ interface ChangeTransactionPinPayload {
   confirmPin: string;
 }
 
+const parseResponseJson = (responseText: string) => {
+  if (!responseText) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    return null;
+  }
+};
+
+const formatResponseLogBody = (responseText: string, limit = 1200) => {
+  if (!responseText) {
+    return "<empty>";
+  }
+
+  if (responseText.length <= limit) {
+    return responseText;
+  }
+
+  return `${responseText.slice(0, limit)}... [truncated]`;
+};
+
 const getResponseErrorMessage = async (
   response: Response,
-  fallback: string
+  fallback: string,
+  responseText?: string,
+  responseJson?: ApiResponse<any> | null
 ) => {
   if (response.status === 413) {
     return "Uploaded image is too large. Please try a smaller image.";
@@ -174,13 +200,23 @@ const getResponseErrorMessage = async (
 
   const contentType = response.headers.get("content-type") || "";
 
-  if (contentType.includes("application/json")) {
-    const errorData = await response.json().catch(() => null);
+  const errorData =
+    typeof responseJson !== "undefined"
+      ? responseJson
+      : contentType.includes("application/json")
+        ? await response.json().catch(() => null)
+        : parseResponseJson(responseText || "");
+
+  if (errorData) {
     return errorData?.data?.message || errorData?.message || fallback;
   }
 
+  if (typeof responseText === "string") {
+    return responseText.trim() || fallback;
+  }
+
   const errorText = await response.text().catch(() => "");
-  return errorText?.trim() || fallback;
+  return errorText.trim() || fallback;
 };
 
 
@@ -411,6 +447,7 @@ export const verifyUserFacial = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
       const url = VERIFY_FACIAL_USERS_ENDPOINT(payload.userId);
+      const requestBody = JSON.stringify({ selfie: payload.selfie });
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
@@ -419,28 +456,50 @@ export const verifyUserFacial = createAsyncThunk(
         headers.Authorization = `Bearer ${token}`;
       }
 
+      console.log("[verifyUserFacial] request", {
+        url,
+        userId: payload.userId,
+        requestBytes: requestBody.length,
+        selfieLength: payload.selfie.length,
+      });
+
       const response = await fetch(url, {
         method: "POST",
         headers,
-        body: JSON.stringify({ selfie: payload.selfie }),
+        body: requestBody,
+      });
+      const contentType = response.headers.get("content-type") || "";
+      const responseText = await response.text().catch(() => "");
+      const responseJson = parseResponseJson(responseText) as ApiResponse<{
+        message?: string;
+      }> | null;
+
+      console.log("[verifyUserFacial] response", {
+        status: response.status,
+        ok: response.ok,
+        contentType,
+        body: formatResponseLogBody(responseText),
       });
 
       if (!response.ok) {
         return rejectWithValue(
           await getResponseErrorMessage(
             response,
-            `Facial verification failed (${response.status})`
+            `Facial verification failed (${response.status})`,
+            responseText,
+            responseJson
           )
         );
       }
 
-      const data = (await response.json()) as ApiResponse<{ message?: string }>;
-      console.log(data);
       return {
         message:
-          data.data?.message || data.message || "Facial verification completed",
+          responseJson?.data?.message ||
+          responseJson?.message ||
+          "Facial verification completed",
       };
     } catch (error: any) {
+      console.error("[verifyUserFacial] request failed", error);
       return rejectWithValue(
         error.data?.message || error.message || "Facial verification error"
       );

@@ -15,8 +15,11 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { prepareImageForUpload } from "@/app/lib/imageUpload";
 import ErrorModal from "@/app/components/ErrorModal";
+import FaceVerificationProgressModal from "@/app/components/FaceVerificationProgressModal";
 
-const MAX_SELFIE_BYTES = 220 * 1024;
+const MAX_SELFIE_BYTES = 110 * 1024;
+const MAX_SELFIE_REQUEST_BYTES = 150 * 1024;
+const SELFIE_REQUEST_ENVELOPE_BYTES = JSON.stringify({ selfie: "" }).length;
 
 const FacialVerificationScreen = () => {
   const router = useRouter();
@@ -24,6 +27,7 @@ const FacialVerificationScreen = () => {
   const { isLoading, user } = useAppSelector((state) => state.auth);
   const { userId } = useLocalSearchParams();
   const [showCamera, setShowCamera] = useState(false);
+  const [isVerifyingFace, setIsVerifyingFace] = useState(false);
   const [verificationError, setVerificationError] = useState("");
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
@@ -69,6 +73,7 @@ const FacialVerificationScreen = () => {
           return;
         }
 
+        setIsVerifyingFace(true);
         const photo = await cameraRef.current.takePictureAsync({
           quality: 0.5,
           base64: false,
@@ -78,16 +83,30 @@ const FacialVerificationScreen = () => {
           photo.uri,
           {
             maxBytes: MAX_SELFIE_BYTES,
-            startWidth: 720,
-            minWidth: 420,
-            initialCompress: 0.55,
-            minCompress: 0.2,
+            maxDataUriLength:
+              MAX_SELFIE_REQUEST_BYTES - SELFIE_REQUEST_ENVELOPE_BYTES,
+            startWidth: 640,
+            minWidth: 360,
+            initialCompress: 0.45,
+            minCompress: 0.12,
           }
         );
+        const selfiePayload = JSON.stringify({ selfie: preparedImage.dataUri });
+        const selfiePayloadBytes = selfiePayload.length;
 
-        if (preparedImage.size > MAX_SELFIE_BYTES) {
+        console.log("[FacialVerificationScreen] prepared selfie", {
+          imageBytes: preparedImage.size,
+          dataUriLength: preparedImage.dataUriLength,
+          payloadBytes: selfiePayloadBytes,
+          maxPayloadBytes: MAX_SELFIE_REQUEST_BYTES,
+        });
+
+        if (
+          preparedImage.size > MAX_SELFIE_BYTES ||
+          selfiePayloadBytes > MAX_SELFIE_REQUEST_BYTES
+        ) {
           presentError(
-            "Selfie is still too large. Please retake it in better light and try again."
+            "Selfie is still too large for upload. Please retake it in better light and try again."
           );
           return;
         }
@@ -107,6 +126,7 @@ const FacialVerificationScreen = () => {
             params: { userId: resolvedUserId },
           });
         } catch (err: any) {
+          console.error("[FacialVerificationScreen] verification failed", err);
           const errorMessage =
             typeof err === "string"
               ? err
@@ -117,6 +137,8 @@ const FacialVerificationScreen = () => {
       } catch (error) {
         console.error("Error capturing photo:", error);
         presentError("Failed to capture photo", true);
+      } finally {
+        setIsVerifyingFace(false);
       }
     }
   };
@@ -182,13 +204,14 @@ const FacialVerificationScreen = () => {
             onPress={capturePhoto}
             className="absolute bottom-6 left-1/2 transform -translate-x-1/2"
             activeOpacity={0.7}
-            disabled={isLoading}
+            disabled={isLoading || isVerifyingFace}
           >
             <View className="bg-green-500 rounded-full p-4 mb-10">
               <Ionicons name="camera" size={32} color="#fff" />
             </View>
           </TouchableOpacity>
         </SafeAreaView>
+        <FaceVerificationProgressModal visible={isVerifyingFace} />
         <ErrorModal
           visible={showErrorModal}
           title="Verification Error"
@@ -295,6 +318,7 @@ const FacialVerificationScreen = () => {
         message={verificationError}
         onDismiss={() => setShowErrorModal(false)}
       />
+      <FaceVerificationProgressModal visible={isVerifyingFace} />
     </>
   );
 };

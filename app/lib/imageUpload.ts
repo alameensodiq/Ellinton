@@ -3,6 +3,8 @@ import * as ImageManipulator from "expo-image-manipulator";
 
 interface PrepareImageForUploadOptions {
   maxBytes: number;
+  maxDataUriLength?: number;
+  dataUriPrefix?: string;
   startWidth?: number;
   minWidth?: number;
   initialCompress?: number;
@@ -14,12 +16,23 @@ interface PreparedImageUpload {
   size: number;
   base64: string;
   dataUri: string;
+  dataUriLength: number;
 }
+
+const DEFAULT_DATA_URI_PREFIX = "data:image/jpeg;base64,";
+
+const estimateBase64Length = (byteLength: number) =>
+  Math.ceil(byteLength / 3) * 4;
+
+const estimateDataUriLength = (byteLength: number, dataUriPrefix: string) =>
+  dataUriPrefix.length + estimateBase64Length(byteLength);
 
 export const prepareImageForUpload = async (
   uri: string,
   {
     maxBytes,
+    maxDataUriLength,
+    dataUriPrefix = DEFAULT_DATA_URI_PREFIX,
     startWidth = 960,
     minWidth = 420,
     initialCompress = 0.6,
@@ -37,8 +50,14 @@ export const prepareImageForUpload = async (
 
   let info = await FileSystem.getInfoAsync(output.uri);
   let size = (info as { size?: number })?.size ?? 0;
+  let estimatedDataUriLength = estimateDataUriLength(size, dataUriPrefix);
 
-  while (size > maxBytes && (width > minWidth || compress > minCompress)) {
+  while (
+    (size > maxBytes ||
+      (typeof maxDataUriLength === "number" &&
+        estimatedDataUriLength > maxDataUriLength)) &&
+    (width > minWidth || compress > minCompress)
+  ) {
     if (width > minWidth) {
       width = Math.max(minWidth, Math.floor(width * 0.85));
     }
@@ -55,17 +74,20 @@ export const prepareImageForUpload = async (
 
     info = await FileSystem.getInfoAsync(output.uri);
     size = (info as { size?: number })?.size ?? 0;
+    estimatedDataUriLength = estimateDataUriLength(size, dataUriPrefix);
   }
 
   const base64 =
     (await FileSystem.readAsStringAsync(output.uri, {
       encoding: "base64",
     })) || "";
+  const dataUri = `${dataUriPrefix}${base64}`;
 
   return {
     uri: output.uri,
     size,
     base64,
-    dataUri: `data:image/jpeg;base64,${base64}`,
+    dataUri,
+    dataUriLength: dataUri.length,
   };
 };
