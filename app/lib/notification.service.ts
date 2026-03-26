@@ -740,8 +740,8 @@ Notifications.setNotificationHandler({
     shouldPlaySound: true,
     shouldSetBadge: true,
     shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+    shouldShowList: true
+  })
 });
 
 class NotificationService {
@@ -790,6 +790,22 @@ class NotificationService {
     }
   }
 
+  private async getDeviceId(): Promise<string> {
+    try {
+      let deviceId = await AsyncStorage.getItem("deviceId");
+      if (!deviceId) {
+        // Generate a unique device ID
+        deviceId = `${Device.osBuildId || Platform.OS}-${Device.deviceYearClass || Date.now()}-${Math.random().toString(36).substring(7)}`;
+        await AsyncStorage.setItem("deviceId", deviceId);
+      }
+      return deviceId;
+    } catch (error) {
+      console.error("Error getting deviceId:", error);
+      // Fallback deviceId
+      return `${Platform.OS}-${Date.now()}`;
+    }
+  }
+
   /**
    * Register for push notifications and get Expo push token
    */
@@ -801,7 +817,7 @@ class NotificationService {
           name: "default",
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: "#FF231F7C",
+          lightColor: "#FF231F7C"
         });
       }
 
@@ -844,7 +860,7 @@ class NotificationService {
       // Get Expo push token
       const pushTokenString = (
         await Notifications.getExpoPushTokenAsync({
-          projectId,
+          projectId
         })
       ).data;
 
@@ -878,7 +894,7 @@ class NotificationService {
         sound: "default",
         title: "Original Title",
         body: "And here is the body!",
-        data: { someData: "goes here" },
+        data: { someData: "goes here" }
       };
 
       const response = await fetch("https://exp.host/--/api/v2/push/send", {
@@ -886,9 +902,9 @@ class NotificationService {
         headers: {
           Accept: "application/json",
           "Accept-encoding": "gzip, deflate",
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(message),
+        body: JSON.stringify(message)
       });
 
       const result = await response.json();
@@ -915,7 +931,7 @@ class NotificationService {
         sound: "default",
         title: title,
         body: body,
-        data: data || {},
+        data: data || {}
       };
 
       const response = await fetch("https://exp.host/--/api/v2/push/send", {
@@ -923,9 +939,9 @@ class NotificationService {
         headers: {
           Accept: "application/json",
           "Accept-encoding": "gzip, deflate",
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(message),
+        body: JSON.stringify(message)
       });
 
       return response.ok;
@@ -956,6 +972,7 @@ class NotificationService {
     try {
       const token = this.expoPushToken;
       const authToken = await AsyncStorage.getItem("authToken");
+      const deviceId = await this.getDeviceId();
 
       if (!token || !authToken) {
         console.log("❌ Missing token or auth for registration");
@@ -968,13 +985,14 @@ class NotificationService {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`
         },
         body: JSON.stringify({
           token: token,
+          deviceId: deviceId
           // platform: Platform.OS,
           // deviceType: Device.deviceName || Platform.OS,
-        }),
+        })
       });
 
       console.log(response);
@@ -999,6 +1017,7 @@ class NotificationService {
     try {
       const token = await this.getStoredToken();
       const authToken = await AsyncStorage.getItem("authToken");
+      const deviceId = await this.getDeviceId();
 
       if (!token || !authToken) {
         console.log("No token or auth to unregister");
@@ -1011,11 +1030,12 @@ class NotificationService {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${authToken}`
         },
         body: JSON.stringify({
           token: token,
-        }),
+          deviceId: deviceId
+        })
       });
 
       if (response.ok) {
@@ -1049,11 +1069,11 @@ class NotificationService {
           body: body,
           data: data || {},
           sound: true,
-          priority: Notifications.AndroidNotificationPriority.HIGH,
+          priority: Notifications.AndroidNotificationPriority.HIGH
         },
         trigger: {
-          seconds: seconds,
-        },
+          seconds: seconds
+        }
       });
 
       console.log("✅ Notification scheduled:", identifier);
