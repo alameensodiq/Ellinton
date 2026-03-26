@@ -7,8 +7,7 @@ import {
   Vibration,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import Header from "@/app/components/header-back";
+import { useRouter } from "expo-router";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Numpad from "@/app/components/inputs/Numpad";
 import CustomText from "@/app/components/CustomText";
@@ -20,7 +19,6 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import Loading from "@/app/components/Loading";
 
 export default function CurrentUser() {
-  const params = useLocalSearchParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { user, isLoading, isRestoring } = useAppSelector((state) => state.auth);
@@ -72,39 +70,9 @@ export default function CurrentUser() {
 
           if (isLoading) return;
 
-          const result = await dispatch(
-            loginUser({ email, passcode })
-          ).unwrap();
+          await dispatch(loginUser({ email, passcode })).unwrap();
 
           setPasscode("");
-
-          if (result.user?.status === "otp_verified") {
-            router.replace("/(auth)/profile-update");
-            return;
-          }
-
-          if (result.user?.status === "bvn_verified") {
-            router.replace("/(auth)/facial-verification");
-            return;
-          }
-
-          if (result.requiresPasscodeSetup) {
-            router.replace("/(auth)/create-passcode");
-            return;
-          }
-
-          if (result.requiresTransactionPinSetup && result.user?.id) {
-            router.replace({
-              pathname: "/(auth)/transacion-pin",
-              params: { userId: result.user.id, source: "login" },
-            });
-            return;
-          }
-
-          router.replace({
-            pathname: "/(root)/(tabs)",
-            params: params,
-          });
         } catch (err: any) {
           setError(true);
           Vibration.vibrate(400);
@@ -114,7 +82,7 @@ export default function CurrentUser() {
 
       return () => clearTimeout(t);
     }
-  }, [passcode, dispatch, email, router, params, isLoading]);
+  }, [passcode, dispatch, email, isLoading]);
 
   const userName = user?.full_name || user?.name || "User";
   const userAvatar = user?.passport;

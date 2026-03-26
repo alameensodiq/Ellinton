@@ -181,7 +181,7 @@ const EmailIdentityScreen = () => {
     if (hasError) return;
 
     try {
-      await dispatch(
+      const response = await dispatch(
         verifyUserBvn({
           userId: (userId as string) || (user?.id as string),
           bvn,
@@ -197,12 +197,20 @@ const EmailIdentityScreen = () => {
         })
       ).unwrap();
 
+      console.log("Profile update API response:", response);
+
       router.push({
         pathname: "/(auth)/facial-verification",
         params: { userId: userId as string|| user?.id },
       });
     } catch (err: any) {
-      setApiError(err?.message || "Verification failed. Please try again.");
+      console.error("Profile update API error:", err);
+      const errorMessage =
+        typeof err === "string"
+          ? err
+          : err?.message || err?.data?.message || "Verification failed. Please try again.";
+
+      setApiError(errorMessage);
       setShowErrorModal(true);
     }
   };

@@ -393,12 +393,9 @@ export const verifyUserBvn = createAsyncThunk(
         );
       }
 
-      const data = (await response.json()) as ApiResponse<{ message?: string }>;
-      console.log(data);
-      return {
-        message:
-          data.data?.message || data.message || "BVN verified successfully",
-      };
+      const data = (await response.json()) as ApiResponse<any>;
+      console.log("verifyUserBvn API response:", data);
+      return data;
     } catch (error: any) {
       return rejectWithValue(
         error.data?.message || error.message || "BVN verification error"

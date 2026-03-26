@@ -27,8 +27,6 @@ import { loginUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import notificationService from "@/app/lib/notification.service";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/app/firebase";
 
 const Login = () => {
   const [pin, setPin] = useState("");
@@ -42,10 +40,6 @@ const Login = () => {
   const {
     isLoading,
     error,
-    isAuthenticated,
-    requiresPasscodeSetup,
-    requiresTransactionPinSetup,
-    user,
   } = useAppSelector((state) => state.auth);
 
   // Auto-fill email if user profile is saved
@@ -65,54 +59,6 @@ const Login = () => {
     };
     loadSavedEmail();
   }, []);
-
-  // Handle post-authentication navigation
-  useEffect(() => {
-    const handleAuthSuccess = async () => {
-      if (isAuthenticated) {
-        try {
-          // Register device with backend after successful login
-          await notificationService.registerDeviceWithBackend();
-          console.log("✅ Device registered after login");
-        } catch (error) {
-          console.error("❌ Error registering device:", error);
-        }
-
-        if (user?.status === "otp_verified") {
-          router.replace("/(auth)/profile-update");
-          return;
-        }
-
-        if (user?.status === "bvn_verified") {
-          router.replace("/(auth)/facial-verification");
-          return;
-        }
-
-        if (requiresPasscodeSetup) {
-          router.replace("/(auth)/create-passcode");
-          return;
-        }
-
-        if (requiresTransactionPinSetup && user?.id) {
-          router.replace({
-            pathname: "/(auth)/transacion-pin",
-            params: { userId: user.id, source: "login" },
-          });
-          return;
-        }
-
-        router.replace("/(root)/(tabs)");
-      }
-    };
-
-    handleAuthSuccess();
-  }, [
-    isAuthenticated,
-    requiresPasscodeSetup,
-    requiresTransactionPinSetup,
-    router,
-    user,
-  ]);
 
   useEffect(() => {
     setShowErrorModal(Boolean(error));
