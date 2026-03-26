@@ -764,7 +764,7 @@ class NotificationService {
 
       // Register for push notifications and get token
       const token = await this.registerForPushNotificationsAsync();
-      
+
       if (token) {
         this.expoPushToken = token;
         await AsyncStorage.setItem(this.TOKEN_KEY, token);
@@ -782,7 +782,7 @@ class NotificationService {
         console.log("✅ Expo push notifications ready");
         return true;
       }
-      
+
       return false;
     } catch (error) {
       console.error("❌ Push notification init error:", error);
@@ -796,41 +796,48 @@ class NotificationService {
   private async registerForPushNotificationsAsync(): Promise<string | null> {
     try {
       // Set up Android notification channel
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "default",
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
+          lightColor: "#FF231F7C",
         });
       }
 
       // Check if device is physical
       if (!Device.isDevice) {
-        this.handleRegistrationError('Must use physical device for push notifications');
+        this.handleRegistrationError(
+          "Must use physical device for push notifications"
+        );
         return null;
       }
 
       // Request permissions
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
-      
-      if (existingStatus !== 'granted') {
+
+      if (existingStatus !== "granted") {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-      
-      if (finalStatus !== 'granted') {
-        this.handleRegistrationError('Permission not granted to get push token for push notification!');
+
+      if (finalStatus !== "granted") {
+        this.handleRegistrationError(
+          "Permission not granted to get push token for push notification!"
+        );
         return null;
       }
 
       // Get project ID from Constants
-      const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? 
-                       Constants?.easConfig?.projectId ?? "2cb6bacc-1e05-4771-81c3-6a9934f26c7d";
-      
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ??
+        Constants?.easConfig?.projectId ??
+        "2cb6bacc-1e05-4771-81c3-6a9934f26c7d";
+
       if (!projectId) {
-        this.handleRegistrationError('Project ID not found');
+        this.handleRegistrationError("Project ID not found");
         return null;
       }
 
@@ -840,7 +847,7 @@ class NotificationService {
           projectId,
         })
       ).data;
-      
+
       return pushTokenString;
     } catch (error: unknown) {
       this.handleRegistrationError(`${error}`);
@@ -868,18 +875,18 @@ class NotificationService {
 
       const message = {
         to: this.expoPushToken,
-        sound: 'default',
-        title: 'Original Title',
-        body: 'And here is the body!',
-        data: { someData: 'goes here' },
+        sound: "default",
+        title: "Original Title",
+        body: "And here is the body!",
+        data: { someData: "goes here" },
       };
 
-      const response = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
+      const response = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
         headers: {
-          Accept: 'application/json',
-          'Accept-encoding': 'gzip, deflate',
-          'Content-Type': 'application/json',
+          Accept: "application/json",
+          "Accept-encoding": "gzip, deflate",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(message),
       });
@@ -905,18 +912,18 @@ class NotificationService {
     try {
       const message = {
         to: expoPushToken,
-        sound: 'default',
+        sound: "default",
         title: title,
         body: body,
         data: data || {},
       };
 
-      const response = await fetch('https://exp.host/--/api/v2/push/send', {
-        method: 'POST',
+      const response = await fetch("https://exp.host/--/api/v2/push/send", {
+        method: "POST",
         headers: {
-          Accept: 'application/json',
-          'Accept-encoding': 'gzip, deflate',
-          'Content-Type': 'application/json',
+          Accept: "application/json",
+          "Accept-encoding": "gzip, deflate",
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(message),
       });
@@ -961,16 +968,16 @@ class NotificationService {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           token: token,
           // platform: Platform.OS,
           // deviceType: Device.deviceName || Platform.OS,
-        })
+        }),
       });
 
-      console.log(response)
+      console.log(response);
 
       if (response.ok) {
         console.log("✅ Device registered successfully");
@@ -1004,11 +1011,11 @@ class NotificationService {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
-          token: token
-        })
+          token: token,
+        }),
       });
 
       if (response.ok) {
@@ -1035,7 +1042,7 @@ class NotificationService {
   ): Promise<string | null> {
     try {
       console.log(`📅 Scheduling notification in ${seconds} seconds...`);
-      
+
       const identifier = await Notifications.scheduleNotificationAsync({
         content: {
           title: title,
@@ -1048,7 +1055,7 @@ class NotificationService {
           seconds: seconds,
         },
       });
-      
+
       console.log("✅ Notification scheduled:", identifier);
       return identifier;
     } catch (error) {
@@ -1088,56 +1095,54 @@ class NotificationService {
   /**
    * Setup notification listeners
    */
+  /**
+   * Setup notification listeners
+   */
   private setupNotificationListeners(): void {
     // Remove existing listeners if any
     if (this.notificationListener) {
-      Notifications.removeNotificationSubscription(this.notificationListener);
+      this.notificationListener.remove();
     }
     if (this.responseListener) {
-      Notifications.removeNotificationSubscription(this.responseListener);
+      this.responseListener.remove();
     }
 
     // Listener for notifications received while app is in foreground
     this.notificationListener = Notifications.addNotificationReceivedListener(
       (notification) => {
         console.log("📨 Notification received in foreground:", notification);
-        
+
         const title = notification.request.content.title;
         const body = notification.request.content.body;
         const data = notification.request.content.data;
-        
+
         // Show alert for foreground notifications
-        Alert.alert(
-          title || "Notification",
-          body || "",
-          [{ text: "OK" }]
-        );
-        
+        Alert.alert(title || "Notification", body || "", [{ text: "OK" }]);
+
         // You can also trigger a callback here if needed
         // this.onNotificationReceived?.(notification);
       }
     );
 
     // Listener for when user taps on notification
-    this.responseListener = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
+    this.responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
         console.log("🔘 Notification tapped:", response);
-        
+
         const data = response.notification.request.content.data;
-        
+
         // Handle navigation based on notification data
-        if (data && typeof data === 'object') {
+        if (data && typeof data === "object") {
           // Add your navigation logic here
           if (data.screen) {
             console.log(`📱 Navigate to: ${data.screen}`);
             // Example: navigation.navigate(data.screen, data.params);
           }
         }
-        
+
         // You can also trigger a callback here if needed
         // this.onNotificationResponse?.(response);
-      }
-    );
+      });
   }
 
   /**
@@ -1152,12 +1157,15 @@ class NotificationService {
   /**
    * Cleanup listeners (call on app unmount if needed)
    */
+  /**
+   * Cleanup listeners (call on app unmount if needed)
+   */
   cleanup(): void {
     if (this.notificationListener) {
-      Notifications.removeNotificationSubscription(this.notificationListener);
+      this.notificationListener.remove();
     }
     if (this.responseListener) {
-      Notifications.removeNotificationSubscription(this.responseListener);
+      this.responseListener.remove();
     }
   }
 }
