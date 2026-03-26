@@ -179,20 +179,21 @@ function buildReceiptPdf(
   content.push("ET");
 
   // 4. DATA GRID (Key-Value Alignment)
-  // We use a fixed displacement to ensure keys and values line up perfectly
   let currentY = pageHeight - 200;
-  const dataKeys = ["Date", "Reference", "Type", "Status"];
+  const dataKeys = ["Date", "Reference No", "Type", "Status"];
 
   dataKeys.forEach((key) => {
     const val =
       (lines.find((l) => l.startsWith(`${key}:`)) || "").split(": ")[1] || "";
-    content.push(
-      `BT ${margin} ${currentY} Td /F2 9 Tf 0.3 rg (${key.toUpperCase()}) Tj ET`
-    );
-    content.push(
-      `BT ${margin + 100} ${currentY} Td /F1 10 Tf 0 rg (${esc(val)}) Tj ET`
-    );
-    currentY -= 18;
+    if (val) {
+      content.push(
+        `BT ${margin} ${currentY} Td /F2 9 Tf 0.3 rg (${key.toUpperCase()}) Tj ET`
+      );
+      content.push(
+        `BT ${margin + 100} ${currentY} Td /F1 10 Tf 0 rg (${esc(val)}) Tj ET`
+      );
+      currentY -= 18;
+    }
   });
 
   // 5. TRANSFER DETAILS
@@ -204,26 +205,47 @@ function buildReceiptPdf(
   currentY -= 25;
   const sender =
     (lines.find((l) => l.startsWith("Sender:")) || "").split(": ")[1] || "";
-  content.push(`BT ${margin} ${currentY} Td /F1 9 Tf 0.5 rg (FROM) Tj ET`);
-  content.push(
-    `BT ${margin + 100} ${currentY} Td /F1 10 Tf 0 rg (${esc(sender)}) Tj ET`
-  );
+  if (sender) {
+    content.push(`BT ${margin} ${currentY} Td /F1 9 Tf 0.5 rg (FROM) Tj ET`);
+    content.push(
+      `BT ${margin + 100} ${currentY} Td /F1 10 Tf 0 rg (${esc(sender)}) Tj ET`
+    );
+    currentY -= 25;
+  }
 
-  currentY -= 25;
   const beneficiary =
     (lines.find((l) => l.startsWith("Beneficiary:")) || "").split(": ")[1] ||
     "";
   const acc =
-    (lines.find((l) => l.startsWith("Account:")) || "").split(": ")[1] || "";
+    (lines.find((l) => l.startsWith("Beneficiary account:")) || "").split(
+      ": "
+    )[1] || "";
   const bank =
-    (lines.find((l) => l.startsWith("Bank:")) || "").split(": ")[1] || "";
+    (lines.find((l) => l.startsWith("Beneficiary bank:")) || "").split(
+      ": "
+    )[1] || "";
 
-  content.push(`BT ${margin} ${currentY} Td /F1 9 Tf 0.5 rg (TO) Tj ET`);
-  content.push(
-    `BT ${margin + 100} ${currentY} Td /F1 10 Tf 0 rg (${esc(beneficiary)}) Tj`
-  );
-  content.push(`0 -12 Td (${esc(acc)}) Tj`);
-  content.push(`0 -12 Td (${esc(bank)}) Tj ET`);
+  if (beneficiary || acc || bank) {
+    content.push(`BT ${margin} ${currentY} Td /F1 9 Tf 0.5 rg (TO) Tj ET`);
+    let toY = currentY;
+    if (beneficiary) {
+      content.push(
+        `BT ${margin + 100} ${toY} Td /F1 10 Tf 0 rg (${esc(beneficiary)}) Tj ET`
+      );
+      toY -= 12;
+    }
+    if (acc) {
+      content.push(
+        `BT ${margin + 100} ${toY} Td /F1 10 Tf 0 rg (${esc(acc)}) Tj ET`
+      );
+      toY -= 12;
+    }
+    if (bank) {
+      content.push(
+        `BT ${margin + 100} ${toY} Td /F1 10 Tf 0 rg (${esc(bank)}) Tj ET`
+      );
+    }
+  }
 
   // 6. FOOTER
   content.push(`BT 1 0 0 1 0 0 Tm /F1 8 Tf 0.6 rg`);
@@ -232,7 +254,72 @@ function buildReceiptPdf(
   );
 
   const stream = content.join("\n");
-  // ... rest of your object/xref logic
+
+  // Build the complete PDF structure
+  const objects = [];
+  let objectCount = 0;
+
+  // Object 1: Catalog
+  objects.push(
+    `${++objectCount} 0 obj\n<< /Type /Catalog /Pages ${objectCount + 1} 0 R >>\nendobj\n`
+  );
+
+  // Object 2: Pages
+  objects.push(
+    `${++objectCount} 0 obj\n<< /Type /Pages /Count 1 /Kids [${objectCount + 1} 0 R] >>\nendobj\n`
+  );
+
+  // Object 3: Page
+  const pageResources = `/Resources << /Font << /F1 5 0 R /F2 6 0 R >>${logo ? " /XObject << /Im1 7 0 R >>" : ""} >>`;
+  objects.push(
+    `${++objectCount} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] ${pageResources} /Contents ${objectCount + 1} 0 R >>\nendobj\n`
+  );
+
+  // Object 4: Contents stream
+  objects.push(
+    `${++objectCount} 0 obj\n<< /Length ${stream.length} >>\nstream\n${stream}endstream\nendobj\n`
+  );
+
+  // Object 5: Font F1 (Helvetica)
+  objects.push(
+    `${++objectCount} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n`
+  );
+
+  // Object 6: Font F2 (Helvetica-Bold)
+  objects.push(
+    `${++objectCount} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n`
+  );
+
+  // Object 7: Image (if logo exists)
+  let imageObjectNumber = null;
+  if (logo) {
+    imageObjectNumber = objectCount + 1;
+    objects.push(
+      `${++objectCount} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${logo.width} /Height ${logo.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${Math.ceil(logo.hex.length / 2)} >>\nstream\n${logo.hex}endstream\nendobj\n`
+    );
+  }
+
+  // Build the PDF
+  let pdf = "%PDF-1.4\n";
+  const offsets = [pdf.length];
+
+  objects.forEach((object) => {
+    offsets.push(pdf.length);
+    pdf += object;
+  });
+
+  const xrefOffset = pdf.length;
+  pdf += "xref\n";
+  pdf += `0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${offset.toString().padStart(10, "0")} 00000 n \n`;
+  });
+  pdf += "trailer\n";
+  pdf += `<< /Size ${objects.length + 1} /Root 1 0 R >>\n`;
+  pdf += `startxref\n${xrefOffset}\n%%EOF`;
+
+  return pdf;
 }
 
 const ReceiptRow = ({
