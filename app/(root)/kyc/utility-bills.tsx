@@ -1,5 +1,5 @@
-import { View, Text, Pressable, Image } from "react-native";
-import React, { useState, useEffect } from "react";
+import { View, Text, Pressable, Image, Platform } from "react-native";
+import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/app/components/header-back";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
@@ -25,16 +25,6 @@ const kycUtility = () => {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
-        setError("Permission to access media library is required!");
-      }
-    })();
-  }, []);
-
   const clearImage = () => {
     setImageUri(null);
     setBase64(null);
@@ -43,6 +33,16 @@ const kycUtility = () => {
 
   const pickImage = async () => {
     setError("");
+
+    if (Platform.OS === "ios") {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        setError("Permission to access your photo library is required.");
+        return;
+      }
+    }
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],

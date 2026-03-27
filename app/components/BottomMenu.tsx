@@ -10,6 +10,7 @@ import {
   Animated,
   Platform
 } from "react-native";
+import Constants from "expo-constants";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../lib/store";
@@ -48,7 +49,7 @@ interface BottomMenuProps {
   onClose: () => void;
   user: UserProfile;
   items?: MenuItem[];
-  version: string;
+  version?: string;
 }
 
 const UserProfileSection: React.FC<UserProfile> = ({
@@ -83,8 +84,9 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   onClose,
   user,
   items = [],
-  version = "2.0.0"
+  version
 }) => {
+  const resolvedVersion = version || Constants.expoConfig?.version || "2.0.5";
   const screenHeight = Dimensions.get("window").height;
   const [slideAnim] = useState(new Animated.Value(screenHeight));
   const dispatch = useDispatch<AppDispatch>();
@@ -321,7 +323,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
                   </View>
 
                   <Text className="text-accent-100 text-sm px-6 pt-8 pb-8">
-                    Version {version}
+                    Version {resolvedVersion}
                   </Text>
                 </ScrollView>
               </Animated.View>
