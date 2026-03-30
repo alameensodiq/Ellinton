@@ -733,6 +733,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
+import { BASE_URL } from "./api";
 
 // Configure notification handler for foreground notifications
 Notifications.setNotificationHandler({
@@ -752,7 +753,7 @@ class NotificationService {
   private responseListener: any = null;
 
   constructor() {
-    this.apiUrl = "https://stagingapi.ellingtonbank.com/api/v2";
+    this.apiUrl = BASE_URL;
   }
 
   /**
