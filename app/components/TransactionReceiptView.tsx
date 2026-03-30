@@ -16,6 +16,7 @@ import { captureRef } from "react-native-view-shot";
 import BottomSheet from "@/app/components/BottomSheet";
 import * as Sharing from "expo-sharing";
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+import * as Print from "expo-print";
 
 export interface ReceiptViewData {
   amount?: number | string;
@@ -364,16 +365,26 @@ export default function TransactionReceiptView({
     try {
       if (!fullViewRef.current) return;
 
+      // 1. Capture the view
       const uri = await captureRef(fullViewRef.current, {
         format: "png",
-        quality: 1,
-        result: "tmpfile"
+        quality: 1
       });
 
-      await Share.share({
-        url: `file://${uri}`,
-        message: `Transfer Receipt\nAmount: ₦${receiptData.amount}\nTo: ${receiptData.beneficiary}\nReference: ${receiptData.referenceNo}`
-      });
+      // 2. Check if sharing is available (good practice for Android)
+      const isAvailable = await Sharing.isAvailableAsync();
+
+      if (isAvailable) {
+        // 3. Use expo-sharing instead of Share.share
+        // This ensures the file is sent as an attachment, not a text string
+        await Sharing.shareAsync(uri, {
+          mimeType: "image/png",
+          dialogTitle: "Share Receipt Image"
+        });
+      } else {
+        // Fallback for older devices if necessary
+        Alert.alert("Error", "Sharing is not available on this device.");
+      }
 
       closeBottomSheet();
     } catch (error) {
@@ -382,81 +393,138 @@ export default function TransactionReceiptView({
     }
   };
 
-  const shareAsPdf = async () => {
-    try {
-      let RNFS: any;
-      try {
-        const rnfsModule = require("react-native-fs");
-        RNFS = rnfsModule.default ?? rnfsModule;
-      } catch {
-        Alert.alert(
-          "Unavailable",
-          "PDF receipt sharing is not supported in Expo Go. Use a development build to enable PDF export."
-        );
-        return;
-      }
+  // const shareAsPdf = async () => {
+  //   try {
+  //     let RNFS: any;
+  //     try {
+  //       const rnfsModule = require("react-native-fs");
+  //       RNFS = rnfsModule.default ?? rnfsModule;
+  //     } catch {
+  //       Alert.alert(
+  //         "Unavailable",
+  //         "PDF receipt sharing is not supported in Expo Go. Use a development build to enable PDF export."
+  //       );
+  //       return;
+  //     }
 
-      const isSharingAvailable = await Sharing.isAvailableAsync();
-      if (!isSharingAvailable) {
-        Alert.alert(
-          "Unavailable",
-          "PDF sharing is not available on this device."
-        );
-        return;
-      }
+  //     const isSharingAvailable = await Sharing.isAvailableAsync();
+  //     if (!isSharingAvailable) {
+  //       Alert.alert(
+  //         "Unavailable",
+  //         "PDF sharing is not available on this device."
+  //       );
+  //       return;
+  //     }
 
-      const pdfLines = [
-        "Ellington Bank Transaction Receipt",
-        "",
-        `Amount: NGN ${toAscii(String(receiptData.amount ?? ""))}`,
-        `Type: ${toAscii(receiptData.type)}`,
-        `Status: ${toAscii(receiptData.status || "")}`,
-        `Sender: ${toAscii(receiptData.sender)}`,
-        `Beneficiary: ${toAscii(receiptData.beneficiary)}`,
-        `Beneficiary account: ${toAscii(receiptData.beneficiaryAccount)}`,
-        `Beneficiary bank: ${toAscii(receiptData.beneficiaryBank)}`,
-        `Date: ${toAscii(receiptData.date)}`,
-        `Reference No: ${toAscii(receiptData.referenceNo)}`
-      ].filter((line) => !line.endsWith(": "));
+  //     const pdfLines = [
+  //       "Ellington Bank Transaction Receipt",
+  //       "",
+  //       `Amount: NGN ${toAscii(String(receiptData.amount ?? ""))}`,
+  //       `Type: ${toAscii(receiptData.type)}`,
+  //       `Status: ${toAscii(receiptData.status || "")}`,
+  //       `Sender: ${toAscii(receiptData.sender)}`,
+  //       `Beneficiary: ${toAscii(receiptData.beneficiary)}`,
+  //       `Beneficiary account: ${toAscii(receiptData.beneficiaryAccount)}`,
+  //       `Beneficiary bank: ${toAscii(receiptData.beneficiaryBank)}`,
+  //       `Date: ${toAscii(receiptData.date)}`,
+  //       `Reference No: ${toAscii(receiptData.referenceNo)}`
+  //     ].filter((line) => !line.endsWith(": "));
 
-      const logoAsset = Image.resolveAssetSource(
-        require("../assets/logo1.png")
-      );
-      const logoImage = await manipulateAsync(
-        logoAsset.uri,
-        [{ resize: { width: 224 } }],
-        {
-          compress: 1,
-          format: SaveFormat.JPEG,
-          base64: true
-        }
-      );
+  //     const logoAsset = Image.resolveAssetSource(
+  //       require("../assets/logo1.png")
+  //     );
+  //     const logoImage = await manipulateAsync(
+  //       logoAsset.uri,
+  //       [{ resize: { width: 224 } }],
+  //       {
+  //         compress: 1,
+  //         format: SaveFormat.JPEG,
+  //         base64: true
+  //       }
+  //     );
 
-      const pdfContents = buildReceiptPdf(
-        pdfLines,
-        logoImage.base64
-          ? {
-              hex: base64ToHex(logoImage.base64),
-              width: logoImage.width,
-              height: logoImage.height
+  //     const pdfContents = buildReceiptPdf(
+  //       pdfLines,
+  //       logoImage.base64
+  //         ? {
+  //             hex: base64ToHex(logoImage.base64),
+  //             width: logoImage.width,
+  //             height: logoImage.height
+  //           }
+  //         : undefined
+  //     );
+  //     const filePath = `${RNFS.CachesDirectoryPath}/transfer-receipt-${Date.now()}.pdf`;
+
+  //     await RNFS.writeFile(filePath, pdfContents, "ascii");
+  //     await Sharing.shareAsync(`file://${filePath}`, {
+  //       mimeType: "application/pdf",
+  //       dialogTitle: "Share Receipt",
+  //       UTI: "com.adobe.pdf"
+  //     });
+
+  //     closeBottomSheet();
+  //   } catch (error) {
+  //     console.error("Error sharing PDF:", error);
+  //     Alert.alert("Error", "Failed to generate and share PDF receipt.");
+  //   }
+  // };
+
+const shareAsPdf = async () => {
+  try {
+    if (!fullViewRef.current) return;
+
+    // 1. Capture the EXACT view as a high-quality base64 string
+    const imageBase64 = await captureRef(fullViewRef.current, {
+      format: "png",
+      quality: 1.0, 
+      result: "base64",
+    });
+
+    // 2. Create HTML that behaves like a PDF "wrapper"
+    // We match the background color to your app's primary-400 (#0F172A)
+    const html = `
+      <html>
+        <head>
+          <style>
+            @page { margin: 0; }
+            body, html { 
+              margin: 0; 
+              padding: 0; 
+              background-color: #0F172A; 
+              width: 100%;
             }
-          : undefined
-      );
-      const filePath = `${RNFS.CachesDirectoryPath}/transfer-receipt-${Date.now()}.pdf`;
+            img { 
+              width: 100%; 
+              display: block; 
+            }
+          </style>
+        </head>
+        <body>
+          <img src="data:image/png;base64,${imageBase64}" />
+        </body>
+      </html>
+    `;
 
-      await RNFS.writeFile(filePath, pdfContents, "ascii");
-      await Sharing.shareAsync(`file://${filePath}`, {
-        mimeType: "application/pdf",
-        dialogTitle: "Share Receipt",
-        UTI: "com.adobe.pdf"
-      });
+    // 3. Generate the PDF file using expo-print
+    const { uri } = await Print.printToFileAsync({
+      html: html,
+      base64: false
+    });
 
-      closeBottomSheet();
-    } catch (error) {
-      console.error("Error sharing PDF:", error);
-      Alert.alert("Error", "Failed to generate and share PDF receipt.");
-    }
-  };
+    // 4. Share the PDF using expo-sharing
+    await Sharing.shareAsync(uri, {
+      mimeType: "application/pdf",
+      dialogTitle: "Transaction Receipt",
+      UTI: "com.adobe.pdf"
+    });
+
+    closeBottomSheet();
+  } catch (error) {
+    console.error("PDF Error:", error);
+    Alert.alert("Error", "Failed to generate PDF. Sharing as image instead.");
+    shareAsImage(); // Fallback so the user isn't stuck
+  }
+};
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
