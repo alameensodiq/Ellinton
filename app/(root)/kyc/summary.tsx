@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,34 +7,65 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/lib/store";
 import { getKycSummary, submitKyc } from "@/app/lib/thunks/kycThunks";
 import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
-import Loading from "@/app/components/Loading";
 
 const SummaryReviewScreen = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
+  const isMountedRef = useRef(true);
 
-  const {
-    summary,
-    isLoading: summaryLoading,
-    error: summaryError,
-  } = useSelector((state: RootState) => state.kyc);
-  const [submitLoading, setSubmitLoading] = React.useState(false);
+  const { summary } = useSelector((state: RootState) => state.kyc);
+  const [isFetchingSummary, setIsFetchingSummary] = useState(true);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [submitLoading, setSubmitLoading] = useState(false);
 
   useEffect(() => {
-    dispatch(getKycSummary());
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const loadSummary = useCallback(async () => {
+    try {
+      setIsFetchingSummary(true);
+      setSummaryError(null);
+      await dispatch(getKycSummary()).unwrap();
+    } catch (err: any) {
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      const errorMessage =
+        typeof err === "string"
+          ? err
+          : err?.message || "Unable to load your KYC summary.";
+      setSummaryError(errorMessage);
+    } finally {
+      if (isMountedRef.current) {
+        setIsFetchingSummary(false);
+      }
+    }
   }, [dispatch]);
 
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
+
   const handleSubmit = async () => {
+    if (submitLoading || isFetchingSummary) {
+      return;
+    }
+
     if (!summary?.next_of_kin) {
       Alert.alert(
         "Error",
@@ -47,22 +78,98 @@ const SummaryReviewScreen = () => {
 
     try {
       await dispatch(submitKyc()).unwrap();
-      router.push({
+      if (!isMountedRef.current) {
+        return;
+      }
+      router.replace({
         pathname: "/(root)/kyc/utility-bills",
       });
     } catch (err: any) {
+      if (!isMountedRef.current) {
+        return;
+      }
+
+      const errorMessage =
+        typeof err === "string"
+          ? err
+          : err?.message || "KYC submission failed. Please try again.";
       Alert.alert(
         "Submission Failed",
-        err.message || "KYC submission failed. Please try again."
+        errorMessage
       );
       console.error("KYC submission failed:", err);
     } finally {
-      setSubmitLoading(false);
+      if (isMountedRef.current) {
+        setSubmitLoading(false);
+      }
     }
   };
 
-  if (summaryLoading) {
-    return <Loading visible={true} />;
+  const handleExit = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+
+    router.replace("/(root)/(tabs)");
+  };
+
+  if (isFetchingSummary) {
+    return (
+      <SafeAreaView className="flex-1 bg-primary-100 px-4 pt-4">
+        <View className="flex-row items-center justify-between pb-6">
+          <TouchableOpacity onPress={handleExit}>
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+          <View className="flex-1 ml-4">
+            <ProgressBar currentStep={4} totalSteps={4} />
+          </View>
+        </View>
+
+        <View className="flex-1 justify-center items-center px-6">
+          <ActivityIndicator size="large" color="#fff" />
+          <CustomText secondary size="sm" className="text-center mt-4">
+            Loading your KYC summary...
+          </CustomText>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (summaryError) {
+    return (
+      <SafeAreaView className="flex-1 bg-primary-100 px-4 pt-4">
+        <View className="flex-row items-center justify-between pb-6">
+          <TouchableOpacity onPress={handleExit}>
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+          <View className="flex-1 ml-4">
+            <ProgressBar currentStep={4} totalSteps={4} />
+          </View>
+        </View>
+
+        <View className="flex-1 justify-center px-2">
+          <CustomText size="xl" className="mb-3">
+            We couldn&apos;t load your summary
+          </CustomText>
+          <CustomText secondary size="sm" className="mb-6">
+            {summaryError}
+          </CustomText>
+          <Button
+            title="Retry"
+            variant="primary"
+            onPress={loadSummary}
+            className="w-full mb-4"
+          />
+          <Button
+            title="Go Back"
+            variant="secondary"
+            onPress={handleExit}
+            className="w-full"
+          />
+        </View>
+      </SafeAreaView>
+    );
   }
 
   const nin = summary?.nin_details?.nin || "";
@@ -74,9 +181,12 @@ const SummaryReviewScreen = () => {
         <Text className="text-white text-center">
           Incomplete KYC data. Please go back and complete all steps.
         </Text>
-        <TouchableOpacity onPress={() => router.back()} className="mt-4">
-          <Text className="text-accent-100">Go Back</Text>
-        </TouchableOpacity>
+        <Button
+          title="Go Back"
+          variant="secondary"
+          onPress={handleExit}
+          className="mt-6 w-full"
+        />
       </SafeAreaView>
     );
   }
@@ -89,7 +199,12 @@ const SummaryReviewScreen = () => {
           className="flex-1"
         >
           <View className="flex-row items-center justify-between px-4 pt-4 pb-4">
-            <ProgressBar currentStep={4} totalSteps={4} />
+            <TouchableOpacity onPress={handleExit}>
+              <Ionicons name="close" size={30} color="#fff" />
+            </TouchableOpacity>
+            <View className="flex-1 ml-4">
+              <ProgressBar currentStep={4} totalSteps={4} />
+            </View>
           </View>
           <ScrollView
             contentContainerStyle={{
@@ -175,12 +290,16 @@ const SummaryReviewScreen = () => {
                 onPress={handleSubmit}
                 className="w-full"
                 disabled={submitLoading}
+                icon={
+                  submitLoading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : null
+                }
               />
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-      <Loading visible={submitLoading} />
     </>
   );
 };

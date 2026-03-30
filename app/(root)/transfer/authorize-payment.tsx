@@ -1,20 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
-import {
-  View,
-  Text,
-  StatusBar,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, StatusBar, Vibration } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "@/app/lib/store";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "@/app/lib/store";
 
 import Header from "@/app/components/header-back";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Numpad from "@/app/components/inputs/Numpad";
 import Loading from "@/app/components/Loading";
+import ErrorModal from "@/app/components/ErrorModal";
 
 import {
   performInterBankTransfer,
@@ -22,6 +17,60 @@ import {
   InterBankTransferPayload,
   TransferPayload,
 } from "@/app/lib/thunks/transferThunks";
+import { clearError, clearTransfer } from "@/app/lib/slices/transferSlice";
+
+type TransferRouteData = {
+  accountNumber: string;
+  bank?: string;
+  bankCode?: string;
+  amount: number;
+  receiverName: string;
+  addAsBeneficiary?: boolean;
+  remark?: string;
+  narration?: string;
+  amount_grams?: number;
+  gift?: boolean;
+  isScheduled?: boolean;
+  frequency?: string;
+  scheduleType?: string;
+  dayOfWeek?: string;
+  dateOfTransfer?: string;
+  dateOfMonth?: number;
+  startDate?: string;
+  endDate?: string;
+  scheduleName?: string;
+};
+
+const getParam = (param?: string | string[]) =>
+  Array.isArray(param) ? param[0] : param ?? "";
+
+const getTransferErrorMessage = (error: unknown) => {
+  if (typeof error === "string" && error.trim()) {
+    return error;
+  }
+
+  if (error && typeof error === "object") {
+    const err = error as Record<string, unknown>;
+
+    if (typeof err.message === "string" && err.message.trim()) {
+      return err.message;
+    }
+
+    const data = err.data;
+    if (typeof data === "string" && data.trim()) {
+      return data;
+    }
+
+    if (data && typeof data === "object") {
+      const nestedMessage = (data as Record<string, unknown>).message;
+      if (typeof nestedMessage === "string" && nestedMessage.trim()) {
+        return nestedMessage;
+      }
+    }
+  }
+
+  return "Transfer failed. Please try again.";
+};
 
 export default function AuthorizePayment() {
   const params = useLocalSearchParams();
@@ -29,122 +78,187 @@ export default function AuthorizePayment() {
   const dispatch = useDispatch<AppDispatch>();
 
   const [passcode, setPasscode] = useState("");
-  const [error, setError] = useState(false);
+  const [pinError, setPinError] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
-  const hasHandledResponse = useRef(false);
-  const uniqueReferenceRef = useRef<string | null>(null);
+  const isMountedRef = useRef(true);
 
-  const {
-    isLoading,
-    error: transferError,
-    transferResult,
-  } = useSelector((state: RootState) => state.transfers);
+  const rawTransferData = getParam(params.transferData);
 
-  let transferData;
-  try {
-    transferData = JSON.parse(params.transferData as string);
-  } catch {
-    transferData = null;
-  }
+  const transferData = useMemo<TransferRouteData | null>(() => {
+    if (!rawTransferData) return null;
+
+    try {
+      return JSON.parse(rawTransferData) as TransferRouteData;
+    } catch {
+      return null;
+    }
+  }, [rawTransferData]);
 
   useEffect(() => {
-    if (hasHandledResponse.current) return;
+    dispatch(clearTransfer());
+    dispatch(clearError());
 
-    if (transferResult) {
-      hasHandledResponse.current = true;
-      setIsVerifying(false);
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [dispatch]);
+
+  const clearLocalErrorState = useCallback(() => {
+    setPinError(false);
+    setErrorMessage("");
+    setShowErrorModal(false);
+  }, []);
+
+  const handleDismissError = useCallback(() => {
+    clearLocalErrorState();
+    dispatch(clearError());
+  }, [clearLocalErrorState, dispatch]);
+
+  const handleTransfer = useCallback(async () => {
+    if (passcode.length !== 4 || isVerifying) {
+      return;
+    }
+
+    if (!transferData) {
+      setPinError(true);
+      setPasscode("");
+      setErrorMessage("Missing transfer data. Please restart the transfer.");
+      setShowErrorModal(true);
+      return;
+    }
+
+    setIsVerifying(true);
+    setPinError(false);
+    setErrorMessage("");
+    setShowErrorModal(false);
+    dispatch(clearTransfer());
+    dispatch(clearError());
+
+    const uniqueReference = `TXN_${Date.now()}`;
+
+    const payloadBase: TransferPayload = {
+      beneficiaryAccountNumber: transferData.accountNumber,
+      amount: transferData.amount,
+      narration:
+        transferData.remark || transferData.narration || "transfer",
+      transactionPin: passcode,
+      uniqueReference,
+      isScheduled: transferData.isScheduled || false,
+      saveBeneficiary: transferData.addAsBeneficiary || false,
+      ...(transferData.scheduleType || transferData.frequency
+        ? {
+            scheduleType:
+              transferData.scheduleType || transferData.frequency,
+          }
+        : {}),
+      ...(transferData.dayOfWeek && { dayOfWeek: transferData.dayOfWeek }),
+      ...(transferData.dateOfTransfer && {
+        dateOfTransfer: transferData.dateOfTransfer,
+      }),
+      ...(typeof transferData.dateOfMonth === "number" && {
+        dateOfMonth: transferData.dateOfMonth,
+      }),
+      ...(transferData.startDate && { startDate: transferData.startDate }),
+      ...(transferData.endDate && { endDate: transferData.endDate }),
+      ...(transferData.scheduleName && {
+        scheduleName: transferData.scheduleName,
+      }),
+    };
+
+    const action = transferData.bankCode
+      ? performInterBankTransfer({
+          ...payloadBase,
+          beneficiaryBankName: transferData.bank || "",
+          beneficiaryBankCode: transferData.bankCode,
+          beneficiaryName: transferData.receiverName,
+          ...(transferData.amount_grams && {
+            amount_grams: transferData.amount_grams,
+          }),
+          ...(transferData.gift && { gift: true }),
+        } as InterBankTransferPayload)
+      : performIntraBankTransfer({
+          ...payloadBase,
+          ...(transferData.amount_grams && {
+            amount_grams: transferData.amount_grams,
+          }),
+          ...(transferData.gift && { gift: true }),
+        } as TransferPayload);
+
+    try {
+      const result = await dispatch(action).unwrap();
+
+      if (!isMountedRef.current) {
+        return;
+      }
 
       const receiptPayload = {
-        amount: transferResult.amount ?? transferData.amount,
-        status: transferResult.status ?? "SUCCESSFUL",
-        sender: transferResult.sender,
-        senderBank: transferResult.senderBank ?? "Ellington Bank",
-        beneficiaryName:
-          transferResult.beneficiaryName ?? transferData.receiverName,
+        amount: result.amount ?? transferData.amount,
+        status: result.status ?? "SUCCESSFUL",
+        sender: result.sender,
+        senderBank: result.senderBank ?? "Ellington Bank",
+        beneficiaryName: result.beneficiaryName ?? transferData.receiverName,
         beneficiaryAccount:
-          transferResult.beneficiaryAccount ?? transferData.accountNumber,
-        beneficiaryBankName: transferResult.beneficiaryBankName ?? transferData.bank,
+          result.beneficiaryAccount ?? transferData.accountNumber,
+        beneficiaryBankName: result.beneficiaryBankName ?? transferData.bank,
         remark:
-          transferResult.remark ??
+          result.remark ??
           transferData.remark ??
           transferData.narration ??
           "transfer",
         transactionReference:
-          transferResult.transactionReference ??
-          transferResult.reference ??
-          transferResult.ReferenceID ??
-          uniqueReferenceRef.current,
+          result.transactionReference ??
+          result.reference ??
+          result.ReferenceID ??
+          uniqueReference,
         date:
-          transferResult.date ??
-          transferResult.TransactionDate ??
+          result.date ??
+          result.TransactionDate ??
           new Date().toISOString(),
-        currency: transferResult.currency ?? "NGN",
+        currency: result.currency ?? "NGN",
       };
+
+      setPasscode("");
+      dispatch(clearTransfer());
+      dispatch(clearError());
 
       router.replace({
         pathname: "/(root)/transfer/transfer-success",
         params: {
-          amount: transferData.amount,
+          amount: String(transferData.amount),
           receiverName: transferData.receiverName,
           accountNumber: transferData.accountNumber,
           receiptData: JSON.stringify(receiptPayload),
-          transferResult: JSON.stringify(transferResult),
+          transferResult: JSON.stringify(result),
         },
       });
-    }
+    } catch (error) {
+      if (!isMountedRef.current) {
+        return;
+      }
 
-    if (transferError && !isLoading) {
-      hasHandledResponse.current = true;
-      setIsVerifying(false);
-
-      Alert.alert("Transfer Failed", String(transferError), [
-        { text: "OK", onPress: () => (hasHandledResponse.current = false) },
-      ]);
+      const message = getTransferErrorMessage(error);
+      dispatch(clearTransfer());
+      dispatch(clearError());
+      setPinError(true);
+      setPasscode("");
+      setErrorMessage(message);
+      setShowErrorModal(true);
+      Vibration.vibrate(300);
+    } finally {
+      if (isMountedRef.current) {
+        setIsVerifying(false);
+      }
     }
-  }, [transferResult, transferError, isLoading]);
+  }, [dispatch, isVerifying, passcode, router, transferData]);
 
   useEffect(() => {
-    if (passcode.length === 4 && !isVerifying && !isLoading) {
-      setIsVerifying(true);
-      setError(false);
-      hasHandledResponse.current = false;
-
-      setTimeout(() => {
-        if (!transferData) {
-          setIsVerifying(false);
-          Alert.alert("Error", "Missing transfer data");
-          return;
-        }
-
-        const uniqueReference = `TXN_${Date.now()}`;
-        uniqueReferenceRef.current = uniqueReference;
-
-        const payloadBase: any = {
-          beneficiaryAccountNumber: transferData.accountNumber,
-          amount: transferData.amount,
-          narration: transferData.remark || transferData?.narration || "transfer",
-          ...(transferData.amount_grams && { amount_grams: transferData.amount_grams }),
-          ...(transferData.gift && { gift: true }),
-          transactionPin: passcode,
-          uniqueReference,
-          isScheduled: transferData.isScheduled || false,
-          saveBeneficiary: transferData.addAsBeneficiary || false,
-        };
-
-        const action = transferData.bankCode
-          ? performInterBankTransfer({
-              ...payloadBase,
-              beneficiaryBankName: transferData.bank,
-              beneficiaryBankCode: transferData.bankCode,
-              beneficiaryName: transferData.receiverName,
-            } as InterBankTransferPayload)
-          : performIntraBankTransfer(payloadBase as TransferPayload);
-
-        dispatch(action);
-      }, 300);
+    if (passcode.length === 4) {
+      handleTransfer();
     }
-  }, [passcode]);
+  }, [handleTransfer, passcode]);
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
@@ -161,36 +275,55 @@ export default function AuthorizePayment() {
           <OtpInput
             digitCount={4}
             value={passcode}
-            onChange={(v) => !isVerifying && !isLoading && setPasscode(v)}
-            error={error}
+            onChange={(value) => {
+              if (!isVerifying) {
+                clearLocalErrorState();
+                dispatch(clearError());
+                setPasscode(value.slice(0, 4));
+              }
+            }}
+            error={pinError}
             secure={true}
             inputStyle="w-20 h-20"
             showSoftInputOnFocus={false}
             caretHidden={true}
           />
 
-          {error && (
+          {pinError && !showErrorModal && (
             <Text className="text-red-500 text-sm mt-4">
-              Incorrect passcode. Try again.
+              Transfer failed. Try again.
             </Text>
           )}
         </View>
 
         <Numpad
-          onPress={(n) =>
-            !isVerifying &&
-            !isLoading &&
-            passcode.length < 4 &&
-            setPasscode(passcode + n)
-          }
-          onDelete={() =>
-            !isVerifying && !isLoading && setPasscode(passcode.slice(0, -1))
-          }
-          disabled={isVerifying || isLoading}
+          onPress={(n) => {
+            if (!isVerifying) {
+              clearLocalErrorState();
+              dispatch(clearError());
+              setPasscode((current) =>
+                current.length < 4 ? current + n : current
+              );
+            }
+          }}
+          onDelete={() => {
+            if (!isVerifying) {
+              clearLocalErrorState();
+              dispatch(clearError());
+              setPasscode((current) => current.slice(0, -1));
+            }
+          }}
+          disabled={isVerifying}
         />
       </View>
 
-      <Loading visible={isVerifying || isLoading} />
+      <Loading visible={isVerifying} />
+      <ErrorModal
+        visible={showErrorModal}
+        title="Transfer Failed"
+        message={errorMessage || "Transfer failed. Please try again."}
+        onDismiss={handleDismissError}
+      />
     </SafeAreaView>
   );
 }

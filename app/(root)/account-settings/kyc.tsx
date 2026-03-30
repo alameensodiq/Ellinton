@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Header from "@/app/components/header-back";
@@ -6,7 +6,14 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import CustomText from "@/app/components/CustomText";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { getKycUpgradeRoute } from "@/app/lib/kyc";
+import {
+  formatNairaLimit,
+  getKycUpgradeRoute,
+  getMaxAccountBalance,
+  getTransferTierLimit,
+} from "@/app/lib/kyc";
+
+const tiers = [1, 2, 3] as const;
 
 const kyc = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -14,6 +21,7 @@ const kyc = () => {
     const upgradeRoute = getKycUpgradeRoute(user?.kyc_level);
     if (upgradeRoute) router.push(upgradeRoute);
   };
+
   return (
     <SafeAreaView className="bg-primary-100 flex-1 px-2">
       <Header title="KYC Level" />
@@ -42,66 +50,36 @@ const kyc = () => {
         </View>
         <CustomText className="my-4">Level Benefit</CustomText>
         <View className="bg-primary-400 rounded-2xl p-4">
-          <View className=" p-4">
-            <View className="flex-row gap-4 ">
-              <CustomText>Tier 1</CustomText>
-              {user?.kyc_level === 1 && (
-                <CustomText className="bg-yellow rounded-full text-black px-2">
-                  Current
-                </CustomText>
-              )}
-            </View>
-            <View className="border-b border-primary-300 ">
-              <View className="flex-row justify-between">
-                <CustomText secondary>Daily transaction limit</CustomText>
-                <CustomText secondary>Max account Balance</CustomText>
+          {tiers.map((tier, index) => {
+            const isLastTier = index === tiers.length - 1;
+
+            return (
+              <View key={tier} className="p-4">
+                <View className="flex-row gap-4 ">
+                  <CustomText>Tier {tier}</CustomText>
+                  {user?.kyc_level === tier && (
+                    <CustomText className="bg-yellow rounded-full text-black px-2">
+                      Current
+                    </CustomText>
+                  )}
+                </View>
+                <View className={isLastTier ? "" : "border-b border-primary-300"}>
+                  <View className="flex-row justify-between">
+                    <CustomText secondary>Daily transaction limit</CustomText>
+                    <CustomText secondary>Max account Balance</CustomText>
+                  </View>
+                  <View className="flex-row justify-between">
+                    <CustomText>
+                      {formatNairaLimit(getTransferTierLimit(tier))}
+                    </CustomText>
+                    <CustomText>
+                      {formatNairaLimit(getMaxAccountBalance(tier))}
+                    </CustomText>
+                  </View>
+                </View>
               </View>
-              <View className="flex-row justify-between">
-                <CustomText>₦5,500</CustomText>
-                <CustomText>₦500,000</CustomText>
-              </View>
-            </View>
-          </View>
-          <View className=" p-4">
-            <View className="flex-row gap-4 ">
-              <CustomText>Tier 2</CustomText>
-              {user?.kyc_level === 2 && (
-                <CustomText className="bg-yellow rounded-full text-black px-2">
-                  Current
-                </CustomText>
-              )}
-            </View>
-            <View className="border-b border-primary-300 ">
-              <View className="flex-row justify-between">
-                <CustomText secondary>Daily transaction limit</CustomText>
-                <CustomText secondary>Max account Balance</CustomText>
-              </View>
-              <View className="flex-row justify-between">
-                <CustomText>₦5,500</CustomText>
-                <CustomText>₦1,000,000</CustomText>
-              </View>
-            </View>
-          </View>
-          <View className=" p-4">
-            <View className="flex-row gap-4 ">
-              <CustomText>Tier 3</CustomText>
-              {user?.kyc_level === 3 && (
-                <CustomText className="bg-yellow rounded-full text-black px-2">
-                  Current
-                </CustomText>
-              )}
-            </View>
-            <View>
-              <View className="flex-row justify-between">
-                <CustomText secondary>Daily transaction limit</CustomText>
-                <CustomText secondary>Max account Balance</CustomText>
-              </View>
-              <View className="flex-row justify-between">
-                <CustomText>₦5,500</CustomText>
-                <CustomText>₦5,000,000</CustomText>
-              </View>
-            </View>
-          </View>
+            );
+          })}
         </View>
       </View>
     </SafeAreaView>

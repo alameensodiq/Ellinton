@@ -14,6 +14,8 @@ export interface TransferPayload {
   uniqueReference: string;
   isScheduled: boolean;
   saveBeneficiary: boolean;
+  amount_grams?: number;
+  gift?: boolean;
   scheduleType?: string;
   dayOfWeek?: string;
   dateOfTransfer?: string;
@@ -94,7 +96,40 @@ export interface TransactionReceipt {
 
 
 function extractError(errorData: any, status: number) {
-  return errorData?.message || errorData?.data || `Transfer failed (${status})`;
+  if (typeof errorData === "string" && errorData.trim()) {
+    return errorData;
+  }
+
+  if (typeof errorData?.message === "string" && errorData.message.trim()) {
+    return errorData.message;
+  }
+
+  if (typeof errorData?.data === "string" && errorData.data.trim()) {
+    return errorData.data;
+  }
+
+  if (
+    typeof errorData?.data?.message === "string" &&
+    errorData.data.message.trim()
+  ) {
+    return errorData.data.message;
+  }
+
+  const errors =
+    errorData?.errors ||
+    errorData?.data?.errors ||
+    errorData?.data?.error ||
+    errorData?.error;
+
+  if (Array.isArray(errors) && errors.length > 0) {
+    return String(errors[0]);
+  }
+
+  if (typeof errors === "string" && errors.trim()) {
+    return errors;
+  }
+
+  return `Transfer failed (${status})`;
 }
 
 export const performIntraBankTransfer = createAsyncThunk<

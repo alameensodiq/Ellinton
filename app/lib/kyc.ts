@@ -15,6 +15,18 @@ export const getTransferTierLimit = (kycLevel?: number | null) => {
   return null;
 };
 
+export const getMaxAccountBalance = (kycLevel?: number | null) => {
+  const level = getKycLevel(kycLevel);
+
+  if (level === 1) return 500000;
+  if (level === 2) return 1000000;
+
+  return 5000000;
+};
+
+export const formatNairaLimit = (amount: number | null) =>
+  amount == null ? "Unlimited" : `₦${amount.toLocaleString()}`;
+
 export const getTierLabel = (kycLevel?: number | null) =>
   `Tier ${getKycLevel(kycLevel)}`;
 
