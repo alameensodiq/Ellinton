@@ -86,7 +86,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   items = [],
   version
 }) => {
-  const resolvedVersion = version || Constants.expoConfig?.version || "2.0.5";
+  const resolvedVersion = version || Constants.expoConfig?.version || "2.0.7";
   const screenHeight = Dimensions.get("window").height;
   const [slideAnim] = useState(new Animated.Value(screenHeight));
   const dispatch = useDispatch<AppDispatch>();

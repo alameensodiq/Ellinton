@@ -233,7 +233,10 @@ export const runCreditCheck = createAsyncThunk<
 
     const data = (await res.json()) as ApiResponse<any>;
 
+    console.log("📥 CREDIT CHECK RESPONSE:", data);
+
     if (!res.ok || !data.success) {
+      console.log("❌ CREDIT CHECK ERROR BODY:", data);
       return rejectWithValue(data?.message || "Credit check failed");
     }
     return data.data;
@@ -285,6 +288,9 @@ export const applyForLoan = createAsyncThunk<
 >("loans/apply", async (payload, { getState, rejectWithValue }) => {
   try {
     const token = (getState() as any).auth.token;
+    const requestBody = JSON.stringify(payload);
+
+    console.log("📤 LOAN APPLY REQUEST BODY:", requestBody);
 
     const res = await fetch(LOAN_APPLY_ENDPOINT, {
       method: "POST",
@@ -292,7 +298,7 @@ export const applyForLoan = createAsyncThunk<
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(payload),
+      body: requestBody,
     });
 
     const data = (await res.json()) as ApiResponse<Loan>;
