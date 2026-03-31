@@ -62,7 +62,7 @@ export default function RootLayout() {
           }
 
           // update redux state
-          await notificationService.unregisterDeviceFromBackend();
+          // await notificationService.unregisterDeviceFromBackend();
           store.dispatch(logout());
 
           // mark session expired so other parts of the app can react

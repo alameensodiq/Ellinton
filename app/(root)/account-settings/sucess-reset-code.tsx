@@ -25,7 +25,7 @@ const handleClose = async () => {
     await dispatch(logoutUser()).unwrap();
     
     // 2. Unregister device from backend
-    await notificationService.unregisterDeviceFromBackend();
+    // await notificationService.unregisterDeviceFromBackend();
     
     // 3. Sign out from Firebase
     await signOut(auth);

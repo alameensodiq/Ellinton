@@ -44,7 +44,7 @@ const goToLogin = async () => {
 
   try {
     // ✅ 1. Unregister device from backend FIRST
-    await notificationService.unregisterDeviceFromBackend();
+    // await notificationService.unregisterDeviceFromBackend();
     console.log("✅ Device unregistered");
     
     // ✅ 2. Sign out from Firebase
