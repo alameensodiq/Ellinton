@@ -100,7 +100,7 @@ export default function Index() {
 const handleAuthNavigation = async (path: string) => {
   try {
     // 1. Unregister device first
-    await notificationService.unregisterDeviceFromBackend();
+    // await notificationService.unregisterDeviceFromBackend();
     
     // 2. Sign out from Firebase
     // await signOut(auth);

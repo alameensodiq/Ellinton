@@ -1019,48 +1019,48 @@ class NotificationService {
   /**
    * Unregister device from backend
    */
-  async unregisterDeviceFromBackend(): Promise<boolean> {
-    try {
-      const token = await this.getStoredToken();
-      const authToken = await AsyncStorage.getItem("authToken");
-      const deviceId = await this.getDeviceId();
+  // async unregisterDeviceFromBackend(): Promise<boolean> {
+  //   try {
+  //     const token = await this.getStoredToken();
+  //     const authToken = await AsyncStorage.getItem("authToken");
+  //     const deviceId = await this.getDeviceId();
 
-      if (!token || !authToken) {
-        console.log("No token or auth to unregister");
-        return false;
-      }
+  //     if (!token || !authToken) {
+  //       console.log("No token or auth to unregister");
+  //       return false;
+  //     }
 
-      console.log("📡 Unregistering device...");
+  //     console.log("📡 Unregistering device...");
 
-      const response = await fetch(`${this.apiUrl}/users/push-tokens/delete`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          push_token: token,
-          device_id: deviceId,
-          platform: Platform.OS,
-          app_version: Constants.expoConfig?.version || "2.0.5",
-          device_make: Device.manufacturer || "Unknown",
-          device_model: Device.modelName || Platform.OS,
-          device_name: Device.deviceName || "Unknown"
-        })
-      });
+  //     const response = await fetch(`${this.apiUrl}/users/push-tokens/delete`, {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${authToken}`
+  //       },
+  //       body: JSON.stringify({
+  //         push_token: token,
+  //         device_id: deviceId,
+  //         platform: Platform.OS,
+  //         app_version: Constants.expoConfig?.version || "2.0.5",
+  //         device_make: Device.manufacturer || "Unknown",
+  //         device_model: Device.modelName || Platform.OS,
+  //         device_name: Device.deviceName || "Unknown"
+  //       })
+  //     });
 
-      if (response.ok) {
-        await AsyncStorage.removeItem(this.TOKEN_KEY);
-        this.expoPushToken = null;
-        console.log("✅ Device unregistered successfully");
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("❌ Unregister error:", error);
-      return false;
-    }
-  }
+  //     if (response.ok) {
+  //       await AsyncStorage.removeItem(this.TOKEN_KEY);
+  //       this.expoPushToken = null;
+  //       console.log("✅ Device unregistered successfully");
+  //       return true;
+  //     }
+  //     return false;
+  //   } catch (error) {
+  //     console.error("❌ Unregister error:", error);
+  //     return false;
+  //   }
+  // }
 
   /**
    * Schedule a local notification
