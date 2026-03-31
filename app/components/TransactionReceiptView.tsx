@@ -355,6 +355,7 @@ export default function TransactionReceiptView({
   receiptData: ReceiptViewData;
   onBack: () => void;
 }) {
+  console.log(receiptData);
   const fullViewRef = useRef<View>(null);
   const [shareBottomSheetVisible, setShareBottomSheetVisible] = useState(false);
 
@@ -469,20 +470,20 @@ export default function TransactionReceiptView({
   //   }
   // };
 
-const shareAsPdf = async () => {
-  try {
-    if (!fullViewRef.current) return;
+  const shareAsPdf = async () => {
+    try {
+      if (!fullViewRef.current) return;
 
-    // 1. Capture the EXACT view as a high-quality base64 string
-    const imageBase64 = await captureRef(fullViewRef.current, {
-      format: "png",
-      quality: 1.0, 
-      result: "base64",
-    });
+      // 1. Capture the EXACT view as a high-quality base64 string
+      const imageBase64 = await captureRef(fullViewRef.current, {
+        format: "png",
+        quality: 1.0,
+        result: "base64"
+      });
 
-    // 2. Create HTML that behaves like a PDF "wrapper"
-    // We match the background color to your app's primary-400 (#0F172A)
-    const html = `
+      // 2. Create HTML that behaves like a PDF "wrapper"
+      // We match the background color to your app's primary-400 (#0F172A)
+      const html = `
       <html>
         <head>
           <style>
@@ -505,26 +506,26 @@ const shareAsPdf = async () => {
       </html>
     `;
 
-    // 3. Generate the PDF file using expo-print
-    const { uri } = await Print.printToFileAsync({
-      html: html,
-      base64: false
-    });
+      // 3. Generate the PDF file using expo-print
+      const { uri } = await Print.printToFileAsync({
+        html: html,
+        base64: false
+      });
 
-    // 4. Share the PDF using expo-sharing
-    await Sharing.shareAsync(uri, {
-      mimeType: "application/pdf",
-      dialogTitle: "Transaction Receipt",
-      UTI: "com.adobe.pdf"
-    });
+      // 4. Share the PDF using expo-sharing
+      await Sharing.shareAsync(uri, {
+        mimeType: "application/pdf",
+        dialogTitle: "Transaction Receipt",
+        UTI: "com.adobe.pdf"
+      });
 
-    closeBottomSheet();
-  } catch (error) {
-    console.error("PDF Error:", error);
-    Alert.alert("Error", "Failed to generate PDF. Sharing as image instead.");
-    shareAsImage(); // Fallback so the user isn't stuck
-  }
-};
+      closeBottomSheet();
+    } catch (error) {
+      console.error("PDF Error:", error);
+      Alert.alert("Error", "Failed to generate PDF. Sharing as image instead.");
+      shareAsImage(); // Fallback so the user isn't stuck
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
@@ -540,49 +541,59 @@ const shareAsPdf = async () => {
         >
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-
-        <Image
-          source={require("../assets/logo1.png")}
-          style={{ width: 100, height: 100, marginTop: 16 }}
-          resizeMode="contain"
-        />
-
         <View ref={fullViewRef} collapsable={false}>
-          <View className="bg-primary-400 rounded-2xl p-6 mt-4">
-            <ReceiptRow label="Amount" value={`₦${receiptData.amount ?? ""}`} />
-            <ReceiptRow label="Type" value={receiptData.type} />
-            <ReceiptRow
-              label="Status"
-              value={receiptData.status || ""}
-              highlight
-            />
-            <ReceiptRow label="Sender" value={receiptData.sender} />
-            {!!receiptData.beneficiary && (
-              <ReceiptRow label="Beneficiary" value={receiptData.beneficiary} />
-            )}
-            {!!receiptData.beneficiaryAccount && (
-              <ReceiptRow
-                label="Beneficiary account"
-                value={receiptData.beneficiaryAccount}
-              />
-            )}
-            {!!receiptData.beneficiaryBank && (
-              <ReceiptRow
-                label="Beneficiary bank"
-                value={receiptData.beneficiaryBank}
-              />
-            )}
-            <ReceiptRow label="Date" value={receiptData.date} />
+          <Image
+            source={require("../assets/logo1.png")}
+            style={{ width: 100, height: 100, marginTop: 16 }}
+            resizeMode="contain"
+          />
 
-            <View className="flex-row justify-between items-center py-4">
-              <Text className="text-accent-100 text-sm">Reference No.</Text>
-              <View className="flex-row items-center">
-                <Text className="text-white text-base font-semibold mr-2 max-w-44">
-                  {receiptData.referenceNo}
-                </Text>
-                <TouchableOpacity>
-                  <Ionicons name="copy-outline" size={18} color="#fff" />
-                </TouchableOpacity>
+          <View>
+            <View className="bg-primary-400 rounded-2xl p-6 mt-4">
+              <ReceiptRow
+                label="Amount"
+                value={`₦${receiptData.amount ?? ""}`}
+              />
+              <ReceiptRow label="Type" value={receiptData.type} />
+              <ReceiptRow
+                label="Status"
+                value={receiptData.status || ""}
+                highlight
+              />
+              <ReceiptRow label="Sender" value={receiptData.sender} />
+              {!!receiptData.beneficiary && (
+                <ReceiptRow
+                  label="Beneficiary"
+                  value={receiptData.beneficiary}
+                />
+              )}
+              {!!receiptData.beneficiaryAccount && (
+                <ReceiptRow
+                  label="Beneficiary account"
+                  value={receiptData.beneficiaryAccount}
+                />
+              )}
+              {!!receiptData.beneficiaryBank && (
+                <ReceiptRow
+                  label="Beneficiary bank"
+                  value={receiptData.beneficiaryBank}
+                />
+              )}
+
+              <ReceiptRow label={receiptData.status === 'Credit' ? "Receiver Account" : "Sender Account"} value={"Ellington MFB"} />
+
+              <ReceiptRow label="Date" value={receiptData.date} />
+
+              <View className="flex-row justify-between items-center py-4">
+                <Text className="text-accent-100 text-sm">Reference No.</Text>
+                <View className="flex-row items-center">
+                  <Text className="text-white text-base font-semibold mr-2 max-w-44">
+                    {receiptData.referenceNo}
+                  </Text>
+                  <TouchableOpacity>
+                    <Ionicons name="copy-outline" size={18} color="#fff" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
