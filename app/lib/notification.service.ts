@@ -993,7 +993,7 @@ class NotificationService {
         body: JSON.stringify({
           token: token,
           deviceId: deviceId,
-          app_version: Constants.expoConfig?.version || "2.0.5",
+          app_version: Constants.expoConfig?.version || "2.0.7",
           device_make: Device.manufacturer || "Unknown",
           device_model: Device.modelName || Platform.OS,
           device_name: Device.deviceName || "Unknown"
@@ -1040,7 +1040,7 @@ class NotificationService {
         body: JSON.stringify({
           token: token,
           deviceId: deviceId,
-          app_version: Constants.expoConfig?.version || "2.0.5",
+          app_version: Constants.expoConfig?.version || "2.0.7",
           device_make: Device.manufacturer || "Unknown",
           device_model: Device.modelName || Platform.OS,
           device_name: Device.deviceName || "Unknown"

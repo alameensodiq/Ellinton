@@ -81,7 +81,11 @@ export default function AuthorizeLoan() {
     const assessment = creditCheck?.assessment ?? creditCheck?.data?.assessment;
     const loanAmount = Number(assessment?.maxLoanLimit ?? 0);
     const interestRate = Number(assessment?.interestRatePerMonth ?? 0);
-    const tenureInDays = Number(assessment?.tenorDays ?? 0);
+    const selectedTenure = Number(params.tenure ?? 0);
+    const tenureInDays =
+      selectedTenure > 0
+        ? selectedTenure
+        : Number(assessment?.tenorDays ?? assessment?.tenure ?? 0);
     const repaymentFrequency = String(
       assessment?.repaymentFrequency ?? ""
     );

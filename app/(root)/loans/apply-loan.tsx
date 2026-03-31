@@ -45,7 +45,11 @@ const ApplyLoan = () => {
   // values from credit check
   const offer = creditCheckMessage;
   const amount = assessment?.maxLoanLimit ?? 0;
-  const tenure = assessment?.tenorDays ?? 0;
+  const selectedTenure = Number(params.tenure ?? 0);
+  const tenure =
+    selectedTenure > 0
+      ? selectedTenure
+      : Number(assessment?.tenorDays ?? assessment?.tenure ?? 0);
   const interest = assessment?.interestRatePerMonth ?? 0;
   const annualInterest = Number(interest) * 12;
   const repaymentFrequency = assessment?.repaymentFrequency ?? "";

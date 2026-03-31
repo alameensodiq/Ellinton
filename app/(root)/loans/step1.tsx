@@ -78,6 +78,9 @@ const Loans = () => {
   const getProductCode = (product: LoanProduct) =>
     String(product.code ?? product.productCode ?? "");
 
+  const getProductTenure = (product: LoanProduct) =>
+    Number(product.tenure ?? product.tenor_options?.[0] ?? 0);
+
   const formatAmount = (value?: string) => {
     const amount = Number(value ?? 0);
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -146,6 +149,7 @@ const Loans = () => {
       params: {
         productCode: getProductCode(selectedProduct),
         name: selectedProduct.name,
+        tenure: String(getProductTenure(selectedProduct)),
       },
     });
   };
@@ -188,7 +192,7 @@ const Loans = () => {
             const productCode = getProductCode(loan);
             const isSelected = selectedLoan === productCode;
             const Icon = icons[index % icons.length];
-            const tenor = loan.tenure ?? loan.tenor_options?.[0];
+            const tenor = getProductTenure(loan);
             const interestRate = Number(loan.interest_rate ?? 0);
             const rangeLabel = `${formatAmount(loan.min_amount)}-${formatAmount(
               loan.max_amount
