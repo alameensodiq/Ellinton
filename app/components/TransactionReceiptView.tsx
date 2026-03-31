@@ -541,7 +541,7 @@ export default function TransactionReceiptView({
         >
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <View ref={fullViewRef} collapsable={false}>
+        <View style={{backgroundColor: '#3F401B'}} ref={fullViewRef} collapsable={false}>
           <Image
             source={require("../assets/logo1.png")}
             style={{ width: 100, height: 100, marginTop: 16 }}
