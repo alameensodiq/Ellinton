@@ -991,8 +991,9 @@ class NotificationService {
           Authorization: `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          token: token,
-          deviceId: deviceId,
+          push_token: token,
+          device_id: deviceId,
+          platform: Platform.OS,
           app_version: Constants.expoConfig?.version || "2.0.5",
           device_make: Device.manufacturer || "Unknown",
           device_model: Device.modelName || Platform.OS,
@@ -1038,8 +1039,9 @@ class NotificationService {
           Authorization: `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          token: token,
-          deviceId: deviceId,
+          push_token: token,
+          device_id: deviceId,
+          platform: Platform.OS,
           app_version: Constants.expoConfig?.version || "2.0.5",
           device_make: Device.manufacturer || "Unknown",
           device_model: Device.modelName || Platform.OS,
