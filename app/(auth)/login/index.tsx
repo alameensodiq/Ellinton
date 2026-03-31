@@ -72,12 +72,12 @@ const Login = () => {
     if (!email || !pin) return;
 
     try {
-      await notificationService.scheduleLocalNotification(
-        "Welcome Back! 👋",
-        `Hello ${email}, you've successfully logged in.`,
-        { type: "test", timestamp: new Date().toISOString() },
-        3
-      );
+      // await notificationService.scheduleLocalNotification(
+      //   "Welcome Back! 👋",
+      //   `Hello ${email}, you've successfully logged in.`,
+      //   { type: "test", timestamp: new Date().toISOString() },
+      //   3
+      // );
       // 1. First login to YOUR app
       await dispatch(
         loginUser({
