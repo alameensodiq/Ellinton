@@ -17,7 +17,6 @@ import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { auth } from "./firebase";
-import notificationService from "./lib/notification.service";
 import { signOut } from "firebase/auth";
 import { usePreventScreenCapture } from 'expo-screen-capture';
 
@@ -56,18 +55,8 @@ export default function Index() {
   const [checkingStorage, setCheckingStorage] = useState(true);
   const pan = useRef(new Animated.ValueXY()).current;
   const dispatch = useDispatch();
+  
 
-  useEffect(() => {
-    console.log("Current user:", auth.currentUser?.email);
-
-    // Fix: await the Promise
-    const getToken = async () => {
-      const token = await notificationService.getStoredToken();
-      console.log("Push token:", token);
-    };
-
-    getToken();
-  }, []);
 
   useEffect(() => {
     // Show landing page on app startup

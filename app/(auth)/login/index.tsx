@@ -26,7 +26,7 @@ import images from "@/app/assets/images";
 import { loginUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import notificationService from "@/app/lib/notification.service";
+import  { registerDeviceWithBackend, registerForPushNotificationsAsync } from "@/app/lib/notification.service";
 
 const Login = () => {
   const [pin, setPin] = useState("");
@@ -64,21 +64,12 @@ const Login = () => {
     setShowErrorModal(Boolean(error));
   }, [error]);
 
-  useEffect(() => {
-    notificationService.initialize();
-  }, []);
 
-  const handleLogin = async () => {
+   const handleLogin = async () => {
     if (!email || !pin) return;
 
     try {
-      // await notificationService.scheduleLocalNotification(
-      //   "Welcome Back! 👋",
-      //   `Hello ${email}, you've successfully logged in.`,
-      //   { type: "test", timestamp: new Date().toISOString() },
-      //   3
-      // );
-      // 1. First login to YOUR app
+      // 1. Log in to your app (This likely sets the 'authToken' in AsyncStorage)
       await dispatch(
         loginUser({
           email: email.trim().toLowerCase(),
@@ -87,6 +78,21 @@ const Login = () => {
       ).unwrap();
 
       console.log("✅ App login successful");
+
+      // 2. Request/Get the Push Token
+      const token = await registerForPushNotificationsAsync();
+
+      console.log(token)
+
+      // 3. If we got a token, send it to the backend immediately
+      if (token) {
+        const isRegistered = await registerDeviceWithBackend(token);
+        if (isRegistered) {
+          console.log("✅ Push token synced with backend");
+        } else {
+          console.warn("⚠️ Login succeeded, but push registration failed");
+        }
+      }
     } catch (error) {
       console.error("❌ Login failed:", error);
     }
