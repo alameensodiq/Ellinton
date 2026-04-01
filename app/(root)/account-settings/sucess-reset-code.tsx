@@ -11,7 +11,7 @@ import { logoutUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/firebase";
-import notificationService from "@/app/lib/notification.service";
+
 
 const Success = () => {
   const router = useRouter();

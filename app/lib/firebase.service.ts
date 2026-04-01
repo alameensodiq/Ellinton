@@ -1,5 +1,5 @@
 import { app, auth } from '../firebase';
-import notificationService from './notification.service';
+
 
 class FirebaseService {
   async initialize(): Promise<boolean> {
@@ -9,7 +9,7 @@ class FirebaseService {
         console.log('✅ Firebase initialized successfully');
         
         // Initialize notifications after Firebase
-        await notificationService.initialize();
+        // await notificationService.initialize();
         
         return true;
       } else {

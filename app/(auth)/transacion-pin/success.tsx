@@ -8,7 +8,6 @@ import { useDispatch } from "react-redux";
 import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { trackRegistrationCompleted } from "@/app/lib/analytics/appsflyer";
-import notificationService from "@/app/lib/notification.service";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/firebase";
 

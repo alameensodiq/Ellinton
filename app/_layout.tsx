@@ -15,7 +15,6 @@ import { useEffect } from "react";
 import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
 import firebaseService from "./lib/firebase.service";
 import authListenerService from "./lib/auth-listener.service";
-import notificationService from "./lib/notification.service";
 import UserInactivityProvider from "./components/UserInactivityProvider";
 import { usePreventScreenCapture } from "expo-screen-capture";
 

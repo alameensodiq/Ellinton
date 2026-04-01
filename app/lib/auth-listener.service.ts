@@ -2,7 +2,7 @@ import { User as FirebaseUser } from 'firebase/auth';
 import { auth } from '../firebase'; 
 import { store } from '../lib/store';
 import { setCredentials, logout } from '../lib/slices/authSlice';
-import notificationService from './notification.service';
+import { registerDeviceWithBackend } from './notification.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class AuthListenerService {
@@ -46,7 +46,6 @@ class AuthListenerService {
           }));
 
           await AsyncStorage.setItem('firebaseToken', firebaseToken);
-          await notificationService.registerDeviceWithBackend();
 
           console.log('✅ Firebase user synced with Redux');
         } else {

@@ -4,7 +4,7 @@ import {
   Text,
   StatusBar,
   TouchableOpacity,
-  Vibration,
+  Vibration
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -17,11 +17,17 @@ import { loginUser } from "@/app/lib/thunks/authThunks";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import Loading from "@/app/components/Loading";
+import {
+  registerDeviceWithBackend,
+  registerForPushNotificationsAsync
+} from "@/app/lib/notification.service";
 
 export default function CurrentUser() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, isLoading, isRestoring } = useAppSelector((state) => state.auth);
+  const { user, isLoading, isRestoring } = useAppSelector(
+    (state) => state.auth
+  );
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
 
@@ -71,8 +77,21 @@ export default function CurrentUser() {
           if (isLoading) return;
 
           await dispatch(loginUser({ email, passcode })).unwrap();
-
           setPasscode("");
+
+          const token = await registerForPushNotificationsAsync();
+
+          console.log(token);
+
+          // 3. If we got a token, send it to the backend immediately
+          if (token) {
+            const isRegistered = await registerDeviceWithBackend(token);
+            if (isRegistered) {
+              console.log("✅ Push token synced with backend");
+            } else {
+              console.warn("⚠️ Login succeeded, but push registration failed");
+            }
+          }
         } catch (err: any) {
           setError(true);
           Vibration.vibrate(400);
@@ -116,7 +135,9 @@ export default function CurrentUser() {
           </View>
           <View className="flex-1 justify-between px-6 pb-12">
             <View className="mt-6">
-              <Text className="text-white text-base mb-3">Enter your passcode</Text>
+              <Text className="text-white text-base mb-3">
+                Enter your passcode
+              </Text>
 
               <OtpInput
                 digitCount={6}
