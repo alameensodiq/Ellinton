@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.ellingtonmfb.app",
-      "versionCode":42,
+      "versionCode": 42,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -74,19 +74,16 @@
         {
           "ios": {
             "useFrameworks": "static",
-            "forceStaticLinking": [
-              "RNFBApp",
-              "RNFBMessaging"
-            ],
+            "forceStaticLinking": ["RNFBApp", "RNFBMessaging"],
             "deploymentTarget": "15.1"
           },
           "android": {
             "ndkVersion": "26.1.10909125",
             "compileSdkVersion": 35,
             "targetSdkVersion": 35,
-            "abiFilters": [
-              "arm64-v8a"
-            ]
+            "abiFilters": ["arm64-v8a"],
+            "enableProguardInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
           }
         }
       ],
@@ -97,7 +94,7 @@
         }
       ],
       "expo-notifications",
-      "expo-secure-store",
+      "expo-secure-store"
       // "@react-native-firebase/app",
       // "@react-native-firebase/messaging"
     ],
