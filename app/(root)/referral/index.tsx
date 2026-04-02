@@ -47,7 +47,9 @@ const ReferralScreen = () => {
   const walletWithdrawing = useAppSelector((state) => state.wallet.withdrawing);
   const walletError = useAppSelector((state) => state.wallet.error);
   const totalEarned = Number(bonusBalance?.balance ?? 0);
-  const referralCode = bonusBalance?.walletNumber || "";
+  const referralCode =
+    typeof user?.referral_code === "string" ? user.referral_code.trim() : "";
+  const referralCodeDisplay = referralCode || "Not set yet";
   const appName = "Ellington MFB Personal";
   const iosAppLink =
     "https://apps.apple.com/us/app/ellington-mfb-personal/id6742980740";
@@ -248,12 +250,12 @@ Download on Android: ${androidAppLink}`;
                   className="text-white mb-0"
                   style={{ fontSize: 18, letterSpacing: 1 }}
                 >
-                  {referralCode || "--"}
+                  {referralCodeDisplay}
                 </CustomText>
                 <Ionicons name="copy-outline" size={20} color="#fff" />
               </TouchableOpacity>
               <CustomText className="text-center tex-sm text-accent-100 mt-2">
-                Click to copy
+                {referralCode ? "Click to copy" : "Referral code not available yet"}
               </CustomText>
             </View>
 
@@ -426,7 +428,7 @@ Download on Android: ${androidAppLink}`;
               style={{ backgroundColor: "rgba(150, 152, 65, 0.35)" }}
             >
               {[
-                { label: "Wallet Number", value: bonusBalance?.walletNumber || "--" },
+                { label: "Referral Code", value: referralCodeDisplay },
                 { label: "Currency", value: bonusBalance?.currency || "NGN" },
                 { label: "Available Bonus", value: `₦${totalEarned.toLocaleString()}` },
               ].map((item, index, arr) => (

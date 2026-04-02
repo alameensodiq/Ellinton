@@ -628,6 +628,13 @@ export const getUserProfile = createAsyncThunk(
     try {
       const state = getState() as any;
       const token = state.auth.token;
+      const maskedToken = token ? `${String(token).slice(0, 12)}...` : "<none>";
+
+      console.log("[getUserProfile] request", {
+        endpoint: GET_USER_PROFILE_ENDPOINT,
+        hasToken: Boolean(token),
+        tokenPreview: maskedToken,
+      });
 
       const response = await fetch(GET_USER_PROFILE_ENDPOINT, {
         method: "GET",
@@ -637,13 +644,26 @@ export const getUserProfile = createAsyncThunk(
         },
       });
 
+      const responseText = await response.text().catch(() => "");
+      const responseJson = parseResponseJson(responseText) as ApiResponse<User> | null;
+
+      console.log("[getUserProfile] response", {
+        status: response.status,
+        ok: response.ok,
+        body: formatResponseLogBody(responseText, 4000),
+      });
+
+      if (responseJson) {
+        console.log("[getUserProfile] parsed response", responseJson);
+      }
+
       if (!response.ok) {
         // If 401, clear token and logout (sync)
         if (response.status === 401) {
           await clearAuthToken();
           dispatch(logout());
         }
-        const errorData = await response.json().catch(() => null);
+        const errorData = responseJson;
         return rejectWithValue(
           errorData?.data?.message ||
             errorData?.message ||
@@ -651,9 +671,8 @@ export const getUserProfile = createAsyncThunk(
         );
       }
 
-      const responseData = await response.json();
-      const apiData = responseData as ApiResponse<User>;
-      if (!apiData.data) {
+      const apiData = responseJson;
+      if (!apiData?.data) {
         return rejectWithValue("Invalid response structure");
       }
 
