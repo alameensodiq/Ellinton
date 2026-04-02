@@ -74,7 +74,7 @@ export default function BuyGold() {
 
   const amountRaw = toNumber(amount);
 
-  const minBuy = 50_000;
+  const minBuy = 20_000;
   const minSell = 20_000;
 
   return (
@@ -124,7 +124,7 @@ export default function BuyGold() {
           <AmountInput
             value={amount}
             onChange={setAmount}
-            placeholder={txType === "buy" ? "50,000" : "20,000"}
+            placeholder={txType === "buy" ? "20,000" : "20,000"}
             sign="₦"
             onChangeValue={(n) => console.log("raw:", n)}
           />
@@ -137,7 +137,7 @@ export default function BuyGold() {
             />
             <Text className="text-white/70 text-xs ml-2">
               {txType === "buy"
-                ? "Minimum amount is ₦50,000"
+                ? "Minimum amount is ₦20,000"
                 : "Minimum amount is ₦20,000"}
             </Text>
           </View>

@@ -5,14 +5,14 @@
     "version": "2.0.7",
     "orientation": "portrait",
     "icon": "./app/assets/Logo2.png",
-    "scheme": "myapp",
+    "scheme": "ellingtonbank",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "23",
+      "buildNumber": "24",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver more relevant ads and measure campaign performance.",
@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.ellingtonmfb.app",
-      "versionCode":42,
+      "versionCode":51,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -98,8 +98,8 @@
       ],
       "expo-notifications",
       "expo-secure-store",
-      // "@react-native-firebase/app",
-      // "@react-native-firebase/messaging"
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
     ],
     "experiments": {
       "typedRoutes": true
