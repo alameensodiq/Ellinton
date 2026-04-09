@@ -73,6 +73,8 @@ export default function TransactionsScreen() {
     (state: RootState) => state.transfers
   );
 
+  console.log(transactions)
+
   useEffect(() => {
     dispatch(fetchAccountTransactions());
   }, [dispatch]);
@@ -92,6 +94,7 @@ export default function TransactionsScreen() {
   }, [transactions, searchQuery]);
 
   const groupedTransactions = groupTransactionsByDate(filteredTransactions);
+  console.log(groupedTransactions)
   const hasTransactions = filteredTransactions.length > 0;
   const isFetchingTransactions = isLoading && transactions.length === 0;
   const isOpeningTransaction = Boolean(openingReference);
