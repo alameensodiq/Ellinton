@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ellington Personal Banking",
     "slug": "ellingtonbank",
-    "version": "2.0.7",
+    "version": "2.0.8",
     "orientation": "portrait",
     "icon": "./app/assets/Logo2.png",
     "scheme": "ellingtonbank",
@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "24",
+      "buildNumber": "44",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver more relevant ads and measure campaign performance.",
@@ -30,7 +30,7 @@
     },
     "android": {
       "package": "com.ellingtonmfb.app",
-      "versionCode":51,
+      "versionCode":58,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

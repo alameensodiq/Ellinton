@@ -55,6 +55,7 @@ export default function TransactionDetails() {
   const { transactionReceipt, isLoading, error } = useAppSelector(
     (state) => state.transfers
   );
+  console.log(transactionReceipt)
   const user = useAppSelector((state) => state.auth.user);
   const reference = Array.isArray(params.reference)
     ? params.reference[0]
@@ -139,6 +140,8 @@ export default function TransactionDetails() {
           ? new Date(fallbackReceiptData.date).toLocaleString()
           : new Date().toLocaleString(),
       };
+
+      console.log(transactionReceipt)
 
   return (
     <TransactionReceiptView

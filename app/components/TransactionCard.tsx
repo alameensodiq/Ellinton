@@ -55,7 +55,7 @@ export default function TransactionCard({
         router.push({
           pathname: "/(root)/transaction-details",
           params: {
-            reference: transaction.ReferenceID,
+            reference: transaction.UniqueIdentifier,
             recordType: transaction.RecordType,
             fallbackReceiptData,
           },
