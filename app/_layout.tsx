@@ -21,7 +21,7 @@ import { usePreventScreenCapture } from "expo-screen-capture";
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  usePreventScreenCapture();
+  
   const [fontsLoaded] = useFonts({
     Outfit: require("./assets/fonts/Outfit-Bold.ttf"),
     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),

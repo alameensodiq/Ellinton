@@ -19,7 +19,7 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { usePreventScreenCapture } from "expo-screen-capture";
 
 const HomeScreen = () => {
-    usePreventScreenCapture();
+    
   const [menuVisible, setMenuVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

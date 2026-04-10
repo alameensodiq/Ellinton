@@ -6,7 +6,7 @@ import { usePreventScreenCapture } from "expo-screen-capture";
 const CUSTOMER_CARE_NUMBER = "2347047007086";
 
 export default function TabsLayout() {
-  usePreventScreenCapture();
+  
   const openWhatsApp = async () => {
     const url = `https://wa.me/${CUSTOMER_CARE_NUMBER}`;
     await Linking.openURL(url);
