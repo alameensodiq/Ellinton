@@ -64,7 +64,7 @@ const TransactionsLoadingPlaceholder = () => (
 );
 
 export default function TransactionsScreen() {
-    usePreventScreenCapture();
+    
   const dispatch = useDispatch<AppDispatch>();
   const [searchQuery, setSearchQuery] = useState("");
   const [openingReference, setOpeningReference] = useState<string | null>(null);

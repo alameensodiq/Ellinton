@@ -5,7 +5,7 @@ import { WebView } from "react-native-webview";
 import { useRef, useState } from "react";
 
 export default function ChatScreen() {
-  usePreventScreenCapture();
+  
   const webviewRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

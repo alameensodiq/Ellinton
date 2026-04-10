@@ -8,7 +8,7 @@ import { usePreventScreenCapture } from "expo-screen-capture";
 
 export default function AuthWrapper() {
   const dispatch = useDispatch<AppDispatch>();
-    usePreventScreenCapture();
+    
 
   const {
     isAuthenticated,

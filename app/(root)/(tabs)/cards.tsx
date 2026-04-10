@@ -55,7 +55,7 @@ const selectSelectedVirtualCard = (state: RootState) =>
   state.virtualCards?.selectedCard ?? null;
 
 export default function Card() {
-    usePreventScreenCapture();
+    
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 

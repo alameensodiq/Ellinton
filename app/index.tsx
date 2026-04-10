@@ -49,7 +49,7 @@ const backgrounds = [
 ];
 
 export default function Index() {
-    usePreventScreenCapture();
+    
   const router = useRouter();
   const [backgroundIndex, setBackgroundIndex] = useState(0);
   const [checkingStorage, setCheckingStorage] = useState(true);
