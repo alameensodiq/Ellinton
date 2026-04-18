@@ -8,6 +8,77 @@ import {
   VIRTUAL_CARD_FREEZE_ENDPOINT,
   VIRTUAL_CARD_UNFREEZE_ENDPOINT,
 } from "../api";
+import { encryptedFetch } from "../encryptedFetch";
+import { encryptionClient } from "../encrption.client";
+import { generateSignature, generateNonce } from "../signature";
+import { getDeviceId } from "../utils";
+
+const USE_ENCRYPTION = true;
+
+const safeFetch = async (url: string, options: RequestInit = {}) => {
+  const method = options.method?.toLowerCase() || "get";
+  const headers = (options.headers as Record<string, string>) || {};
+  const body = options.body ? JSON.parse(options.body as string) : undefined;
+  
+  const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
+  
+  let enhancedHeaders = { ...headers };
+  
+  if (hasAuthToken) {
+    const timestamp = Date.now().toString();
+    const nonce = generateNonce();
+    const deviceId = await getDeviceId();
+    
+    const urlObj = new URL(url);
+    const path = urlObj.pathname;
+    
+    // Generate signature - only returns signature, no body_hash
+    const { signature } = await generateSignature(
+      method,
+      path,
+      body,
+      nonce,
+      timestamp,
+      deviceId
+    );
+    
+    // ONLY add these 3 headers as expected by backend
+    enhancedHeaders = {
+      ...headers,
+      'x-request-timestamp': timestamp,
+      'x-request-nonce': nonce,
+      'x-signature': signature,
+    };
+    
+    console.log("🔐 Adding signature headers for authenticated request:", {
+      timestamp,
+      nonce: nonce.substring(0, 10) + "...",
+      hasSignature: !!signature
+    });
+  } else {
+    console.log("🔓 No auth token, skipping signature headers");
+  }
+  
+  if (USE_ENCRYPTION) {
+    switch (method) {
+      case "post":
+        return await encryptedFetch.post(url, body, enhancedHeaders);
+      case "put":
+        return await encryptedFetch.put(url, body, enhancedHeaders);
+      case "patch":
+        return await encryptedFetch.patch(url, body, enhancedHeaders);
+      case "delete":
+        return await encryptedFetch.delete(url, enhancedHeaders);
+      default:
+        return await encryptedFetch.get(url, enhancedHeaders);
+    }
+  } else {
+    return await fetch(url, {
+      ...options,
+      headers: enhancedHeaders,
+    });
+  }
+};
 
 /* =========================
    API RESPONSE WRAPPER
@@ -17,6 +88,14 @@ interface ApiResponse<T = any> {
   status: string;
   success: boolean;
   data?: T;
+  message?: string;
+}
+
+// Type for error responses that have message in data
+interface ErrorResponse {
+  data?: {
+    message?: string;
+  };
   message?: string;
 }
 
@@ -42,7 +121,7 @@ export interface VirtualCardListItem {
 export interface VirtualCardDetails {
   id: string;
   name: string;
-  message:string,
+  message: string;
   card_number: string;
   masked_pan: string;
   expiry: string;
@@ -82,15 +161,15 @@ export interface RequestVirtualCardPayload {
 }
 
 export interface FundVirtualCardPayload {
-  cardId: string| number;
+  cardId: string | number;
   amount: number;
   transactionPin: string;
 }
 
 export interface WithdrawVirtualCardPayload {
-  cardId: string| number;
+  cardId: string | number;
   amount: number;
-  transactionPin:string
+  transactionPin: string;
 }
 
 /* =========================
@@ -106,7 +185,7 @@ export const requestVirtualCard = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
 
-    const res = await fetch(VIRTUAL_CARD_REQUEST_ENDPOINT, {
+    const res = await safeFetch(VIRTUAL_CARD_REQUEST_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -133,7 +212,6 @@ export const requestVirtualCard = createAsyncThunk<
   }
 });
 
-
 /* =========================
    FETCH ALL VIRTUAL CARDS
 ========================= */
@@ -150,7 +228,7 @@ export const fetchVirtualCards = createAsyncThunk<VirtualCardListItem[], void>(
       );
       console.log("Token present?", !!token);
 
-      const res = await fetch(VIRTUAL_CARDS_FETCH_ALL_ENDPOINT, {
+      const res = await safeFetch(VIRTUAL_CARDS_FETCH_ALL_ENDPOINT, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -183,7 +261,6 @@ export const fetchVirtualCards = createAsyncThunk<VirtualCardListItem[], void>(
    POST /customer/card/{id}
 ========================= */
 
-
 type FetchVirtualCardPayload = {
   id: string;
   transactionPin: string;
@@ -197,7 +274,7 @@ export const fetchVirtualCard = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
 
-    const res = await fetch(VIRTUAL_CARD_FETCH_ONE_ENDPOINT(id), {
+    const res = await safeFetch(VIRTUAL_CARD_FETCH_ONE_ENDPOINT(id), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -219,7 +296,6 @@ export const fetchVirtualCard = createAsyncThunk<
   }
 });
 
-
 /* =========================
    FUND VIRTUAL CARD
 ========================= */
@@ -232,7 +308,7 @@ export const fundVirtualCard = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
 
-    const res = await fetch(VIRTUAL_CARD_FUND_ENDPOINT, {
+    const res = await safeFetch(VIRTUAL_CARD_FUND_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -242,15 +318,16 @@ export const fundVirtualCard = createAsyncThunk<
     });
 
     const data = (await res.json()) as ApiResponse<VirtualCardDetails>;
-console.log(data);
+    console.log(data);
 
     if (!res.ok || !data.success || !data.data) {
-      return rejectWithValue(data?.data?.message || "Fund card failed");
+      const errorData = data as unknown as ErrorResponse;
+      return rejectWithValue(errorData?.data?.message || data?.message || "Fund card failed");
     }
-console.log(data.data)
+    console.log(data.data);
     return data.data;
   } catch (err: any) {
-    console.log(err)
+    console.log(err);
     return rejectWithValue(err.message || "Fund card error");
   }
 });
@@ -267,7 +344,7 @@ export const withdrawVirtualCard = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
 
-    const res = await fetch(VIRTUAL_CARD_WITHDRAW_ENDPOINT, {
+    const res = await safeFetch(VIRTUAL_CARD_WITHDRAW_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -277,10 +354,11 @@ export const withdrawVirtualCard = createAsyncThunk<
     });
 
     const data = (await res.json()) as ApiResponse<VirtualCardDetails>;
-    console.log(data)
+    console.log(data);
 
     if (!res.ok || !data.success || !data.data) {
-      return rejectWithValue(data?.data?.message || "Withdraw failed");
+      const errorData = data as unknown as ErrorResponse;
+      return rejectWithValue(errorData?.data?.message || data?.message || "Withdraw failed");
     }
 
     return data.data;
@@ -303,7 +381,7 @@ export const freezeVirtualCard = createAsyncThunk<boolean, string>(
       const url = VIRTUAL_CARD_FREEZE_ENDPOINT(id);
       console.log("Freeze URL:", url);
 
-      const res = await fetch(url, {
+      const res = await safeFetch(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -323,7 +401,6 @@ export const freezeVirtualCard = createAsyncThunk<boolean, string>(
   }
 );
 
-
 /* =========================
    UNFREEZE CARD
 ========================= */
@@ -338,7 +415,7 @@ export const unfreezeVirtualCard = createAsyncThunk<boolean, string>(
       const url = VIRTUAL_CARD_UNFREEZE_ENDPOINT(id);
       console.log("Unfreeze URL:", url);
 
-      const res = await fetch(url, {
+      const res = await safeFetch(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -357,5 +434,3 @@ export const unfreezeVirtualCard = createAsyncThunk<boolean, string>(
     }
   }
 );
-
-

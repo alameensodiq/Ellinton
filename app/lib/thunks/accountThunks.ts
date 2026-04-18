@@ -5,6 +5,77 @@ import {
   ACCOUNT_VALIDATE_ELLINGLON_ENDPOINT,
   BANKS_ENDPOINT,
 } from "../api";
+import { encryptedFetch } from "../encryptedFetch";
+import { encryptionClient } from "../encrption.client";
+import { generateSignature, generateNonce } from "../signature";
+import { getDeviceId } from "../utils";
+
+const USE_ENCRYPTION = true;
+
+const safeFetch = async (url: string, options: RequestInit = {}) => {
+  const method = options.method?.toLowerCase() || "get";
+  const headers = (options.headers as Record<string, string>) || {};
+  const body = options.body ? JSON.parse(options.body as string) : undefined;
+  
+  const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
+  
+  let enhancedHeaders = { ...headers };
+  
+  if (hasAuthToken) {
+    const timestamp = Date.now().toString();
+    const nonce = generateNonce();
+    const deviceId = await getDeviceId();
+    
+    const urlObj = new URL(url);
+    const path = urlObj.pathname;
+    
+    // Generate signature - only returns signature, no body_hash
+    const { signature } = await generateSignature(
+      method,
+      path,
+      body,
+      nonce,
+      timestamp,
+      deviceId
+    );
+    
+    // ONLY add these 3 headers as expected by backend
+    enhancedHeaders = {
+      ...headers,
+      'x-request-timestamp': timestamp,
+      'x-request-nonce': nonce,
+      'x-signature': signature,
+    };
+    
+    console.log("🔐 Adding signature headers for authenticated request:", {
+      timestamp,
+      nonce: nonce.substring(0, 10) + "...",
+      hasSignature: !!signature
+    });
+  } else {
+    console.log("🔓 No auth token, skipping signature headers");
+  }
+  
+  if (USE_ENCRYPTION) {
+    switch (method) {
+      case "post":
+        return await encryptedFetch.post(url, body, enhancedHeaders);
+      case "put":
+        return await encryptedFetch.put(url, body, enhancedHeaders);
+      case "patch":
+        return await encryptedFetch.patch(url, body, enhancedHeaders);
+      case "delete":
+        return await encryptedFetch.delete(url, enhancedHeaders);
+      default:
+        return await encryptedFetch.get(url, enhancedHeaders);
+    }
+  } else {
+    return await fetch(url, {
+      ...options,
+      headers: enhancedHeaders,
+    });
+  }
+};
 
 interface ValidateAccountPayload {
   accountNumber: string;
@@ -39,6 +110,14 @@ export interface ApiResponse<T = any> {
   message?: string;
 }
 
+// Type for error responses that have message in data
+interface ErrorResponse {
+  data?: {
+    message?: string;
+  };
+  message?: string;
+}
+
 export const validateEllingtonAccount = createAsyncThunk<
   AccountValidation,
   ValidateAccountPayload
@@ -48,7 +127,7 @@ export const validateEllingtonAccount = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
     try {
-      const response = await fetch(ACCOUNT_VALIDATE_ELLINGLON_ENDPOINT, {
+      const response = await safeFetch(ACCOUNT_VALIDATE_ELLINGLON_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -58,8 +137,10 @@ export const validateEllingtonAccount = createAsyncThunk<
         body: JSON.stringify({ accountNumber: payload.accountNumber }),
       });
 
+      const data = await response.json() as ApiResponse<AccountValidation>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
             errorData?.message ||
@@ -67,7 +148,6 @@ export const validateEllingtonAccount = createAsyncThunk<
         );
       }
 
-      const data = (await response.json()) as ApiResponse<AccountValidation>;
       console.log(data);
       if (!data.success || !data.data) {
         return rejectWithValue(data.message || "Account validation failed");
@@ -95,7 +175,7 @@ export const validateNipAccount = createAsyncThunk<
       if (!payload.bankCode) {
         return rejectWithValue("Bank code is required for NIP validation");
       }
-      const response = await fetch(ACCOUNT_VALIDATE_NIP_ENDPOINT, {
+      const response = await safeFetch(ACCOUNT_VALIDATE_NIP_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -107,8 +187,10 @@ export const validateNipAccount = createAsyncThunk<
         }),
       });
 
+      const data = await response.json() as ApiResponse<AccountValidation>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
             errorData?.message ||
@@ -116,7 +198,6 @@ export const validateNipAccount = createAsyncThunk<
         );
       }
 
-      const data = (await response.json()) as ApiResponse<AccountValidation>;
       console.log(data);
       if (!data.success || !data.data) {
         return rejectWithValue(data.message || "Account validation failed");
@@ -139,7 +220,7 @@ export const fetchAccountInfo = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
 
-    const response = await fetch(ACCOUNT_INFO_ENDPOINT, {
+    const response = await safeFetch(ACCOUNT_INFO_ENDPOINT, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -147,8 +228,10 @@ export const fetchAccountInfo = createAsyncThunk<
       },
     });
 
+    const data = await response.json() as ApiResponse<AccountInfo>;
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
+      const errorData = data as unknown as ErrorResponse;
       return rejectWithValue(
         errorData?.data?.message ||
           errorData?.message ||
@@ -156,12 +239,10 @@ export const fetchAccountInfo = createAsyncThunk<
       );
     }
 
-    const responseData = await response.json();
-    const apiData = responseData as ApiResponse<AccountInfo>;
-    if (!apiData.data) {
+    if (!data.data) {
       return rejectWithValue("Invalid response structure");
     }
-    return { accountInfo: apiData.data };
+    return { accountInfo: data.data };
   } catch (error: any) {
     console.log("Fetch error:", error);
     return rejectWithValue(
@@ -177,7 +258,7 @@ export const fetchBanks = createAsyncThunk<{ banks: Bank[] }, void>(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(BANKS_ENDPOINT, {
+      const response = await safeFetch(BANKS_ENDPOINT, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -185,8 +266,10 @@ export const fetchBanks = createAsyncThunk<{ banks: Bank[] }, void>(
         },
       });
 
+      const data = await response.json() as ApiResponse<Bank[]>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
             errorData?.message ||
@@ -194,12 +277,10 @@ export const fetchBanks = createAsyncThunk<{ banks: Bank[] }, void>(
         );
       }
 
-      const responseData = await response.json();
-      const apiData = responseData as ApiResponse<Bank[]>;
-      if (!apiData.data) {
+      if (!data.data) {
         return rejectWithValue("Invalid response structure");
       }
-      return { banks: apiData.data };
+      return { banks: data.data };
     } catch (error: any) {
       console.log("Fetch banks error:", error);
       return rejectWithValue(

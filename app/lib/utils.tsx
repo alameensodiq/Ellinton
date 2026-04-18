@@ -11,6 +11,11 @@ import { SERVICE_ICONS } from "../components/home/Services/service-icons";
 import { ServiceItem } from "../components/home/Services/types";
 import { Transaction } from "./types/transaction";
 import { DropdownOption } from "../components/inputs/DropdownInputs";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
+import * as Device from "expo-device";
+
+const DEVICE_ID_KEY = "deviceId";
 
 const frequencyOptions = [
   { value: "once", label: "Once" },
@@ -1237,6 +1242,34 @@ const formatNigerianPhone = (input: string): string => {
   return digits ? `+234${digits}` : "";
 };
 
+
+const getDeviceId = async (): Promise<string> => {
+  try {
+    let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
+    if (!deviceId) {
+      deviceId = `${Device.osBuildId || Platform.OS}-${
+        Device.deviceYearClass || Date.now()
+      }-${Math.random().toString(36).substring(7)}`;
+      await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
+    }
+    return deviceId;
+  } catch (error) {
+    console.error("Failed to get/generate device ID:", error);
+    return `${Platform.OS}-${Date.now()}`;
+  }
+};
+
+/**
+ * Clear Device ID (useful for logout/reset)
+ */
+ const clearDeviceId = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(DEVICE_ID_KEY);
+  } catch (error) {
+    console.error("Failed to clear device ID:", error);
+  }
+};
+
 export {
   dayOptions,
   frequencyOptions,
@@ -1268,6 +1301,8 @@ export {
   stateOptions,
   formatMoney,
   formatNigerianPhone,
+  getDeviceId,
+  clearDeviceId
 };
 
 export type { ColorOption, GradientColors, TwoColorGradient };

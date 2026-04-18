@@ -26,7 +26,11 @@ import images from "@/app/assets/images";
 import { loginUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import  { registerDeviceWithBackend, registerForPushNotificationsAsync } from "@/app/lib/notification.service";
+import {
+  registerDeviceWithBackend,
+  registerForPushNotificationsAsync
+} from "@/app/lib/notification.service";
+import { getDeviceId } from "@/app/lib/utils";
 
 const Login = () => {
   const [pin, setPin] = useState("");
@@ -37,10 +41,7 @@ const Login = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const {
-    isLoading,
-    error,
-  } = useAppSelector((state) => state.auth);
+  const { isLoading, error } = useAppSelector((state) => state.auth);
 
   // Auto-fill email if user profile is saved
   useEffect(() => {
@@ -64,37 +65,41 @@ const Login = () => {
     setShowErrorModal(Boolean(error));
   }, [error]);
 
-
-   const handleLogin = async () => {
+  const handleLogin = async () => {
     if (!email || !pin) return;
 
     try {
+      const [deviceId] = await Promise.all([getDeviceId()]);
+      console.log(email, pin)
       // 1. Log in to your app (This likely sets the 'authToken' in AsyncStorage)
       await dispatch(
         loginUser({
           email: email.trim().toLowerCase(),
-          passcode: pin
+          passcode: pin,
+          device_id: deviceId
         })
       ).unwrap();
 
-      console.log("✅ App login successful");
+        await AsyncStorage.setItem("userPin", pin);
+
+       await new Promise(resolve => setTimeout(resolve, 500));
 
       // 2. Request/Get the Push Token
       const token = await registerForPushNotificationsAsync();
 
-      console.log(token)
+      console.log(token);
 
       // 3. If we got a token, send it to the backend immediately
       if (token) {
         const isRegistered = await registerDeviceWithBackend(token);
         if (isRegistered) {
-          console.log("✅ Push token synced with backend");
+          // console.log("✅ Push token synced with backend");
         } else {
-          console.warn("⚠️ Login succeeded, but push registration failed");
+          // console.warn("⚠️ Login succeeded, but push registration failed");
         }
       }
     } catch (error) {
-      console.error("❌ Login failed:", error);
+      // console.error("❌ Login failed:", error);
     }
   };
 
