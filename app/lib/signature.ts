@@ -1,74 +1,84 @@
 // lib/signature.service.ts
 import * as Crypto from 'expo-crypto';
+import * as Application from 'expo-application';
 
 const SECRET_KEY = 'ellingtonsignaturesecretkey';
 
-// Simple HMAC-SHA256 implementation using only expo-crypto
+// FIXED HMAC-SHA256 implementation - no buffer overflows
 const hmacSha256 = async (message: string, secret: string): Promise<string> => {
+  const blockSize = 64;
+  const encoder = new TextEncoder();
+  
+  // Step 1: Hash key if longer than block size
   let key = secret;
-  if (key.length > 64) {
-    key = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, key);
+  if (key.length > blockSize) {
+    const keyHash = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      key
+    );
+    key = keyHash;
   }
   
-  const paddedKey = key.padEnd(64, '\0');
+  // Step 2: Create padded key
+  const keyBytes = new Uint8Array(blockSize);
+  const keyStrBytes = encoder.encode(key);
+  // SAFE: Only copy up to keyStrBytes length or blockSize, whichever is smaller
+  const bytesToCopy = Math.min(keyStrBytes.length, blockSize);
+  for (let i = 0; i < bytesToCopy; i++) {
+    keyBytes[i] = keyStrBytes[i];
+  }
   
-  const innerKey = paddedKey.split('').map(c => String.fromCharCode(c.charCodeAt(0) ^ 0x36)).join('');
-  const outerKey = paddedKey.split('').map(c => String.fromCharCode(c.charCodeAt(0) ^ 0x5c)).join('');
+  // Step 3: Create inner and outer padding
+  const innerPadding = new Uint8Array(blockSize);
+  const outerPadding = new Uint8Array(blockSize);
   
-  const innerHash = await Crypto.digestStringAsync(
+  for (let i = 0; i < blockSize; i++) {
+    innerPadding[i] = keyBytes[i] ^ 0x36;
+    outerPadding[i] = keyBytes[i] ^ 0x5c;
+  }
+  
+  // Step 4: Hash inner layer (innerPadding + message)
+  const messageBytes = encoder.encode(message);
+  const innerData = new Uint8Array(innerPadding.length + messageBytes.length);
+  // SAFE: Copy innerPadding
+  for (let i = 0; i < innerPadding.length; i++) {
+    innerData[i] = innerPadding[i];
+  }
+  // SAFE: Copy messageBytes
+  for (let i = 0; i < messageBytes.length; i++) {
+    innerData[innerPadding.length + i] = messageBytes[i];
+  }
+  
+  const innerHashBuffer = await Crypto.digest(
     Crypto.CryptoDigestAlgorithm.SHA256,
-    innerKey + message
+    innerData
   );
+  const innerHash = new Uint8Array(innerHashBuffer);
   
-  const outerHash = await Crypto.digestStringAsync(
+  // Step 5: Hash outer layer (outerPadding + innerHash)
+  const outerData = new Uint8Array(outerPadding.length + innerHash.length);
+  // SAFE: Copy outerPadding
+  for (let i = 0; i < outerPadding.length; i++) {
+    outerData[i] = outerPadding[i];
+  }
+  // SAFE: Copy innerHash
+  for (let i = 0; i < innerHash.length; i++) {
+    outerData[outerPadding.length + i] = innerHash[i];
+  }
+  
+  const outerHashBuffer = await Crypto.digest(
     Crypto.CryptoDigestAlgorithm.SHA256,
-    outerKey + innerHash
+    outerData
   );
+  const outerHash = new Uint8Array(outerHashBuffer);
   
-  return outerHash;
+  // Convert to hex string
+  return Array.from(outerHash)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
 };
 
-export const generateSignature = async (
-  method: string,
-  path: string,
-  body: unknown,
-  nonce: string,
-  timestamp: string,
-  deviceId: string,
-): Promise<{ signature: string }> => {
-  // Calculate body hash (same as backend)
-  const bodyHash = await hashBody(body);
-  
-  // Create payload string - MUST MATCH BACKEND EXACTLY
-  // Backend: `${method.toUpperCase()}${path}${bodyHash}${nonce}${timestamp}${deviceId}`
-  const payload = `${method.toUpperCase()}${path}${bodyHash}${nonce}${timestamp}${deviceId}`;
-  
-  // Generate signature
-  const signature = await hmacSha256(payload, SECRET_KEY);
-
-  console.log('🔐 Signature Debug:', {
-    method: method.toUpperCase(),
-    path,
-    bodyHash: bodyHash.substring(0, 20) + '...',
-    nonce: nonce.substring(0, 10) + '...',
-    timestamp,
-    deviceId: deviceId.substring(0, 10) + '...',
-    payload: payload.substring(0, 100) + '...',
-    signature: signature.substring(0, 30) + '...'
-  });
-
-  return { signature };
-};
-
-const hashBody = async (body: unknown): Promise<string> => {
-  const payload = body === undefined || body === null ? '' : stableStringify(body);
-  const hash = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    payload
-  );
-  return hash;
-};
-
+// EXACT MATCH of backend's stableStringify
 const stableStringify = (value: unknown): string => {
   if (value === null || typeof value !== 'object') {
     return JSON.stringify(value);
@@ -90,8 +100,54 @@ const stableStringify = (value: unknown): string => {
     .join(',')}}`;
 };
 
+// EXACT MATCH of backend's hashBody
+const hashBody = async (body: unknown): Promise<string> => {
+  const payload = body === undefined || body === null ? '' : stableStringify(body);
+  const hash = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    payload
+  );
+  return hash;
+};
+
+export const generateSignature = async (
+  method: string,
+  path: string,
+  body: unknown,
+  nonce: string,
+  timestamp: string,
+  deviceId: string,
+): Promise<{ signature: string; bodyHash: string; payload: string }> => {
+  const bodyHash = await hashBody(body);
+  const payload = `${method.toUpperCase()}${path}${bodyHash}${nonce}${timestamp}${deviceId}`;
+  const signature = await hmacSha256(payload, SECRET_KEY);
+
+  console.log('===== BACKEND MATCHING SIGNATURE =====');
+  console.log('Method:', method.toUpperCase());
+  console.log('Path:', path);
+  console.log('Body:', body);
+  console.log('Body Hash:', bodyHash);
+  console.log('Nonce:', nonce);
+  console.log('Timestamp:', timestamp);
+  console.log('Device ID:', deviceId);
+  console.log('Payload:', payload);
+  console.log('Signature:', signature);
+  console.log('=======================================');
+
+  return { signature, bodyHash, payload };
+};
+
 export const generateNonce = (): string => {
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15) +
          Date.now().toString(36);
+};
+
+export const getDeviceId = async (): Promise<string> => {
+  try {
+    const deviceId = await Application.getAndroidId();
+    return deviceId || 'unknown-device';
+  } catch (error) {
+    return 'fallback-device-id';
+  }
 };

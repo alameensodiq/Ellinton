@@ -25,6 +25,10 @@ import {
 import CustomText from "@/app/components/CustomText";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getDeviceId } from "@/app/lib/utils";
+import {
+  registerDeviceWithBackend,
+  registerForPushNotificationsAsync
+} from "@/app/lib/notification.service";
 
 const MultiFactorOtpScreen = () => {
   const router = useRouter();
@@ -91,6 +95,21 @@ const MultiFactorOtpScreen = () => {
 
       console.log({ device_id: deviceId, otp, challenge_token: challenge });
 
+      // 2. Request/Get the Push Token
+      const token = await registerForPushNotificationsAsync();
+
+      console.log(token);
+
+      // 3. If we got a token, send it to the backend immediately
+      if (token) {
+        const isRegistered = await registerDeviceWithBackend(token);
+        if (isRegistered) {
+          // console.log("✅ Push token synced with backend");
+        } else {
+          // console.warn("⚠️ Login succeeded, but push registration failed");
+        }
+      }
+
       router.replace({
         pathname: "/(auth)/mfasuccess",
         params: { userId: userId as string }
@@ -100,42 +119,42 @@ const MultiFactorOtpScreen = () => {
     }
   };
 
-const handleResend = async () => {
-  try {
-    const [userProfileStr, storedPin, deviceId] = await Promise.all([
-      AsyncStorage.getItem("userProfile"),
-      AsyncStorage.getItem("userPin"),
-      getDeviceId()
-    ]);
-    
-    if (!userProfileStr) {
-      setErrorMessage("User profile not found. Please login again.");
-      return;
+  const handleResend = async () => {
+    try {
+      const [userProfileStr, storedPin, deviceId] = await Promise.all([
+        AsyncStorage.getItem("userProfile"),
+        AsyncStorage.getItem("userPin"),
+        getDeviceId()
+      ]);
+
+      if (!userProfileStr) {
+        setErrorMessage("User profile not found. Please login again.");
+        return;
+      }
+
+      const user = JSON.parse(userProfileStr);
+      const userEmail = user.email; // Email is always there
+
+      if (!storedPin) {
+        setErrorMessage("PIN not found. Please login again.");
+        return;
+      }
+
+      await dispatch(
+        loginUser({
+          email: userEmail.trim().toLowerCase(),
+          passcode: storedPin,
+          device_id: deviceId
+        })
+      ).unwrap();
+
+      setErrorMessage("");
+      setRemainingTime(30);
+      startCountdown();
+    } catch (error) {
+      setErrorMessage("Failed to resend code. Please try again.");
     }
-    
-    const user = JSON.parse(userProfileStr);
-    const userEmail = user.email; // Email is always there
-    
-    if (!storedPin) {
-      setErrorMessage("PIN not found. Please login again.");
-      return;
-    }
-    
-    await dispatch(
-      loginUser({
-        email: userEmail.trim().toLowerCase(),
-        passcode: storedPin,
-        device_id: deviceId
-      })
-    ).unwrap();
-    
-    setErrorMessage("");
-    setRemainingTime(30);
-    startCountdown();
-  } catch (error) {
-    setErrorMessage("Failed to resend code. Please try again.");
-  }
-};
+  };
 
   const canResend = remainingTime === 0;
 

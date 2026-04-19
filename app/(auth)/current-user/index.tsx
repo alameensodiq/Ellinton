@@ -21,6 +21,7 @@ import {
   registerDeviceWithBackend,
   registerForPushNotificationsAsync
 } from "@/app/lib/notification.service";
+import { getDeviceId } from "@/app/lib/utils";
 
 export default function CurrentUser() {
   const router = useRouter();
@@ -75,8 +76,10 @@ export default function CurrentUser() {
           }
 
           if (isLoading) return;
-
-          await dispatch(loginUser({ email, passcode })).unwrap();
+          const [deviceId] = await Promise.all([getDeviceId()]);
+          await dispatch(
+            loginUser({ email, passcode, device_id: deviceId })
+          ).unwrap();
           setPasscode("");
 
           const token = await registerForPushNotificationsAsync();

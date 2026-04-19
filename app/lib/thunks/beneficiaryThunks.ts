@@ -21,10 +21,19 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     const nonce = generateNonce();
     const deviceId = await getDeviceId();
     
+    // IMPORTANT: Extract ONLY the pathname, not the full URL
     const urlObj = new URL(url);
-    const path = urlObj.pathname;
+    const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
     
-    // Generate signature - only returns signature, no body_hash
+    console.log("📡 Request details:", {
+      fullUrl: url,
+      path,
+      method,
+      hasBody: !!body,
+      deviceId
+    });
+    
+    // Generate signature
     const { signature } = await generateSignature(
       method,
       path,
@@ -34,21 +43,23 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       deviceId
     );
     
-    // ONLY add these 3 headers as expected by backend
+    // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {
       ...headers,
       'x-request-timestamp': timestamp,
       'x-request-nonce': nonce,
       'x-signature': signature,
+      'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
     };
     
-    console.log("🔐 Adding signature headers for authenticated request:", {
+    console.log("🔐 Added signature headers:", {
       timestamp,
-      nonce: nonce.substring(0, 10) + "...",
-      hasSignature: !!signature
+      noncePreview: nonce.substring(0, 10) + "...",
+      signaturePreview: signature.substring(0, 20) + "...",
+      deviceId
     });
   } else {
-    console.log("🔓 No auth token, skipping signature headers");
+    console.log("🔓 No auth token, skipping signature");
   }
   
   if (USE_ENCRYPTION) {
