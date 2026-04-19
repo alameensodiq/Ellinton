@@ -122,17 +122,17 @@ export const generateSignature = async (
   const payload = `${method.toUpperCase()}${path}${bodyHash}${nonce}${timestamp}${deviceId}`;
   const signature = await hmacSha256(payload, SECRET_KEY);
 
-  console.log('===== BACKEND MATCHING SIGNATURE =====');
-  console.log('Method:', method.toUpperCase());
-  console.log('Path:', path);
-  console.log('Body:', body);
-  console.log('Body Hash:', bodyHash);
-  console.log('Nonce:', nonce);
-  console.log('Timestamp:', timestamp);
-  console.log('Device ID:', deviceId);
-  console.log('Payload:', payload);
-  console.log('Signature:', signature);
-  console.log('=======================================');
+  // console.log('===== BACKEND MATCHING SIGNATURE =====');
+  // console.log('Method:', method.toUpperCase());
+  // console.log('Path:', path);
+  // console.log('Body:', body);
+  // console.log('Body Hash:', bodyHash);
+  // console.log('Nonce:', nonce);
+  // console.log('Timestamp:', timestamp);
+  // console.log('Device ID:', deviceId);
+  // console.log('Payload:', payload);
+  // console.log('Signature:', signature);
+  // console.log('=======================================');
 
   return { signature, bodyHash, payload };
 };

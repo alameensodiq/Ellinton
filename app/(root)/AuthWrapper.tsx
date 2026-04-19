@@ -114,12 +114,6 @@ export default function AuthWrapper() {
       storedData?.access_token || storedData?.token || authToken;
 
     if (isAuthenticated && (isOnLogin || isOnCurrentUser)) {
-      // Handle MFA requirement first - no params needed
-      if (requiresMFA && !isOnMultiFactorOtp) {
-        console.log("🔐 MFA required, redirecting to multifactorotp");
-        router.replace("/(auth)/multifactorotp");
-        return;
-      }
       // Handle Device Authentication requirement - no params needed
       if (requiresDeviceVerification && !isOnDeviceOtp) {
         console.log(
@@ -132,6 +126,13 @@ export default function AuthWrapper() {
             source: "login"
           }
         });
+        return;
+      }
+
+      // Handle MFA requirement first - no params needed
+      if (requiresMFA && !isOnMultiFactorOtp) {
+        console.log("🔐 MFA required, redirecting to multifactorotp");
+        router.replace("/(auth)/multifactorotp");
         return;
       }
 

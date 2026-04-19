@@ -25,13 +25,13 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     const urlObj = new URL(url);
     const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
     
-    console.log("📡 Request details:", {
-      fullUrl: url,
-      path,
-      method,
-      hasBody: !!body,
-      deviceId
-    });
+    // console.log("📡 Request details:", {
+    //   fullUrl: url,
+    //   path,
+    //   method,
+    //   hasBody: !!body,
+    //   deviceId
+    // });
     
     // Generate signature
     const { signature } = await generateSignature(
@@ -52,14 +52,14 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
     };
     
-    console.log("🔐 Added signature headers:", {
-      timestamp,
-      noncePreview: nonce.substring(0, 10) + "...",
-      signaturePreview: signature.substring(0, 20) + "...",
-      deviceId
-    });
+    // console.log("🔐 Added signature headers:", {
+    //   timestamp,
+    //   noncePreview: nonce.substring(0, 10) + "...",
+    //   signaturePreview: signature.substring(0, 20) + "...",
+    //   deviceId
+    // });
   } else {
-    console.log("🔓 No auth token, skipping signature");
+    // console.log("🔓 No auth token, skipping signature");
   }
   
   if (USE_ENCRYPTION) {

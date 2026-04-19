@@ -141,6 +141,15 @@ export const registerDeviceWithBackend = async (
     const deviceId = await getDeviceId();
 
     if (!token || !authToken) return false;
+    console.log({
+        push_token: token,
+        device_id: deviceId,
+        platform: Platform.OS,
+        app_version: Constants.expoConfig?.version || "2.0.5",
+        device_make: Device.manufacturer || "Unknown",
+        device_model: Device.modelName || Platform.OS,
+        device_name: Device.deviceName || "Unknown"
+      })
 
     console.log("📡 Registering device with backend...");
     const response = await safeFetch(`${BASE_URL}/users/push-tokens`, {
