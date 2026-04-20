@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Animated, Easing, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MFaSuccessScreen = () => {
   const router = useRouter();
@@ -11,13 +12,14 @@ const MFaSuccessScreen = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fallAnim = useRef(new Animated.Value(0)).current;
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     // Fade in
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
-      useNativeDriver: true,
+      useNativeDriver: true
     }).start();
 
     // Slide up
@@ -25,7 +27,7 @@ const MFaSuccessScreen = () => {
       toValue: -50,
       duration: 800,
       easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
+      useNativeDriver: true
     }).start();
 
     Animated.loop(
@@ -34,17 +36,59 @@ const MFaSuccessScreen = () => {
           toValue: 20,
           duration: 2000,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: true
         }),
         Animated.timing(fallAnim, {
           toValue: 0,
           duration: 2000,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
+          useNativeDriver: true
+        })
       ])
     ).start();
   }, []);
+
+  const handleContinue = async () => {
+    try {
+      const dataStr = await AsyncStorage.getItem("data");
+      if (dataStr) {
+        const parsedData = JSON.parse(dataStr);
+        const requiresDeviceVerification =
+          parsedData?.device_authentication_required ||
+          parsedData?.requires_device_verification;
+
+        if (requiresDeviceVerification) {
+          // Redirect to deviceotp if device authentication is required
+          router.replace({
+            pathname: "/(auth)/deviceotp",
+            params: {
+              userId: userId as string,
+              source: "mfa_success"
+            }
+          });
+        } else {
+          // Otherwise go to tabs
+          router.replace({
+            pathname: "/(root)/(tabs)",
+            params: { userId: userId as string }
+          });
+        }
+      } else {
+        // Default to tabs if no data found
+        router.replace({
+          pathname: "/(root)/(tabs)",
+          params: { userId: userId as string }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to check device authentication:", error);
+      // Default to tabs on error
+      router.replace({
+        pathname: "/(root)/(tabs)",
+        params: { userId: userId as string }
+      });
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-6">
@@ -53,7 +97,7 @@ const MFaSuccessScreen = () => {
           onPress={() =>
             router.replace({
               pathname: "/(auth)/login",
-              params: { userId: userId as string },
+              params: { userId: userId as string }
             })
           }
         >
@@ -65,7 +109,7 @@ const MFaSuccessScreen = () => {
         <Animated.View
           style={{
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }, { translateY: fallAnim }],
+            transform: [{ translateY: slideAnim }, { translateY: fallAnim }]
           }}
         >
           <Text className="text-8xl">🎉</Text>
@@ -84,16 +128,7 @@ const MFaSuccessScreen = () => {
 
       <Animated.View style={{ opacity: fadeAnim }}>
         <View className="pb-6">
-          <Button
-            title="Continue"
-            variant="primary"
-            onPress={() =>
-              router.replace({
-                pathname: "/(root)/(tabs)",
-                params: { userId: userId as string },
-              })
-            }
-          />
+          <Button title="Continue" variant="primary" onPress={handleContinue} />
         </View>
       </Animated.View>
     </SafeAreaView>

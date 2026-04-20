@@ -27,13 +27,23 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getDeviceId } from "@/app/lib/utils";
-import { getPushToken } from "@/app/lib/notification.service";
+import {
+  getPushToken,
+  registerDeviceWithBackend,
+  registerForPushNotificationsAsync
+} from "@/app/lib/notification.service";
 
 const DeviceOtpScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isLoading, device, token: reduxToken } = useAppSelector((state) => state.auth);
-  const { userId, token: paramToken } = useLocalSearchParams();
+  const {
+    isLoading,
+    device,
+    token: reduxToken
+  } = useAppSelector((state) => state.auth);
+  console.log(reduxToken);
+  const { userId, token } = useLocalSearchParams();
+  console.log(token);
 
   const [otp, setOtp] = useState("");
   const [otp2, setOtp2] = useState("");
@@ -70,23 +80,27 @@ const DeviceOtpScreen = () => {
   // Save token to AsyncStorage when component mounts
   useEffect(() => {
     const saveTokenToStorage = async () => {
-      const authToken = reduxToken || (paramToken as string);
+      const authToken = reduxToken || (token as string);
+      console.log(authToken);
       if (authToken) {
         try {
           await AsyncStorage.setItem("authToken", authToken);
           console.log("✅ Token saved to AsyncStorage from DeviceOtpScreen");
-          
+
           // Verify it was saved
           const savedToken = await AsyncStorage.getItem("authToken");
-          console.log("🔐 Verified token in storage:", savedToken ? "Present" : "Missing");
+          console.log(
+            "🔐 Verified token in storage:",
+            savedToken ? "Present" : "Missing"
+          );
         } catch (error) {
           console.error("Failed to save token to AsyncStorage:", error);
         }
       }
     };
-    
+
     saveTokenToStorage();
-  }, [reduxToken, paramToken]);
+  }, [reduxToken, token]);
 
   const handleVerify = async () => {
     if (otp.length !== 6) {
@@ -100,29 +114,50 @@ const DeviceOtpScreen = () => {
 
     setErrorMessage("");
     setErrorMessage2("");
-    
-    const authToken = reduxToken || (paramToken as string);
-    
+
+    // Get token from AsyncStorage instead of relying on URL param
+     let authToken = await AsyncStorage.getItem("authToken");
+
+    if (!authToken) {
+      try {
+        const dataStr = await AsyncStorage.getItem("data");
+        if (dataStr) {
+          const parsedData = JSON.parse(dataStr);
+          authToken = parsedData?.access_token || parsedData?.token;
+          console.log(
+            "🔑 Retrieved token from AsyncStorage:",
+            authToken ? "Present" : "Missing"
+          );
+          console.log(authToken)
+        }
+      } catch (error) {
+        console.error("Failed to get token from AsyncStorage:", error);
+      }
+    }
+
     if (!authToken) {
       setErrorMessage("Session expired. Please login again.");
       return;
     }
-    
+
     try {
       const [deviceId, pushToken] = await Promise.all([
         getDeviceId(),
         getPushToken()
       ]);
-      
+
       if (!pushToken) {
         setErrorMessage(
           "Unable to get push notification token. Please try again."
         );
         return;
       }
-      
-      console.log("📤 Sending DeviceOtp verification with token:", authToken.substring(0, 30) + "...");
-      
+
+      console.log(
+        "📤 Sending DeviceOtp verification with token:",
+        authToken.substring(0, 30) + "..."
+      );
+
       await dispatch(
         DeviceOtp({
           push_token: pushToken,
@@ -138,14 +173,30 @@ const DeviceOtpScreen = () => {
         })
       ).unwrap();
 
+      // 2. Request/Get the Push Token
+      // const pushNotificationToken = await registerForPushNotificationsAsync();
+
+      // console.log(pushNotificationToken);
+
+      // // 3. If we got a token, send it to the backend immediately
+      // if (pushNotificationToken) {
+      //   const isRegistered = await registerDeviceWithBackend(
+      //     pushNotificationToken
+      //   );
+      //   if (isRegistered) {
+      //     console.log("✅ Push token synced with backend");
+      //   } else {
+      //     console.warn("⚠️ Login succeeded, but push registration failed");
+      //   }
+      // }
+
       // After successful verification, redirect
       router.replace({
         pathname: "/(auth)/devicesuccess",
         params: { userId: userId as string }
       });
-      
     } catch (error: any) {
-      console.error("Verification error:", error);
+      // console.error("Verification error:", error);
       setErrorMessage(error?.message || "Code incorrect. Try again.");
       setErrorMessage2(error?.message || "Code incorrect. Try again.");
     }
@@ -153,9 +204,7 @@ const DeviceOtpScreen = () => {
 
   const handleResend = async () => {
     try {
-      const [deviceId] = await Promise.all([
-        getDeviceId(),
-      ]);
+      const [deviceId] = await Promise.all([getDeviceId()]);
       await dispatch(resendDeviceOtp({ device_id: deviceId })).unwrap();
       setErrorMessage("");
       setErrorMessage2("");

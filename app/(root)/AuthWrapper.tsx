@@ -1,6 +1,6 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useDispatch } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { AppDispatch, RootState } from "../lib/store";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
 import { restoreAuth } from "../lib/thunks/authThunks";
@@ -39,21 +39,42 @@ export default function AuthWrapper() {
     dispatch(restoreAuth());
   }, [dispatch]);
 
-  // Load the persisted data from AsyncStorage
+  // Function to refresh stored data
+  const refreshStoredData = useCallback(async () => {
+    try {
+      const dataStr = await AsyncStorage.getItem("data");
+      console.log("🔄 Refreshing stored data:", dataStr);
+      if (dataStr) {
+        const parsedData = JSON.parse(dataStr);
+        setStoredData(parsedData);
+        console.log("📦 Refreshed persisted data:", {
+          mfa_required: parsedData?.mfa_required,
+          requires_mfa: parsedData?.requires_mfa,
+          device_authentication_required: parsedData?.device_authentication_required,
+          requires_device_verification: parsedData?.requires_device_verification
+        });
+        return parsedData;
+      }
+    } catch (error) {
+      console.error("Failed to refresh stored data:", error);
+    }
+    return null;
+  }, []);
+
+  // Load the persisted data from AsyncStorage (initial load)
   useEffect(() => {
     const loadStoredData = async () => {
       try {
         const dataStr = await AsyncStorage.getItem("data");
+        console.log("📦 Initial data load:", dataStr);
         if (dataStr) {
           const parsedData = JSON.parse(dataStr);
           setStoredData(parsedData);
           console.log("📦 Loaded persisted data:", {
             mfa_required: parsedData?.mfa_required,
             requires_mfa: parsedData?.requires_mfa,
-            device_authentication_required:
-              parsedData?.device_authentication_required,
-            requires_device_verification:
-              parsedData?.requires_device_verification
+            device_authentication_required: parsedData?.device_authentication_required,
+            requires_device_verification: parsedData?.requires_device_verification
           });
         } else {
           console.log("📦 No persisted data found");
@@ -73,6 +94,13 @@ export default function AuthWrapper() {
       setReady(true);
     }
   }, [isRestoring, isLoadingData]);
+
+  // Refresh stored data whenever segments change (navigation occurs)
+  useEffect(() => {
+    if (ready) {
+      refreshStoredData();
+    }
+  }, [segments, ready, refreshStoredData]);
 
   useEffect(() => {
     if (!ready) return;
@@ -112,27 +140,29 @@ export default function AuthWrapper() {
 
     const effectiveToken =
       storedData?.access_token || storedData?.token || authToken;
+    
+    console.log("🔍 Navigation check - requiresMFA:", requiresMFA);
+    console.log("🔍 Navigation check - requiresDeviceVerification:", requiresDeviceVerification);
+    console.log("🔍 Navigation check - effectiveToken:", effectiveToken ? "Present" : "Missing");
 
     if (isAuthenticated && (isOnLogin || isOnCurrentUser)) {
-      // Handle Device Authentication requirement - no params needed
-      if (requiresDeviceVerification && !isOnDeviceOtp) {
-        console.log(
-          "📱 Device authentication required, redirecting to deviceotp"
-        );
-        router.replace({
-          pathname: "/(auth)/deviceotp",
-          params: {
-            paramToken: effectiveToken,
-            source: "login"
-          }
-        });
-        return;
-      }
-
-      // Handle MFA requirement first - no params needed
       if (requiresMFA && !isOnMultiFactorOtp) {
         console.log("🔐 MFA required, redirecting to multifactorotp");
         router.replace("/(auth)/multifactorotp");
+        return;
+      }
+
+      // Then check Device Authentication requirement
+      if (requiresDeviceVerification && !isOnDeviceOtp) {
+        console.log("📱 Device authentication required, redirecting to deviceotp");
+        const tokenToPass = effectiveToken ? String(effectiveToken) : "";
+        router.replace({
+          pathname: "/(auth)/deviceotp",
+          params: {
+            token: tokenToPass,
+            source: "login"
+          }
+        });
         return;
       }
 
@@ -194,7 +224,8 @@ export default function AuthWrapper() {
     requiresTransactionPinSetup,
     user,
     storedData,
-    authToken
+    authToken,
+    router
   ]);
 
   if (!ready || isLoadingData) {

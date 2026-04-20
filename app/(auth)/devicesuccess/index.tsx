@@ -17,7 +17,7 @@ const DeviceSuccessScreen = () => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
-      useNativeDriver: true,
+      useNativeDriver: true
     }).start();
 
     // Slide up
@@ -25,7 +25,7 @@ const DeviceSuccessScreen = () => {
       toValue: -50,
       duration: 800,
       easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
+      useNativeDriver: true
     }).start();
 
     Animated.loop(
@@ -34,14 +34,14 @@ const DeviceSuccessScreen = () => {
           toValue: 20,
           duration: 2000,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
+          useNativeDriver: true
         }),
         Animated.timing(fallAnim, {
           toValue: 0,
           duration: 2000,
           easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
+          useNativeDriver: true
+        })
       ])
     ).start();
   }, []);
@@ -53,7 +53,7 @@ const DeviceSuccessScreen = () => {
           onPress={() =>
             router.replace({
               pathname: "/(auth)/login",
-              params: { userId: userId as string },
+              params: { userId: userId as string }
             })
           }
         >
@@ -65,7 +65,7 @@ const DeviceSuccessScreen = () => {
         <Animated.View
           style={{
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }, { translateY: fallAnim }],
+            transform: [{ translateY: slideAnim }, { translateY: fallAnim }]
           }}
         >
           <Text className="text-8xl">🎉</Text>
@@ -89,8 +89,8 @@ const DeviceSuccessScreen = () => {
             variant="primary"
             onPress={() =>
               router.replace({
-                pathname: "/(auth)/login",
-                params: { userId: userId as string },
+                pathname: "/(root)/(tabs)",
+                params: { userId: userId as string }
               })
             }
           />

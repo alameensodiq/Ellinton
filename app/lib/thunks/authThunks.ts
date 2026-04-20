@@ -37,20 +37,21 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   const method = options.method?.toLowerCase() || "get";
   const headers = (options.headers as Record<string, string>) || {};
   const body = options.body ? JSON.parse(options.body as string) : undefined;
-  
-  const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
-  
+
+  const hasAuthToken =
+    headers.Authorization && headers.Authorization.startsWith("Bearer ");
+
   let enhancedHeaders = { ...headers };
-  
+
   if (hasAuthToken) {
     const timestamp = Date.now().toString();
     const nonce = generateNonce();
     const deviceId = await getDeviceId();
-    
+
     // IMPORTANT: Extract ONLY the pathname, not the full URL
     const urlObj = new URL(url);
     const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
-    
+
     // console.log("📡 Request details:", {
     //   fullUrl: url,
     //   path,
@@ -58,7 +59,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     //   hasBody: !!body,
     //   deviceId
     // });
-    
+
     // Generate signature
     const { signature } = await generateSignature(
       method,
@@ -68,16 +69,16 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       timestamp,
       deviceId
     );
-    
+
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {
       ...headers,
-      'x-request-timestamp': timestamp,
-      'x-request-nonce': nonce,
-      'x-signature': signature,
-      'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
+      "x-request-timestamp": timestamp,
+      "x-request-nonce": nonce,
+      "x-signature": signature,
+      "x-device-id": deviceId // ← THIS WAS MISSING - ADD THIS LINE
     };
-    
+
     // console.log("🔐 Added signature headers:", {
     //   timestamp,
     //   noncePreview: nonce.substring(0, 10) + "...",
@@ -87,7 +88,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     // console.log("🔓 No auth token, skipping signature");
   }
-  
+
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
@@ -104,7 +105,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     return await fetch(url, {
       ...options,
-      headers: enhancedHeaders,
+      headers: enhancedHeaders
     });
   }
 };
@@ -146,7 +147,7 @@ interface DeviceOtpPayload {
   device_name: string;
   sms_otp: string;
   email_otp: string;
-   token?: string;
+  token?: string;
 }
 
 interface ResendOtpPayload {
@@ -344,16 +345,15 @@ const persistToken = async (token: string) => {
     if (!token) {
       return;
     }
-    
+
     await AsyncStorage.setItem("authToken", token);
-    
+
     // Verify immediately
     const savedToken = await AsyncStorage.getItem("authToken");
     if (savedToken === token) {
     } else {
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 };
 
 const persistChallenge = async (challenge: string | null | undefined) => {
@@ -366,8 +366,7 @@ const persistChallenge = async (challenge: string | null | undefined) => {
         await AsyncStorage.removeItem("challenge");
       }
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 };
 
 const persistData = async (data: any) => {
@@ -375,8 +374,7 @@ const persistData = async (data: any) => {
     // If data is an object, stringify it first
     const dataToStore = typeof data === "object" ? JSON.stringify(data) : data;
     await AsyncStorage.setItem("data", dataToStore);
-  } catch (error) {
-  }
+  } catch (error) {}
 };
 
 // Helper function to clear auth token only
@@ -450,7 +448,7 @@ export const loginUser = createAsyncThunk(
       const user = apiData.user;
       const token = apiData.access_token;
       console.log(token);
-      console.log(data)
+      console.log(data);
       const challenge = apiData.challenge_token;
       const requiresPasscodeSetup = apiData.requires_passcode_setup;
       const requiresTransactionPinSetup =
@@ -548,24 +546,36 @@ export const MultiFactorOtp = createAsyncThunk(
         return rejectWithValue("Invalid response structure");
       }
 
+      console.log(data);
+
       // Extract data from response
       const apiData = data.data;
       const accessToken = apiData.access_token || apiData.token;
-      
+
       // Extract user data
       const user = apiData.user;
-      
+      console.log(data);
+      const challenge = apiData.challenge_token;
+
       // Extract flags (using snake_case from API)
       const requiresPasscodeSetup = apiData.requires_passcode_setup || false;
-      const requiresTransactionPinSetup = apiData.requires_transaction_pin_setup || false;
-      
+      const requiresTransactionPinSetup =
+        apiData.requires_transaction_pin_setup || false;
+
+      await Promise.all([
+        persistUserProfile(user),
+        persistToken(accessToken),
+        persistData(apiData),
+        persistChallenge(challenge)
+      ]);
+
       if (!user) {
         return rejectWithValue("User data not found in response");
       }
-      
+
       if (!accessToken) {
         console.log("ℹ️ No access_token in MFA response");
-        
+
         // Verify existing token is still valid
         const existingToken = await AsyncStorage.getItem("authToken");
         if (!existingToken) {
@@ -575,12 +585,12 @@ export const MultiFactorOtp = createAsyncThunk(
       } else {
         console.log("✅ MFA returned access_token, saving to storage...");
         await AsyncStorage.setItem("authToken", accessToken);
-        
+
         // Also save user data
         if (user) {
           await AsyncStorage.setItem("userProfile", JSON.stringify(user));
         }
-        
+
         console.log("✅ Access token saved successfully after MFA");
       }
 
@@ -591,7 +601,6 @@ export const MultiFactorOtp = createAsyncThunk(
         requiresPasscodeSetup: requiresPasscodeSetup,
         requiresTransactionPinSetup: requiresTransactionPinSetup
       };
-
     } catch (error: any) {
       console.error("MFA error:", error);
       return rejectWithValue(
@@ -656,39 +665,46 @@ export const DeviceOtp = createAsyncThunk(
   async (payload: DeviceOtpPayload, { rejectWithValue }) => {
     try {
       console.log("🔵 DeviceOtp called at:", new Date().toISOString());
-      
+
       const url = DEVICE_ENDPOINT;
-      
+
       // Use token from payload first, then try AsyncStorage
       let authToken: string | undefined = payload.token;
       if (!authToken) {
         const storedToken = await AsyncStorage.getItem("authToken");
-        authToken = storedToken || undefined; // Convert null to undefined
-        console.log("🔐 Token from AsyncStorage:", authToken ? "Found" : "Not found");
+        authToken = storedToken || undefined;
+        console.log(
+          "🔐 Token from AsyncStorage:",
+          authToken ? "Found" : "Not found"
+        );
       } else {
-        console.log("🔐 Token from Redux payload:", authToken.substring(0, 30) + "...");
+        console.log(
+          "🔐 Token from Redux payload:",
+          authToken.substring(0, 30) + "..."
+        );
       }
-      
+
       if (!authToken) {
         console.error("❌ No token found in DeviceOtp");
-        return rejectWithValue("Authentication token not found. Please login again.");
+        return rejectWithValue(
+          "Authentication token not found. Please login again."
+        );
       }
-      
+
       const headers: HeadersInit = { "Content-Type": "application/json" };
       headers.Authorization = `Bearer ${authToken}`;
-      
+
       // Remove token from body before sending
       const { token, ...bodyPayload } = payload;
       console.log("📤 Request body:", bodyPayload);
-      
+
       const response = await safeFetch(url, {
         method: "POST",
         headers: headers,
         body: JSON.stringify(bodyPayload)
       });
-      
+
       const data = await response.json();
-      console.log("📥 DeviceOtp response:", data);
 
       if (!response.ok) {
         return rejectWithValue(
@@ -698,9 +714,57 @@ export const DeviceOtp = createAsyncThunk(
         );
       }
 
+      const apiData = data.data;
+      console.log(data);
+      const challenge = apiData.challenge_token;
+      const accessToken = apiData.access_token || apiData.token;
+
+      // Extract user data
+      const user = apiData.user;
+
+      // Extract flags (using snake_case from API)
+      const requiresPasscodeSetup = apiData.requires_passcode_setup || false;
+      const requiresTransactionPinSetup =
+        apiData.requires_transaction_pin_setup || false;
+
+      // // Still persist data to AsyncStorage for future use
+      // await Promise.all([
+      //   persistUserProfile(user),
+      //   persistToken(accessToken),
+      //   persistData(apiData),
+      //   persistChallenge(challenge)
+      // ]);
+
+      if (!user) {
+        return rejectWithValue("User data not found in response");
+      }
+
+      if (!accessToken) {
+        console.log("ℹ️ No access_token in MFA response");
+
+        // Verify existing token is still valid
+        const existingToken = await AsyncStorage.getItem("authToken");
+        if (!existingToken) {
+          console.error("❌ No token found after MFA");
+          return rejectWithValue("Session expired. Please login again.");
+        }
+      } else {
+        console.log("✅ MFA returned access_token, saving to storage...");
+        await AsyncStorage.setItem("authToken", accessToken);
+
+        // Also save user data
+        if (user) {
+          await AsyncStorage.setItem("userProfile", JSON.stringify(user));
+        }
+
+        console.log("✅ Access token saved successfully after MFA");
+      }
+
+      // Return just a success message
       return {
-        message: data?.data?.message || data?.message || "OTP verified successfully"
+        message: "Device verified successfully"
       };
+      
     } catch (error: any) {
       console.error("❌ DeviceOtp error:", error);
       return rejectWithValue(
@@ -1002,7 +1066,7 @@ export const getUserProfile = createAsyncThunk(
     try {
       const state = getState() as any;
       const token = state.auth.token;
-      console.log(token)
+      console.log(token);
       const maskedToken = token ? `${String(token).slice(0, 12)}...` : "<none>";
 
       console.log("[getUserProfile] request", {
@@ -1031,9 +1095,9 @@ export const getUserProfile = createAsyncThunk(
       });
 
       if (responseJson) {
-        console.log(token)
-        const authy = AsyncStorage.getItem('authToken')
-        console.log(authy)
+        console.log(token);
+        const authy = AsyncStorage.getItem("authToken");
+        console.log(authy);
         console.log("[getUserProfile] parsed response", responseJson);
       }
 
@@ -1072,12 +1136,12 @@ export const restoreAuth = createAsyncThunk(
   async (_, { dispatch, rejectWithValue, getState }) => {
     try {
       console.log("🔐 restoreAuth: Starting...");
-      
+
       const [token, userProfileStr] = await Promise.all([
         AsyncStorage.getItem("authToken"),
         AsyncStorage.getItem("userProfile")
       ]);
-      
+
       console.log("🔐 restoreAuth: Token found?", !!token);
       console.log("🔐 restoreAuth: User profile found?", !!userProfileStr);
 
@@ -1085,7 +1149,9 @@ export const restoreAuth = createAsyncThunk(
         const user = JSON.parse(userProfileStr) as User;
 
         if (token) {
-          console.log("🔐 restoreAuth: Both token and user found, restoring session");
+          console.log(
+            "🔐 restoreAuth: Both token and user found, restoring session"
+          );
           dispatch(setCredentials({ token, user, isAuthenticated: true }));
 
           try {
@@ -1093,7 +1159,10 @@ export const restoreAuth = createAsyncThunk(
             console.log("🔐 restoreAuth: User profile validated successfully");
             return { token, user };
           } catch (error) {
-            console.error("🔐 restoreAuth: Token validation failed, but keeping user data", error);
+            console.error(
+              "🔐 restoreAuth: Token validation failed, but keeping user data",
+              error
+            );
             // Don't clear token here - just return user without token
             dispatch(setUserOnly({ user }));
             return { user };
@@ -1289,7 +1358,7 @@ export const logoutUser = createAsyncThunk(
     try {
       const state = getState() as any;
       const token = state.auth.token;
-      
+
       console.log("🔐 Logout - Token exists:", !!token);
       console.log("🔐 Logout - USE_ENCRYPTION:", USE_ENCRYPTION);
       console.log("🔐 Logout - Endpoint:", LOGOUT_AUTH_ENDPOINT);
@@ -1299,8 +1368,8 @@ export const logoutUser = createAsyncThunk(
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
-             body: JSON.stringify({})
-        }
+        },
+        body: JSON.stringify({})
       });
 
       console.log("🔐 Logout - Response status:", response.status);
@@ -1327,7 +1396,6 @@ export const logoutUser = createAsyncThunk(
     }
   }
 );
-
 
 export const forgotPasscode = createAsyncThunk(
   "auth/forgotPasscode",

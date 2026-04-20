@@ -37,6 +37,7 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
       }
 
       try {
+         await AsyncStorage.clear();
         await dispatch(logoutUser()).unwrap();
       } catch (error) {
         console.error("Backend inactivity logout failed:", error);
