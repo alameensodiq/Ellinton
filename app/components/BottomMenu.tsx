@@ -155,8 +155,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
 
   const handleLogout = async () => {
     try {
-      const keysToRemove = ["authToken", "userProfile", "challenge_token"];
-      await AsyncStorage.multiRemove(keysToRemove);
+      await AsyncStorage.removeItem("authToken");
       await dispatch(logoutUser()).unwrap();
       await signOut(auth);
       onClose();
