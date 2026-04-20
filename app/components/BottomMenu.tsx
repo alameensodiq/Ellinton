@@ -29,6 +29,7 @@ import { requestStatement } from "../lib/thunks/statementsThunks";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface MenuItem {
   id: string;
@@ -154,14 +155,17 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
 
   const handleLogout = async () => {
     try {
+      const keysToRemove = ["authToken", "userProfile", "challenge_token"];
+      await AsyncStorage.multiRemove(keysToRemove);
       await dispatch(logoutUser()).unwrap();
-
       await signOut(auth);
+      onClose();
+
+      // 4. Navigate to login screen
+      router.replace("/(auth)/current-user");
     } catch (error) {
       console.error("Logout failed:", error);
     }
-    router.replace("/(auth)/current-user");
-    onClose();
   };
 
   const startDateText = useMemo(

@@ -8,11 +8,101 @@ import {
   SAVINGS_WITHDRAWAL_ENDPOINT,
   SAVINGS_TRANSACTIONS_ENDPOINT,
 } from "../api";
+import { encryptedFetch } from "../encryptedFetch";
+import { encryptionClient } from "../encrption.client";
+import { generateSignature, generateNonce } from "../signature";
+import { getDeviceId } from "../utils";
+
+const USE_ENCRYPTION = true;
+
+const safeFetch = async (url: string, options: RequestInit = {}) => {
+  const method = options.method?.toLowerCase() || "get";
+  const headers = (options.headers as Record<string, string>) || {};
+  const body = options.body ? JSON.parse(options.body as string) : undefined;
+  
+  const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
+  
+  let enhancedHeaders = { ...headers };
+  
+  if (hasAuthToken) {
+    const timestamp = Date.now().toString();
+    const nonce = generateNonce();
+    const deviceId = await getDeviceId();
+    
+    // IMPORTANT: Extract ONLY the pathname, not the full URL
+    const urlObj = new URL(url);
+    const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
+    
+    // console.log("📡 Request details:", {
+    //   fullUrl: url,
+    //   path,
+    //   method,
+    //   hasBody: !!body,
+    //   deviceId
+    // });
+    
+    // Generate signature
+    const { signature } = await generateSignature(
+      method,
+      path,
+      body,
+      nonce,
+      timestamp,
+      deviceId
+    );
+    
+    // CRITICAL FIX: Add x-device-id header
+    enhancedHeaders = {
+      ...headers,
+      'x-request-timestamp': timestamp,
+      'x-request-nonce': nonce,
+      'x-signature': signature,
+      'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
+    };
+    
+    // console.log("🔐 Added signature headers:", {
+    //   timestamp,
+    //   noncePreview: nonce.substring(0, 10) + "...",
+    //   signaturePreview: signature.substring(0, 20) + "...",
+    //   deviceId
+    // });
+  } else {
+    // console.log("🔓 No auth token, skipping signature");
+  }
+  
+  if (USE_ENCRYPTION) {
+    switch (method) {
+      case "post":
+        return await encryptedFetch.post(url, body, enhancedHeaders);
+      case "put":
+        return await encryptedFetch.put(url, body, enhancedHeaders);
+      case "patch":
+        return await encryptedFetch.patch(url, body, enhancedHeaders);
+      case "delete":
+        return await encryptedFetch.delete(url, enhancedHeaders);
+      default:
+        return await encryptedFetch.get(url, enhancedHeaders);
+    }
+  } else {
+    return await fetch(url, {
+      ...options,
+      headers: enhancedHeaders,
+    });
+  }
+};
 
 interface ApiResponse<T = any> {
   status: string;
   success: boolean;
   data?: T;
+  message?: string;
+}
+
+// Type for error responses that have message in data
+interface ErrorResponse {
+  data?: {
+    message?: string;
+  };
   message?: string;
 }
 
@@ -28,7 +118,7 @@ export const fetchSavingsProducts = createAsyncThunk<any, { type?: string }>(
         ? `${SAVINGS_PRODUCTS_ENDPOINT}?type=${payload.type}`
         : SAVINGS_PRODUCTS_ENDPOINT;
 
-      const res = await fetch(url, {
+      const res = await safeFetch(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -36,14 +126,15 @@ export const fetchSavingsProducts = createAsyncThunk<any, { type?: string }>(
         },
       });
 
+      const data = (await res.json()) as ApiResponse<any>;
+
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
-          err?.data?.message || err?.message || `Fetch failed (${res.status})`
+          errorData?.data?.message || data?.message || `Fetch failed (${res.status})`
         );
       }
 
-      const data = (await res.json()) as ApiResponse<any>;
       if (!data.success)
         return rejectWithValue(data.message || "Savings products fetch failed");
       return data.data;
@@ -69,7 +160,7 @@ export const calculateSavingsEstimate = createAsyncThunk<
       const state = getState() as any;
       const token = state.auth.token;
 
-      const res = await fetch(SAVINGS_CALCULATE_ESTIMATE_ENDPOINT, {
+      const res = await safeFetch(SAVINGS_CALCULATE_ESTIMATE_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,16 +169,17 @@ export const calculateSavingsEstimate = createAsyncThunk<
         body: JSON.stringify(payload),
       });
 
+      const data = (await res.json()) as ApiResponse<any>;
+
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
-          err?.data?.message ||
-            err?.message ||
+          errorData?.data?.message ||
+            data?.message ||
             `Calculate failed (${res.status})`
         );
       }
 
-      const data = (await res.json()) as ApiResponse<any>;
       if (!data.success)
         return rejectWithValue(data.message || "Calculate estimate failed");
       return data.data;
@@ -124,7 +216,7 @@ export const createSaving = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
 
-    const res = await fetch(SAVINGS_CREATE_ENDPOINT, {
+    const res = await safeFetch(SAVINGS_CREATE_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -133,18 +225,21 @@ export const createSaving = createAsyncThunk<
       body: JSON.stringify(payload),
     });
 
+    const data = (await res.json()) as ApiResponse<any>;
+
     if (!res.ok) {
-      const err = await res.json().catch(() => null);
+      const errorData = data as unknown as ErrorResponse;
       return rejectWithValue(
-        err?.data?.message || err?.message || `Create failed (${res.status})`
+        errorData?.data?.message || data?.message || `Create failed (${res.status})`
       );
     }
 
-    const data = (await res.json()) as ApiResponse<any>;
-    if (!data.success)
+    if (!data.success) {
+      const errorData = data as unknown as ErrorResponse;
       return rejectWithValue(
-        data.message || data.data.message || "Create saving failed"
+        errorData?.data?.message || data?.message || "Create saving failed"
       );
+    }
     return data.data;
   } catch (error: any) {
     console.log(error);
@@ -174,7 +269,7 @@ export const fetchUserSavings = createAsyncThunk<
 
       const url = `${SAVINGS_FETCH_USER_ENDPOINT}?${params.toString()}`;
 
-      const res = await fetch(url, {
+      const res = await safeFetch(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -182,16 +277,19 @@ export const fetchUserSavings = createAsyncThunk<
         },
       });
 
+      const data = (await res.json()) as ApiResponse<any>;
+
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
-          err?.data?.message || err?.message || `Fetch failed (${res.status})`
+          errorData?.data?.message || data?.message || `Fetch failed (${res.status})`
         );
       }
 
-      const data = (await res.json()) as ApiResponse<any>;
-      if (!data.success)
-        return rejectWithValue(data.message || data.data.message || "Fetch user savings failed");
+      if (!data.success) {
+        const errorData = data as unknown as ErrorResponse;
+        return rejectWithValue(errorData?.data?.message || data?.message || "Fetch user savings failed");
+      }
       console.log("Fetched user savings:", data.data);
       return data.data;
     } catch (error: any) {
@@ -213,7 +311,7 @@ export const topUpSaving = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
 
-    const res = await fetch(SAVINGS_TOP_UP_ENDPOINT, {
+    const res = await safeFetch(SAVINGS_TOP_UP_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -222,14 +320,15 @@ export const topUpSaving = createAsyncThunk<
       body: JSON.stringify(payload),
     });
 
+    const data = (await res.json()) as ApiResponse<any>;
+
     if (!res.ok) {
-      const err = await res.json().catch(() => null);
+      const errorData = data as unknown as ErrorResponse;
       return rejectWithValue(
-        err?.data?.message || err?.message || `Top up failed (${res.status})`
+        errorData?.data?.message || data?.message || `Top up failed (${res.status})`
       );
     }
 
-    const data = (await res.json()) as ApiResponse<any>;
     if (!data.success)
       return rejectWithValue(data.message || "Top up saving failed");
     return data.data;
@@ -251,7 +350,7 @@ export const withdrawFromSaving = createAsyncThunk<
     const state = getState() as any;
     const token = state.auth.token;
 
-    const res = await fetch(SAVINGS_WITHDRAWAL_ENDPOINT, {
+    const res = await safeFetch(SAVINGS_WITHDRAWAL_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -260,16 +359,17 @@ export const withdrawFromSaving = createAsyncThunk<
       body: JSON.stringify(payload),
     });
 
+    const data = (await res.json()) as ApiResponse<any>;
+
     if (!res.ok) {
-      const err = await res.json().catch(() => null);
+      const errorData = data as unknown as ErrorResponse;
       return rejectWithValue(
-        err?.data?.message ||
-          err?.message ||
+        errorData?.data?.message ||
+          data?.message ||
           `Withdrawal failed (${res.status})`
       );
     }
 
-    const data = (await res.json()) as ApiResponse<any>;
     if (!data.success)
       return rejectWithValue(data.message || "Withdrawal from saving failed");
     return data.data;
@@ -297,7 +397,7 @@ export const fetchSavingsTransactions = createAsyncThunk<
 
       const url = `${SAVINGS_TRANSACTIONS_ENDPOINT}?${params.toString()}`;
 
-      const res = await fetch(url, {
+      const res = await safeFetch(url, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -305,14 +405,15 @@ export const fetchSavingsTransactions = createAsyncThunk<
         },
       });
 
+      const data = (await res.json()) as ApiResponse<any>;
+
       if (!res.ok) {
-        const err = await res.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
-          err?.data?.message || err?.message || `Fetch failed (${res.status})`
+          errorData?.data?.message || data?.message || `Fetch failed (${res.status})`
         );
       }
 
-      const data = (await res.json()) as ApiResponse<any>;
       if (!data.success)
         return rejectWithValue(data.message || "Fetch transactions failed");
       return data.data;

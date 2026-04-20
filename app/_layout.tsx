@@ -11,16 +11,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { store } from "./lib/store";
 import AuthWrapper from "./(root)/AuthWrapper";
 import { logout } from "./lib/slices/authSlice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
 import firebaseService from "./lib/firebase.service";
 import authListenerService from "./lib/auth-listener.service";
 import UserInactivityProvider from "./components/UserInactivityProvider";
 import { usePreventScreenCapture } from "expo-screen-capture";
+import { initializeEncryption } from "./lib/initializeEncryption";
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+
+    const [encryptionReady, setEncryptionReady] = useState(false);
   
   const [fontsLoaded] = useFonts({
     Outfit: require("./assets/fonts/Outfit-Bold.ttf"),
@@ -38,6 +41,19 @@ export default function RootLayout() {
       // Start listening to auth changes
       authListenerService.startListening();
     };
+    const initEncryption = async () => {
+      try {
+        await initializeEncryption();
+        setEncryptionReady(true);
+        console.log("✅ Encryption ready");
+      } catch (error) {
+        console.error("❌ Failed to initialize encryption:", error);
+        // You might want to show an error screen here
+        setEncryptionReady(true); // Set to true to prevent hanging, but log error
+      }
+    };
+    
+    initEncryption();
 
     initialize();
 

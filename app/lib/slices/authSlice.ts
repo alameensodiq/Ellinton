@@ -3,6 +3,9 @@ import {
   registerUser,
   loginUser,
   verifyUserOtp,
+  MultiFactorOtp,
+  DeviceOtp,
+  resendDeviceOtp,
   resendUserOtp,
   verifyUserBvn,
   verifyUserFacial,
@@ -20,7 +23,7 @@ import {
   changePasscode,
   restoreAuth,
   changeTransactionPin,
-  searchUsers,
+  searchUsers
 } from "../thunks/authThunks";
 
 interface User {
@@ -53,7 +56,7 @@ interface User {
   created_at?: string;
   kyc_level?: number;
 
-   firebaseUid?: string;
+  firebaseUid?: string;
   firebaseUser?: {
     uid: string;
     email: string | null;
@@ -75,6 +78,8 @@ interface AuthState {
   isAuthenticated: boolean;
   isRestoring: boolean;
   searchResults: User[];
+  multi: boolean;
+  device: boolean;
 }
 
 const initialState: AuthState = {
@@ -86,6 +91,8 @@ const initialState: AuthState = {
   isAuthenticated: false,
   isRestoring: false,
   searchResults: [],
+  multi: false,
+  device: false
 };
 
 const authSlice = createSlice({
@@ -123,10 +130,11 @@ const authSlice = createSlice({
       state.isLoading = false;
       state.isRestoring = false;
       state.error = null;
+      state.multi = false;
     },
     clearError: (state) => {
       state.error = null;
-    },
+    }
   },
   extraReducers: (builder) => {
     /** -----------------------------------------
@@ -252,6 +260,22 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(resendUserOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+    /** -----------------------------------------
+     * RESEND DEVICE OTP
+     * ----------------------------------------- */
+    builder
+      .addCase(resendDeviceOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(resendDeviceOtp.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(resendDeviceOtp.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
@@ -541,17 +565,69 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(searchUsers.fulfilled, (state, action: PayloadAction<User[]>) => {
-        state.isLoading = false;
-        state.searchResults = action.payload || [];
-        state.error = null;
-      })
+      .addCase(
+        searchUsers.fulfilled,
+        (state, action: PayloadAction<User[]>) => {
+          state.isLoading = false;
+          state.searchResults = action.payload || [];
+          state.error = null;
+        }
+      )
       .addCase(searchUsers.rejected, (state, action) => {
         state.isLoading = false;
         state.searchResults = [];
         state.error = action.payload as string;
       });
-  },
+
+    builder
+      .addCase(MultiFactorOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        MultiFactorOtp.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            user: User;
+            token: string;
+            requiresPasscodeSetup: boolean;
+            requiresTransactionPinSetup: boolean;
+          }>
+        ) => {
+          state.isLoading = false;
+          state.multi = true;
+          state.user = action.payload.user;
+          state.token = action.payload.token;
+          state.requiresPasscodeSetup = action.payload.requiresPasscodeSetup;
+          state.requiresTransactionPinSetup =
+            action.payload.requiresTransactionPinSetup;
+          state.pendingUserId = null;
+          state.error = null;
+        }
+      )
+      .addCase(MultiFactorOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.multi = false;
+        state.error = action.payload as string;
+      });
+
+    builder
+      .addCase(DeviceOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(DeviceOtp.fulfilled, (state) => {
+        state.isLoading = false;
+        state.device = true;
+        state.error = null;
+      })
+      .addCase(DeviceOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.device = false;
+        state.error = action.payload as string;
+      });
+  }
 });
 
 export const { logout, clearError, setCredentials, setUserOnly } =

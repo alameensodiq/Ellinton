@@ -4,6 +4,34 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { BASE_URL } from "./api";
+import { getDeviceId } from "./utils";
+import { encryptedFetch } from "./encryptedFetch";
+import { encryptionClient } from "./encrption.client";
+
+const USE_ENCRYPTION = true;
+
+const safeFetch = async (url: string, options: RequestInit = {}) => {
+  if (USE_ENCRYPTION) {
+    const method = options.method?.toLowerCase() || "get";
+    const headers = (options.headers as Record<string, string>) || {};
+    const body = options.body ? JSON.parse(options.body as string) : undefined;
+
+    switch (method) {
+      case "post":
+        return await encryptedFetch.post(url, body, headers);
+      case "put":
+        return await encryptedFetch.put(url, body, headers);
+      case "patch":
+        return await encryptedFetch.patch(url, body, headers);
+      case "delete":
+        return await encryptedFetch.delete(url, headers);
+      default:
+        return await encryptedFetch.get(url, headers);
+    }
+  } else {
+    return await fetch(url, options);
+  }
+};
 
 const TOKEN_KEY = "expoPushToken";
 
@@ -21,20 +49,20 @@ Notifications.setNotificationHandler({
 /**
  * Get or Generate Device ID
  */
-const getDeviceId = async (): Promise<string> => {
-  try {
-    let deviceId = await AsyncStorage.getItem("deviceId");
-    if (!deviceId) {
-      deviceId = `${Device.osBuildId || Platform.OS}-${
-        Device.deviceYearClass || Date.now()
-      }-${Math.random().toString(36).substring(7)}`;
-      await AsyncStorage.setItem("deviceId", deviceId);
-    }
-    return deviceId;
-  } catch (error) {
-    return `${Platform.OS}-${Date.now()}`;
-  }
-};
+// const getDeviceId = async (): Promise<string> => {
+//   try {
+//     let deviceId = await AsyncStorage.getItem("deviceId");
+//     if (!deviceId) {
+//       deviceId = `${Device.osBuildId || Platform.OS}-${
+//         Device.deviceYearClass || Date.now()
+//       }-${Math.random().toString(36).substring(7)}`;
+//       await AsyncStorage.setItem("deviceId", deviceId);
+//     }
+//     return deviceId;
+//   } catch (error) {
+//     return `${Platform.OS}-${Date.now()}`;
+//   }
+// };
 
 /**
  * Register for Push Notifications & Get Token
@@ -113,9 +141,18 @@ export const registerDeviceWithBackend = async (
     const deviceId = await getDeviceId();
 
     if (!token || !authToken) return false;
+    console.log({
+        push_token: token,
+        device_id: deviceId,
+        platform: Platform.OS,
+        app_version: Constants.expoConfig?.version || "2.0.5",
+        device_make: Device.manufacturer || "Unknown",
+        device_model: Device.modelName || Platform.OS,
+        device_name: Device.deviceName || "Unknown"
+      })
 
     console.log("📡 Registering device with backend...");
-    const response = await fetch(`${BASE_URL}/users/push-tokens`, {
+    const response = await safeFetch(`${BASE_URL}/users/push-tokens`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -159,4 +196,25 @@ export const scheduleLocalNotification = async (
 
 export const clearPushToken = async () => {
   await AsyncStorage.removeItem(TOKEN_KEY);
+};
+
+/**
+ * Get Push Token - Gets existing token or registers a new one
+ * Use this function anywhere in your app to get the push token
+ */
+export const getPushToken = async (): Promise<string | null> => {
+  try {
+    // First, try to get existing token from storage
+    let pushToken = await AsyncStorage.getItem(TOKEN_KEY);
+    
+    // If no token exists, register for one
+    if (!pushToken) {
+      pushToken = await registerForPushNotificationsAsync();
+    }
+    
+    return pushToken;
+  } catch (error) {
+    console.error("Failed to get push token:", error);
+    return null;
+  }
 };

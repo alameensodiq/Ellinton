@@ -1,5 +1,5 @@
-const BASE_URL = "https://api.ellingtonbank.com/api/v2";
-// const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
+// const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
@@ -21,6 +21,9 @@ const FORGET_PASSCODE_VERIFY_OTP_AUTH_ENDPOINT = `${BASE_URL}/auth/forgot-passco
 
 //auth
 const SETUP_PASSCODE_AUTH_ENDPOINT = `${BASE_URL}/auth/setup-passcode`;
+const MULTI_FACTOR_OTP_ENDPOINT = `${BASE_URL}/auth/verify-mfa-otp`;
+const DEVICE_ENDPOINT = `${BASE_URL}/auth/verify-device`;
+const RESEND_DEVICE_OTP = `${BASE_URL}/auth/resend-device-otp`;
 const LOGOUT_AUTH_ENDPOINT = `${BASE_URL}/auth/logout`;
 const FORGET_PASSCODE_AUTH_ENDPOINT = `${BASE_URL}/auth/forgot-passcode`;
 const FORGET_PASSCODE_RESET_AUTH_ENDPOINT = `${BASE_URL}/auth/forgot-passcode/reset`;
@@ -223,4 +226,7 @@ export {
   LOAN_CONFIRM_CONSENT_ENDPOINT,
   WALLET_BONUS_BALANCE_ENDPOINT,
   WALLET_WITHDRAW_ENDPOINT,
+  MULTI_FACTOR_OTP_ENDPOINT,
+  DEVICE_ENDPOINT,
+  RESEND_DEVICE_OTP
 };

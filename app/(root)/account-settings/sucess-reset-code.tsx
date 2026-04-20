@@ -11,6 +11,7 @@ import { logoutUser } from "@/app/lib/thunks/authThunks";
 import { clearError } from "@/app/lib/slices/authSlice";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 const Success = () => {
@@ -22,6 +23,7 @@ const Success = () => {
 const handleClose = async () => {
   try {
     // 1. Logout from your backend
+     await AsyncStorage.clear();
     await dispatch(logoutUser()).unwrap();
     
     // 2. Unregister device from backend

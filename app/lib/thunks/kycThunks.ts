@@ -1,4 +1,4 @@
-// kycThunks.ts (Updated getKycSummary thunk)
+// kycThunks.ts (Updated with encryption)
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
   KYC_STATUS_ENDPOINT,
@@ -11,6 +11,88 @@ import {
   KYC_TIER3_ENDPOINT,
   KYC_UTILITY_BILL_URL_ENDPOINT,
 } from "../api";
+import { encryptedFetch } from "../encryptedFetch";
+import { encryptionClient } from "../encrption.client";
+import { generateSignature, generateNonce } from "../signature";
+import { getDeviceId } from "../utils";
+
+const USE_ENCRYPTION = true;
+
+const safeFetch = async (url: string, options: RequestInit = {}) => {
+  const method = options.method?.toLowerCase() || "get";
+  const headers = (options.headers as Record<string, string>) || {};
+  const body = options.body ? JSON.parse(options.body as string) : undefined;
+  
+  const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
+  
+  let enhancedHeaders = { ...headers };
+  
+  if (hasAuthToken) {
+    const timestamp = Date.now().toString();
+    const nonce = generateNonce();
+    const deviceId = await getDeviceId();
+    
+    // IMPORTANT: Extract ONLY the pathname, not the full URL
+    const urlObj = new URL(url);
+    const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
+    
+    // console.log("📡 Request details:", {
+    //   fullUrl: url,
+    //   path,
+    //   method,
+    //   hasBody: !!body,
+    //   deviceId
+    // });
+    
+    // Generate signature
+    const { signature } = await generateSignature(
+      method,
+      path,
+      body,
+      nonce,
+      timestamp,
+      deviceId
+    );
+    
+    // CRITICAL FIX: Add x-device-id header
+    enhancedHeaders = {
+      ...headers,
+      'x-request-timestamp': timestamp,
+      'x-request-nonce': nonce,
+      'x-signature': signature,
+      'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
+    };
+    
+    // console.log("🔐 Added signature headers:", {
+    //   timestamp,
+    //   noncePreview: nonce.substring(0, 10) + "...",
+    //   signaturePreview: signature.substring(0, 20) + "...",
+    //   deviceId
+    // });
+  } else {
+    // console.log("🔓 No auth token, skipping signature");
+  }
+  
+  if (USE_ENCRYPTION) {
+    switch (method) {
+      case "post":
+        return await encryptedFetch.post(url, body, enhancedHeaders);
+      case "put":
+        return await encryptedFetch.put(url, body, enhancedHeaders);
+      case "patch":
+        return await encryptedFetch.patch(url, body, enhancedHeaders);
+      case "delete":
+        return await encryptedFetch.delete(url, enhancedHeaders);
+      default:
+        return await encryptedFetch.get(url, enhancedHeaders);
+    }
+  } else {
+    return await fetch(url, {
+      ...options,
+      headers: enhancedHeaders,
+    });
+  }
+};
 
 interface VerifyNinPayload {
   nin: string;
@@ -98,6 +180,14 @@ interface ApiResponse<T = any> {
   message?: string;
 }
 
+// Type for error responses that have message in data
+interface ErrorResponse {
+  data?: {
+    message?: string;
+  };
+  message?: string;
+}
+
 const getResponseErrorMessage = async (
   response: Response,
   fallback: string
@@ -124,7 +214,7 @@ export const getKycStatus = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_STATUS_ENDPOINT, {
+      const response = await safeFetch(KYC_STATUS_ENDPOINT, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -132,16 +222,17 @@ export const getKycStatus = createAsyncThunk(
         },
       });
 
+      const data = await response.json() as KycStatus;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
+            data?.message ||
             `KYC status fetch failed (${response.status})`
         );
       }
 
-      const data = (await response.json()) as KycStatus;
       return data;
     } catch (error: any) {
       return rejectWithValue(
@@ -158,7 +249,7 @@ export const verifyNin = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_NIN_VERIFY_ENDPOINT, {
+      const response = await safeFetch(KYC_NIN_VERIFY_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -167,21 +258,21 @@ export const verifyNin = createAsyncThunk(
         body: JSON.stringify({ nin: payload.nin }),
       });
 
+      const data = await response.json() as ApiResponse<VerifyNinResponse>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
+            data?.message ||
             `NIN verification failed (${response.status})`
         );
       }
 
-      const responseData =
-        (await response.json()) as ApiResponse<VerifyNinResponse>;
-      const innerData = responseData.data;
-      if (!responseData.success || !innerData) {
+      const innerData = data.data;
+      if (!data.success || !innerData) {
         return rejectWithValue(
-          responseData.message || "Invalid response: Missing verification data"
+          data.message || "Invalid response: Missing verification data"
         );
       }
 
@@ -202,7 +293,7 @@ export const submitNextOfKin = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_NEXT_OF_KIN_ENDPOINT, {
+      const response = await safeFetch(KYC_NEXT_OF_KIN_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -211,16 +302,17 @@ export const submitNextOfKin = createAsyncThunk(
         body: JSON.stringify(payload),
       });
 
+      const data = await response.json() as ApiResponse<{ message?: string }>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
+            data?.message ||
             `Next of kin submission failed (${response.status})`
         );
       }
 
-      const data = (await response.json()) as ApiResponse<{ message?: string }>;
       return {
         message:
           data.data?.message ||
@@ -242,7 +334,7 @@ export const captureSignature = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_SIGNATURE_ENDPOINT, {
+      const response = await safeFetch(KYC_SIGNATURE_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -251,16 +343,17 @@ export const captureSignature = createAsyncThunk(
         body: JSON.stringify({ signature: payload.signature }),
       });
 
+      const data = await response.json() as ApiResponse<{ message?: string }>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
+            data?.message ||
             `Signature capture failed (${response.status})`
         );
       }
 
-      const data = (await response.json()) as ApiResponse<{ message?: string }>;
       return {
         message:
           data.data?.message ||
@@ -282,7 +375,7 @@ export const getKycSummary = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_SUMMARY_ENDPOINT, {
+      const response = await safeFetch(KYC_SUMMARY_ENDPOINT, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -290,21 +383,22 @@ export const getKycSummary = createAsyncThunk(
         },
       });
 
+      const data = await response.json() as ApiResponse<KycSummary>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
+            data?.message ||
             `KYC summary fetch failed (${response.status})`
         );
       }
 
-      const responseData = (await response.json()) as ApiResponse<KycSummary>;
-      console.log(responseData)
-      const innerData = responseData.data;
-      if (!responseData.success || !innerData) {
+      console.log(data);
+      const innerData = data.data;
+      if (!data.success || !innerData) {
         return rejectWithValue(
-          responseData.message || "Invalid response: Missing summary data"
+          data.message || "Invalid response: Missing summary data"
         );
       }
       return innerData;
@@ -323,7 +417,7 @@ export const submitKyc = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_SUBMIT_ENDPOINT, {
+      const response = await safeFetch(KYC_SUBMIT_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -331,16 +425,17 @@ export const submitKyc = createAsyncThunk(
         },
       });
 
+      const data = await response.json() as ApiResponse<{ message?: string }>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
+            data?.message ||
             `KYC submission failed (${response.status})`
         );
       }
 
-      const data = (await response.json()) as ApiResponse<{ message?: string }>;
       return {
         message:
           data.data?.message || data.message || "KYC submitted successfully",
@@ -360,7 +455,7 @@ export const uploadUtilityBill = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_UTILITY_BILL_ENDPOINT, {
+      const response = await safeFetch(KYC_UTILITY_BILL_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -369,16 +464,17 @@ export const uploadUtilityBill = createAsyncThunk(
         body: JSON.stringify({ utility_bill: payload.utility_bill }),
       });
 
+      const data = await response.json() as ApiResponse<{ message?: string }>;
+
       if (!response.ok) {
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
-          await getResponseErrorMessage(
-            response,
+          errorData?.data?.message ||
+            data?.message ||
             `Utility bill upload failed (${response.status})`
-          )
         );
       }
 
-      const data = (await response.json()) as ApiResponse<{ message?: string }>;
       return {
         message:
           data.data?.message ||
@@ -400,7 +496,7 @@ export const submitTier3 = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_TIER3_ENDPOINT, {
+      const response = await safeFetch(KYC_TIER3_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -408,16 +504,17 @@ export const submitTier3 = createAsyncThunk(
         },
       });
 
+      const data = await response.json() as ApiResponse<{ message?: string }>;
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
+            data?.message ||
             `Tier 3 submission failed (${response.status})`
         );
       }
 
-      const data = (await response.json()) as ApiResponse<{ message?: string }>;
       return {
         message:
           data.data?.message ||
@@ -439,7 +536,7 @@ export const getUtilityBillUrl = createAsyncThunk(
       const state = getState() as any;
       const token = state.auth.token;
 
-      const response = await fetch(KYC_UTILITY_BILL_URL_ENDPOINT, {
+      const response = await safeFetch(KYC_UTILITY_BILL_URL_ENDPOINT, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -447,17 +544,18 @@ export const getUtilityBillUrl = createAsyncThunk(
         },
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
+            data?.message ||
             `Utility bill URL fetch failed (${response.status})`
         );
       }
 
-      const data = await response.json();
-      return data; 
+      return data;
     } catch (error: any) {
       return rejectWithValue(
         error.data?.message || error.message || "Utility bill URL fetch error"
