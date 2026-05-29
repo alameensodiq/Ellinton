@@ -47,6 +47,8 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       timestamp,
       deviceId
     );
+
+    console.log(signature)
     
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {

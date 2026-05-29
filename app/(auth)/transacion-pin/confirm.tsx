@@ -5,7 +5,7 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Keyboard,
+  Keyboard
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -15,7 +15,7 @@ import OtpInput from "@/app/components/inputs/OtpInput";
 import Loading from "@/app/components/Loading";
 import {
   createUserAccount,
-  createUserTransactionPin,
+  createUserTransactionPin
 } from "@/app/lib/thunks/authThunks";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
@@ -50,6 +50,19 @@ const ConfirmTransactionPinScreen = () => {
     }
   };
 
+  const getErrorMessage = (error: unknown): string => {
+    if (error && typeof error === "object" && "message" in error) {
+      return (error as { message: string }).message;
+    }
+    if (typeof error === "string") {
+      return error;
+    }
+    if (error instanceof Error) {
+      return error.message;
+    }
+    return "Failed to set transaction PIN. Please try again.";
+  };
+
   const handleVerify = async (valueToCheck?: string) => {
     const code = valueToCheck ?? otp;
 
@@ -71,7 +84,7 @@ const ConfirmTransactionPinScreen = () => {
       if (source !== "login") {
         await dispatch(
           createUserAccount({
-            userId: userId as string,
+            userId: userId as string
           })
         ).unwrap();
       }
@@ -79,18 +92,19 @@ const ConfirmTransactionPinScreen = () => {
       await dispatch(
         createUserTransactionPin({
           userId: userId as string,
-          pin: code,
+          pin: code
         })
       ).unwrap();
       router.push({
         pathname: "/(auth)/transacion-pin/success",
-        params: { userId: userId as string, source: source || "signup" },
+        params: { userId: userId as string, source: source || "signup" }
       });
     } catch (err: any) {
       setError(true);
-      setErrorMessage(
-        err.message || "Failed to set transaction PIN. Please try again."
-      );
+      setErrorMessage(getErrorMessage(err));
+      // setErrorMessage(
+      //   err.message || "Failed to set transaction PIN. Please try again."
+      // );
     } finally {
       setLoading(false);
     }

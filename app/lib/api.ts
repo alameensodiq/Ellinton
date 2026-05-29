@@ -1,5 +1,5 @@
-// const BASE_URL = "https://api.ellingtonbank.com/api/v2";
-const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
+const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+// const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
@@ -35,6 +35,9 @@ const UPDATE_USER_PROFILE_ENDPOINT = `${BASE_URL}/users/me`;
 const UPDATE_USER_ADDRESS_PROFILE_ENDPOINT = `${BASE_URL}/users/address`;
 const UPDATE_USER_PROFILE_PASSWORD_ENDPOINT = `${BASE_URL}/users/profile/passport`;
 export const CHANGE_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}/users/change-transaction-pin`;
+export const RESET_OTP_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}/users/transaction-pin/forgot`;
+export const RESET_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}/users/transaction-pin/reset`;
+export const RESET_MFA_USERS_ENDPOINT = `${BASE_URL}/users/mfa`;
 
 //kyc
 const KYC_STATUS_ENDPOINT = `${BASE_URL}/kyc/status`;

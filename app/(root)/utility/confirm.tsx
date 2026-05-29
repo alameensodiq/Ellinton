@@ -14,12 +14,32 @@ import Button from "@/app/components/Button";
 import {
   dayOptions,
   frequencyOptions,
-  utilityserviceItems,
+  utilityserviceItems
 } from "@/app/lib/utils";
+import ValidationResultCard from "@/app/components/VerificationResultCard";
 
 export default function ConfirmBuyAirtime() {
-  const { service, product, meterNumber, amount, providerName } =
-    useLocalSearchParams();
+  const {
+    service,
+    product,
+    meterNumber,
+    amount,
+    providerName,
+    validationResult
+  } = useLocalSearchParams();
+  console.log(validationResult);
+
+  const parsedValidationResult = React.useMemo(() => {
+    try {
+      const raw = Array.isArray(validationResult)
+        ? validationResult[0]
+        : validationResult;
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.error("Failed to parse validationResult:", e);
+      return null;
+    }
+  }, [validationResult]);
   const router = useRouter();
 
   const rawAmount = Array.isArray(amount)
@@ -63,8 +83,8 @@ export default function ConfirmBuyAirtime() {
         frequency,
         dayOfWeek,
         startDate,
-        endDate,
-      },
+        endDate
+      }
     });
   };
 
@@ -88,6 +108,10 @@ export default function ConfirmBuyAirtime() {
           }
           icon={providerIcon}
         />
+
+        {parsedValidationResult && (
+          <ValidationResultCard {...parsedValidationResult} />
+        )}
 
         <TransferSummaryCard
           amount={rawAmount}

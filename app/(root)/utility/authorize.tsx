@@ -4,7 +4,7 @@ import {
   Text,
   StatusBar,
   Vibration,
-  ActivityIndicator,
+  ActivityIndicator
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -18,13 +18,13 @@ import { payBill } from "@/app/lib/thunks/billsThunks";
 import { clearError } from "@/app/lib/slices/billsSlice";
 
 const getParam = (param?: string | string[]) =>
-  Array.isArray(param) ? param[0] : param ?? "";
+  Array.isArray(param) ? param[0] : (param ?? "");
 
 export default function AuthorizeUtilityPayment() {
   const params = useLocalSearchParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
-  console.log(params)
+  console.log(params);
 
   const amount = getParam(params.amount);
   const meterNumber = getParam(params.meterNumber);
@@ -75,27 +75,36 @@ export default function AuthorizeUtilityPayment() {
         amount: numericAmount,
         bundleSlug: product,
         customerId: meterNumber,
-        transactionPin: passcode,
+        transactionPin: passcode
       };
 
       console.log("PayBill payload:", payload);
 
       const result = await dispatch(payBill(payload)).unwrap();
-      dispatch(clearError());
 
       router.replace({
         pathname: "/(root)/utility/success",
         params: {
           ...params,
           reference: result?.reference,
-          status: "success",
-        },
+          status: "success"
+        }
       });
+      // dispatch(clearError());
     } catch (err: any) {
-      setError(
+      console.log("PayBill error full object:", JSON.stringify(err, null, 2));
+      console.log("Error type:", typeof err);
+      console.log("Error keys:", err ? Object.keys(err) : "null");
+
+      // Try multiple possible error message locations
+      const errorMessage =
         err?.message ||
-          "Service not available at this time, please try again later"
-      );
+        err?.data?.message ||
+        err?.error ||
+        (typeof err === "string" ? err : null) ||
+        "Service not available at this time, please try again later";
+
+      setError(errorMessage);
       Vibration.vibrate(400);
       setPasscode("");
     } finally {

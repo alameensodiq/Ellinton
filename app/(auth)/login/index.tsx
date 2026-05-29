@@ -9,7 +9,8 @@ import {
   Keyboard,
   ScrollView,
   KeyboardAvoidingView,
-  Pressable
+  Pressable,
+  Platform
 } from "react-native";
 import { useState, useEffect } from "react";
 import TextInputField from "@/app/components/inputs/TextInputField";
@@ -31,6 +32,7 @@ import {
   registerForPushNotificationsAsync
 } from "@/app/lib/notification.service";
 import { getDeviceId } from "@/app/lib/utils";
+import * as Notifications from "expo-notifications";
 
 const Login = () => {
   const [pin, setPin] = useState("");
@@ -70,8 +72,10 @@ const Login = () => {
 
     try {
       const [deviceId] = await Promise.all([getDeviceId()]);
-      console.log(email, pin)
-      // 1. Log in to your app (This likely sets the 'authToken' in AsyncStorage)
+      console.log(deviceId);
+      console.log(email, pin);
+
+      // 1. Log in to your app
       await dispatch(
         loginUser({
           email: email.trim().toLowerCase(),
@@ -80,26 +84,25 @@ const Login = () => {
         })
       ).unwrap();
 
-        await AsyncStorage.setItem("userPin", pin);
-
-       await new Promise(resolve => setTimeout(resolve, 500));
+      await AsyncStorage.setItem("userPin", pin);
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 2. Request/Get the Push Token
       const token = await registerForPushNotificationsAsync();
-
-      console.log(token);
+      console.log("Push Token:", token);
 
       // 3. If we got a token, send it to the backend immediately
       if (token) {
         const isRegistered = await registerDeviceWithBackend(token);
         if (isRegistered) {
-          // console.log("✅ Push token synced with backend");
+          console.log("✅ Push token synced with backend");
+          console.log("📱 Ready to receive push notifications from backend");
         } else {
-          // console.warn("⚠️ Login succeeded, but push registration failed");
+          console.warn("⚠️ Login succeeded, but push registration failed");
         }
       }
     } catch (error) {
-      // console.error("❌ Login failed:", error);
+      console.error("❌ Login failed:", error);
     }
   };
 
@@ -121,6 +124,54 @@ const Login = () => {
     setShowErrorModal(false);
     dispatch(clearError());
   };
+
+  // Add this function INSIDE your Login component
+//  const testLocalNotification = async () => {
+//   try {
+//     console.log("📱 Testing LOCAL notification...");
+    
+//     // Create a channel specifically for this test (Vivo needs this)
+//     if (Platform.OS === "android") {
+//       await Notifications.setNotificationChannelAsync('local_test', {
+//         name: 'Local Test Channel',
+//         importance: Notifications.AndroidImportance.MAX,
+//         vibrationPattern: [0, 250, 250, 250],
+//         lightColor: '#FF231F7C',
+//         sound: 'default',
+//         enableVibrate: true,
+//         enableLights: true,
+//         bypassDnd: true, // Force through Do Not Disturb
+//       });
+//     }
+    
+//     // Send a local notification immediately
+//     const notificationId = await Notifications.scheduleNotificationAsync({
+//       content: {
+//         title: "🔔 Local Test Success!",
+//         body: "If you see this, your device CAN show notifications!",
+//         sound: true,
+//         priority: Notifications.AndroidNotificationPriority.HIGH,
+//         data: { source: "local_test", timestamp: Date.now() }
+//       },
+//       trigger: null, // null = show immediately
+//     });
+    
+//     console.log("✅ Local notification sent with ID:", notificationId);
+//     console.log("📱 CHECK YOUR NOTIFICATION SHADE NOW!");
+    
+//   } catch (error) {
+//     console.error("❌ Local notification failed:", error);
+//   }
+// };
+
+// const testFCM = async () => {
+//   try {
+//     const token = await Notifications.getDevicePushTokenAsync();
+//     console.log("FCM TOKEN:", token);
+//   } catch (e) {
+//     console.error("FCM ERROR:", e);
+//   }
+// };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -199,6 +250,12 @@ const Login = () => {
                 disabled={isLoading}
                 onPress={handleLogin}
               />
+              {/* <Button
+                title="📱 Test Push Notification"
+                variant="secondary"
+                className="w-full mt-2"
+                onPress={testFCM}
+              /> */}
 
               <Pressable onPress={() => router.push("/(auth)/forget-password")}>
                 <Text className="text-primary-200 text-center font-semibold text-md mt-4">

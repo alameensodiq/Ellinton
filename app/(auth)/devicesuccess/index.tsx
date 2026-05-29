@@ -4,13 +4,18 @@ import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import {
+  registerDeviceWithBackend,
+  registerForPushNotificationsAsync
+} from "@/app/lib/notification.service";
 
 const DeviceSuccessScreen = () => {
   const router = useRouter();
-  const { userId } = useLocalSearchParams();
+  // const { userId } = useLocalSearchParams();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fallAnim = useRef(new Animated.Value(0)).current;
+    const { userId } = useLocalSearchParams();
 
   useEffect(() => {
     // Fade in
@@ -44,6 +49,27 @@ const DeviceSuccessScreen = () => {
         })
       ])
     ).start();
+    const registerPushNotifications = async () => {
+      try {
+        const pushNotificationToken = await registerForPushNotificationsAsync();
+        if (pushNotificationToken) {
+          const isRegistered = await registerDeviceWithBackend(
+            pushNotificationToken
+          );
+          if (isRegistered) {
+            console.log("✅ Push token synced with backend");
+          } else {
+            console.warn("⚠️ Login succeeded, but push registration failed");
+          }
+        } else {
+          console.warn("⚠️ No push notification token received");
+        }
+      } catch (error) {
+        console.error("Push notification registration error:", error);
+      }
+    };
+
+    registerPushNotifications();
   }, []);
 
   return (
@@ -53,7 +79,7 @@ const DeviceSuccessScreen = () => {
           onPress={() =>
             router.replace({
               pathname: "/(auth)/login",
-              params: { userId: userId as string }
+              // params: { userId: userId as string }
             })
           }
         >
@@ -90,7 +116,7 @@ const DeviceSuccessScreen = () => {
             onPress={() =>
               router.replace({
                 pathname: "/(root)/(tabs)",
-                params: { userId: userId as string }
+                   params: { userId: userId as string }
               })
             }
           />

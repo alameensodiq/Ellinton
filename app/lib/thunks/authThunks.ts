@@ -22,7 +22,10 @@ import {
   SEARCH_USERS_ENDPOINT,
   MULTI_FACTOR_OTP_ENDPOINT,
   DEVICE_ENDPOINT,
-  RESEND_DEVICE_OTP
+  RESEND_DEVICE_OTP,
+  RESET_OTP_TRANSACTION_PIN_USERS_ENDPOINT,
+  RESET_TRANSACTION_PIN_USERS_ENDPOINT,
+  RESET_MFA_USERS_ENDPOINT,
 } from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout, setCredentials, setUserOnly } from "../slices/authSlice";
@@ -42,6 +45,8 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     headers.Authorization && headers.Authorization.startsWith("Bearer ");
 
   let enhancedHeaders = { ...headers };
+
+  console.log(hasAuthToken);
 
   if (hasAuthToken) {
     const timestamp = Date.now().toString();
@@ -70,13 +75,21 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       deviceId
     );
 
+    console.log(signature);
+    console.log(method);
+    console.log(path);
+    console.log(body);
+    console.log(nonce);
+    console.log(deviceId);
+    console.log(timestamp);
+
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {
       ...headers,
       "x-request-timestamp": timestamp,
       "x-request-nonce": nonce,
       "x-signature": signature,
-      "x-device-id": deviceId // ← THIS WAS MISSING - ADD THIS LINE
+      "x-device-id": deviceId, // ← THIS WAS MISSING - ADD THIS LINE
     };
 
     // console.log("🔐 Added signature headers:", {
@@ -105,7 +118,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     return await fetch(url, {
       ...options,
-      headers: enhancedHeaders
+      headers: enhancedHeaders,
     });
   }
 };
@@ -156,6 +169,7 @@ interface ResendOtpPayload {
 
 interface ResendDeviceOtpPayload {
   device_id: string;
+  token?: string;
 }
 
 interface VerifyBvnPayload {
@@ -205,6 +219,16 @@ interface ChangePasscodePayload {
   currentPasscode: string;
   newPasscode: string;
   confirmNewPasscode: string;
+}
+
+interface ResetPinPasscodePayload {
+  otp: string;
+  pin: string;
+  confirm_pin: string;
+}
+
+interface MfaResetPayload {
+  enabled: boolean;
 }
 
 interface UpdateProfilePayload {
@@ -314,8 +338,8 @@ const getResponseErrorMessage = async (
     typeof responseJson !== "undefined"
       ? responseJson
       : contentType.includes("application/json")
-        ? await response.json().catch(() => null)
-        : parseResponseJson(responseText || "");
+      ? await response.json().catch(() => null)
+      : parseResponseJson(responseText || "");
 
   if (errorData) {
     return errorData?.data?.message || errorData?.message || fallback;
@@ -372,6 +396,7 @@ const persistChallenge = async (challenge: string | null | undefined) => {
 const persistData = async (data: any) => {
   try {
     // If data is an object, stringify it first
+    console.log(data)
     const dataToStore = typeof data === "object" ? JSON.stringify(data) : data;
     await AsyncStorage.setItem("data", dataToStore);
   } catch (error) {}
@@ -393,7 +418,7 @@ export const registerUser = createAsyncThunk(
       const response = await safeFetch(REGISTER_USERS_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -410,7 +435,7 @@ export const registerUser = createAsyncThunk(
       return {
         userId: data?.data?.user_id || "",
         message:
-          data?.data?.message || data?.message || "User registered, OTP sent"
+          data?.data?.message || data?.message || "User registered, OTP sent",
       };
     } catch (error: any) {
       return rejectWithValue(
@@ -427,7 +452,7 @@ export const loginUser = createAsyncThunk(
       const response = await safeFetch(LOGIN_USERS_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -458,7 +483,7 @@ export const loginUser = createAsyncThunk(
         persistUserProfile(user),
         persistToken(token),
         persistData(apiData),
-        persistChallenge(challenge)
+        persistChallenge(challenge),
       ]);
 
       const verifyToken = await AsyncStorage.getItem("authToken");
@@ -475,7 +500,7 @@ export const loginUser = createAsyncThunk(
         user,
         token,
         requiresPasscodeSetup,
-        requiresTransactionPinSetup
+        requiresTransactionPinSetup,
       };
     } catch (error: any) {
       // console.error("❌ Login error caught:", error);
@@ -494,7 +519,7 @@ export const verifyUserOtp = createAsyncThunk(
       const response = await safeFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp: payload.otp })
+        body: JSON.stringify({ otp: payload.otp }),
       });
 
       const data = await response.json();
@@ -510,7 +535,7 @@ export const verifyUserOtp = createAsyncThunk(
 
       return {
         message:
-          data?.data?.message || data?.message || "OTP verified successfully"
+          data?.data?.message || data?.message || "OTP verified successfully",
       };
     } catch (error: any) {
       return rejectWithValue(
@@ -528,7 +553,7 @@ export const MultiFactorOtp = createAsyncThunk(
       const response = await safeFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -566,7 +591,7 @@ export const MultiFactorOtp = createAsyncThunk(
         persistUserProfile(user),
         persistToken(accessToken),
         persistData(apiData),
-        persistChallenge(challenge)
+        persistChallenge(challenge),
       ]);
 
       if (!user) {
@@ -599,7 +624,7 @@ export const MultiFactorOtp = createAsyncThunk(
         user: user,
         token: accessToken,
         requiresPasscodeSetup: requiresPasscodeSetup,
-        requiresTransactionPinSetup: requiresTransactionPinSetup
+        requiresTransactionPinSetup: requiresTransactionPinSetup,
       };
     } catch (error: any) {
       console.error("MFA error:", error);
@@ -696,17 +721,23 @@ export const DeviceOtp = createAsyncThunk(
 
       // Remove token from body before sending
       const { token, ...bodyPayload } = payload;
+
       console.log("📤 Request body:", bodyPayload);
 
       const response = await safeFetch(url, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify(bodyPayload)
+        body: JSON.stringify(bodyPayload),
       });
 
+      console.log("✅ safeFetch response received:", response.status);
+
       const data = await response.json();
+      console.log("📦 Response data:", JSON.stringify(data, null, 2));
+      console.log(data);
 
       if (!response.ok) {
+        console.log("❌ Response not OK:", response);
         return rejectWithValue(
           data?.data?.message ||
             data?.message ||
@@ -714,61 +745,133 @@ export const DeviceOtp = createAsyncThunk(
         );
       }
 
-      const apiData = data.data;
-      console.log(data);
-      const challenge = apiData.challenge_token;
-      const accessToken = apiData.access_token || apiData.token;
+      console.log("✅ API call successful, processing response...");
 
-      // Extract user data
-      const user = apiData.user;
-
-      // Extract flags (using snake_case from API)
-      const requiresPasscodeSetup = apiData.requires_passcode_setup || false;
-      const requiresTransactionPinSetup =
-        apiData.requires_transaction_pin_setup || false;
-
-      // // Still persist data to AsyncStorage for future use
-      // await Promise.all([
-      //   persistUserProfile(user),
-      //   persistToken(accessToken),
-      //   persistData(apiData),
-      //   persistChallenge(challenge)
-      // ]);
-
-      if (!user) {
-        return rejectWithValue("User data not found in response");
+      // For device OTP, the response may not have a user object
+      // Just check if the response indicates success
+      if (data.status !== "success" && !data.success) {
+        console.error("❌ Response indicates failure");
+        return rejectWithValue(
+          data?.data?.message || data?.message || "Verification failed"
+        );
       }
 
-      if (!accessToken) {
-        console.log("ℹ️ No access_token in MFA response");
+      // ✅ EXTRACT TOKEN FROM RESPONSE
+      const responseToken = data.token || data.access_token;
 
-        // Verify existing token is still valid
-        const existingToken = await AsyncStorage.getItem("authToken");
-        if (!existingToken) {
-          console.error("❌ No token found after MFA");
-          return rejectWithValue("Session expired. Please login again.");
+      // ✅ GET OR CREATE USER DATA
+      let userData = null;
+
+      if (responseToken) {
+        console.log("💾 Saving token from response...");
+
+        // Save token to AsyncStorage
+        await AsyncStorage.setItem("authToken", responseToken);
+        console.log("✅ Token saved to authToken key");
+
+        // Try to get existing user profile from storage
+        try {
+          const userProfileStr = await AsyncStorage.getItem("userProfile");
+          if (userProfileStr) {
+            userData = JSON.parse(userProfileStr);
+            console.log("✅ Retrieved existing user profile");
+          }
+        } catch (err) {
+          console.error("Failed to get user profile:", err);
         }
-      } else {
-        console.log("✅ MFA returned access_token, saving to storage...");
-        await AsyncStorage.setItem("authToken", accessToken);
 
-        // Also save user data
-        if (user) {
-          await AsyncStorage.setItem("userProfile", JSON.stringify(user));
+        // If user data is in response, use that instead
+        if (data.user || data.data?.user) {
+          userData = data.user || data.data?.user;
+          if (userData) {
+            await AsyncStorage.setItem("userProfile", JSON.stringify(userData));
+            console.log("✅ User data saved from response");
+          }
         }
 
-        console.log("✅ Access token saved successfully after MFA");
+        // Update the main data object
+        try {
+          const existingDataStr = await AsyncStorage.getItem("data");
+          let existingData = {};
+
+          if (existingDataStr) {
+            existingData = JSON.parse(existingDataStr);
+          }
+
+          const updatedData = {
+            ...existingData,
+            access_token: responseToken,
+            token: responseToken,
+            user: userData,
+            device_authentication_required: false,
+            requires_device_verification: false,
+          };
+
+          await AsyncStorage.setItem("data", JSON.stringify(updatedData));
+          console.log("✅ Updated main data object with new token and user");
+        } catch (err) {
+          console.error("⚠️ Failed to update data object:", err);
+        }
+
+        authToken = responseToken;
       }
 
-      // Return just a success message
+      // CRITICAL: Update AsyncStorage to clear device verification flags
+      try {
+        const existingDataStr = await AsyncStorage.getItem("data");
+        let existingData = {};
+
+        if (existingDataStr) {
+          existingData = JSON.parse(existingDataStr);
+          console.log("📦 Existing data loaded");
+        }
+
+        const updatedData = {
+          ...existingData,
+          device_authentication_required: false,
+          requires_device_verification: false,
+          access_token: authToken,
+          token: authToken,
+        };
+
+        await AsyncStorage.setItem("data", JSON.stringify(updatedData));
+        console.log("✅ Updated main data object with cleared flags");
+
+        await AsyncStorage.setItem("deviceVerified", "true");
+        console.log("✅ Set deviceVerified flag");
+      } catch (storageError) {
+        console.error("⚠️ Storage error:", storageError);
+      }
+
+      console.log("🎉 DeviceOtp completed successfully");
+
+      // ✅ RETURN USER AND TOKEN DATA (matching MultiFactorOtp structure)
       return {
-        message: "Device verified successfully"
+        message:
+          data?.data?.message ||
+          data?.message ||
+          "Device verified successfully",
+        verified: true,
+        token: responseToken || authToken,
+        user: userData,
+        requiresPasscodeSetup: data?.requires_passcode_setup || false,
+        requiresTransactionPinSetup:
+          data?.requires_transaction_pin_setup || false,
       };
-      
     } catch (error: any) {
-      console.error("❌ DeviceOtp error:", error);
+      console.error("❌ CRITICAL: DeviceOtp caught an error:", error);
+      console.error("Error stack:", error.stack);
+
+      if (error.message === "Network request failed") {
+        return rejectWithValue("Network error. Please check your connection.");
+      }
+
+      if (error.message && error.message.includes("JSON")) {
+        return rejectWithValue("Invalid response from server");
+      }
+
       return rejectWithValue(
-        error.data?.message || error.message || "OTP verification error"
+        error.message || "An unexpected error occurred during verification"
       );
     }
   }
@@ -781,7 +884,7 @@ export const resendUserOtp = createAsyncThunk(
       const url = RESEND_OTP_USERS_ENDPOINT(payload.userId);
       const response = await safeFetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
 
       const data = await response.json();
@@ -796,7 +899,7 @@ export const resendUserOtp = createAsyncThunk(
       }
       return {
         message:
-          data?.data?.message || data?.message || "OTP resent successfully"
+          data?.data?.message || data?.message || "OTP resent successfully",
       };
     } catch (error: any) {
       return rejectWithValue(
@@ -811,27 +914,86 @@ export const resendDeviceOtp = createAsyncThunk(
   async (payload: ResendDeviceOtpPayload, { rejectWithValue }) => {
     try {
       const url = RESEND_DEVICE_OTP;
+
+      let authToken: string | undefined = payload.token;
+      console.log("Token from payload:", authToken ? "Present" : "Missing");
+
+      if (!authToken) {
+        const storedToken = await AsyncStorage.getItem("authToken");
+        authToken = storedToken || undefined;
+        console.log(
+          "🔐 Token from AsyncStorage:",
+          authToken ? "Found" : "Not found"
+        );
+
+        // Also try to get from "data" key
+        if (!authToken) {
+          const dataStr = await AsyncStorage.getItem("data");
+          if (dataStr) {
+            const parsedData = JSON.parse(dataStr);
+            authToken = parsedData?.access_token || parsedData?.token;
+            console.log(
+              "🔐 Token from 'data' key:",
+              authToken ? "Found" : "Not found"
+            );
+          }
+        }
+      } else {
+        console.log(
+          "🔐 Token from payload:",
+          authToken.substring(0, 30) + "..."
+        );
+      }
+
+      if (!authToken) {
+        console.error("❌ No token found in resendDeviceOtp");
+        return rejectWithValue(
+          "Authentication token not found. Please login again."
+        );
+      }
+
+      // ✅ Create headers with Authorization
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      };
+
+      // ✅ Remove token from body before sending (like in DeviceOtp)
+      const { token, ...bodyPayload } = payload;
+
+      console.log("📤 Sending resend request to:", url);
+      console.log("📤 Headers:", {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken.substring(0, 30)}...`,
+      });
+      console.log("📤 Request body:", bodyPayload);
+
+      // ✅ Use the headers variable with Authorization
       const response = await safeFetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        headers: headers, // ✅ NOW USING CORRECT HEADERS
+        body: JSON.stringify(bodyPayload), // ✅ Don't send token in body
       });
 
       const data = await response.json();
-      console.log(data);
+      console.log("📥 Response:", data);
 
       if (!response.ok) {
+        console.error("❌ Resend OTP failed with status:", response.status);
         return rejectWithValue(
           data?.data?.message ||
             data?.message ||
             `Resend OTP failed (${response.status})`
         );
       }
+
+      console.log("✅ Resend OTP successful");
       return {
         message:
-          data?.data?.message || data?.message || "OTP resent successfully"
+          data?.data?.message || data?.message || "OTP resent successfully",
       };
     } catch (error: any) {
+      console.error("❌ Resend OTP error:", error);
       return rejectWithValue(
         error.data?.message || error.message || "Resend OTP error"
       );
@@ -856,8 +1018,8 @@ export const verifyUserBvn = createAsyncThunk(
           city: payload.city,
           local_government: payload.local_government,
           address_1: payload.address_1,
-          address_2: payload.address_2 || ""
-        })
+          address_2: payload.address_2 || "",
+        }),
       });
 
       const data = await response.json();
@@ -888,7 +1050,7 @@ export const verifyUserFacial = createAsyncThunk(
       const url = VERIFY_FACIAL_USERS_ENDPOINT(payload.userId);
       const requestBody = JSON.stringify({ selfie: payload.selfie });
       const headers: Record<string, string> = {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       };
 
       if (token) {
@@ -899,13 +1061,13 @@ export const verifyUserFacial = createAsyncThunk(
         url,
         userId: payload.userId,
         requestBytes: requestBody.length,
-        selfieLength: payload.selfie.length
+        selfieLength: payload.selfie.length,
       });
 
       const response = await safeFetch(url, {
         method: "POST",
         headers,
-        body: requestBody
+        body: requestBody,
       });
       const contentType = response.headers.get("content-type") || "";
       const responseText = await response.text().catch(() => "");
@@ -917,7 +1079,7 @@ export const verifyUserFacial = createAsyncThunk(
         status: response.status,
         ok: response.ok,
         contentType,
-        body: formatResponseLogBody(responseText)
+        body: formatResponseLogBody(responseText),
       });
 
       if (!response.ok) {
@@ -935,7 +1097,7 @@ export const verifyUserFacial = createAsyncThunk(
         message:
           responseJson?.data?.message ||
           responseJson?.message ||
-          "Facial verification completed"
+          "Facial verification completed",
       };
     } catch (error: any) {
       console.error("[verifyUserFacial] request failed", error);
@@ -953,7 +1115,7 @@ export const createUserAccount = createAsyncThunk(
       const url = CREATE_ACCOUNT_USERS_ENDPOINT(payload.userId);
       const response = await safeFetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
 
       const data = await response.json();
@@ -970,7 +1132,7 @@ export const createUserAccount = createAsyncThunk(
         message:
           data?.data?.message ||
           data?.message ||
-          "Bank account created successfully"
+          "Bank account created successfully",
       };
     } catch (error: any) {
       return rejectWithValue(
@@ -988,7 +1150,7 @@ export const createUserTransactionPin = createAsyncThunk(
       const response = await safeFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin: payload.pin })
+        body: JSON.stringify({ pin: payload.pin }),
       });
 
       const data = await response.json();
@@ -1002,7 +1164,8 @@ export const createUserTransactionPin = createAsyncThunk(
         );
       }
       return {
-        message: data?.data?.message || data?.message || "Registration complete"
+        message:
+          data?.data?.message || data?.message || "Registration complete",
       };
     } catch (error: any) {
       console.log(error);
@@ -1027,13 +1190,13 @@ export const changeTransactionPin = createAsyncThunk(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           current_pin: payload.currentPin,
           new_pin: payload.newPin,
-          confirm_pin: payload.confirmPin
-        })
+          confirm_pin: payload.confirmPin,
+        }),
       });
 
       const data = await response.json();
@@ -1050,7 +1213,7 @@ export const changeTransactionPin = createAsyncThunk(
         message:
           data?.data?.message ||
           data?.message ||
-          "Transaction PIN updated successfully"
+          "Transaction PIN updated successfully",
       };
     } catch (error: any) {
       return rejectWithValue(
@@ -1072,15 +1235,15 @@ export const getUserProfile = createAsyncThunk(
       console.log("[getUserProfile] request", {
         endpoint: GET_USER_PROFILE_ENDPOINT,
         hasToken: Boolean(token),
-        tokenPreview: maskedToken
+        tokenPreview: maskedToken,
       });
 
       const response = await safeFetch(GET_USER_PROFILE_ENDPOINT, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       const responseText = await response.text().catch(() => "");
@@ -1091,7 +1254,7 @@ export const getUserProfile = createAsyncThunk(
       console.log("[getUserProfile] response", {
         status: response.status,
         ok: response.ok,
-        body: formatResponseLogBody(responseText, 4000)
+        body: formatResponseLogBody(responseText, 4000),
       });
 
       if (responseJson) {
@@ -1139,11 +1302,11 @@ export const restoreAuth = createAsyncThunk(
 
       const [token, userProfileStr] = await Promise.all([
         AsyncStorage.getItem("authToken"),
-        AsyncStorage.getItem("userProfile")
+        AsyncStorage.getItem("userProfile"),
       ]);
 
-      console.log("🔐 restoreAuth: Token found?", !!token);
-      console.log("🔐 restoreAuth: User profile found?", !!userProfileStr);
+      // console.log("🔐 restoreAuth: Token found?", !!token);
+      // console.log("🔐 restoreAuth: User profile found?", !!userProfileStr);
 
       if (userProfileStr) {
         const user = JSON.parse(userProfileStr) as User;
@@ -1159,10 +1322,10 @@ export const restoreAuth = createAsyncThunk(
             console.log("🔐 restoreAuth: User profile validated successfully");
             return { token, user };
           } catch (error) {
-            console.error(
-              "🔐 restoreAuth: Token validation failed, but keeping user data",
-              error
-            );
+            // console.error(
+            //   "🔐 restoreAuth: Token validation failed, but keeping user data",
+            //   error
+            // );
             // Don't clear token here - just return user without token
             dispatch(setUserOnly({ user }));
             return { user };
@@ -1196,9 +1359,9 @@ export const updateUserProfile = createAsyncThunk(
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -1238,9 +1401,9 @@ export const updateUserAddress = createAsyncThunk(
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -1283,9 +1446,9 @@ export const updateProfilePicture = createAsyncThunk(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -1325,9 +1488,9 @@ export const setupPasscode = createAsyncThunk(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ passcode: payload.passcode })
+        body: JSON.stringify({ passcode: payload.passcode }),
       });
 
       const data = await response.json();
@@ -1342,7 +1505,7 @@ export const setupPasscode = createAsyncThunk(
 
       return {
         message:
-          data?.data?.message || data?.message || "Passcode setup successfully"
+          data?.data?.message || data?.message || "Passcode setup successfully",
       };
     } catch (error: any) {
       return rejectWithValue(
@@ -1369,7 +1532,7 @@ export const logoutUser = createAsyncThunk(
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({}),
       });
 
       console.log("🔐 Logout - Response status:", response.status);
@@ -1404,7 +1567,7 @@ export const forgotPasscode = createAsyncThunk(
       const response = await safeFetch(FORGET_PASSCODE_AUTH_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: payload.email })
+        body: JSON.stringify({ email: payload.email }),
       });
 
       const data = await response.json();
@@ -1420,7 +1583,7 @@ export const forgotPasscode = createAsyncThunk(
 
       return {
         message:
-          data?.data?.message || data?.message || "Reset code sent to email"
+          data?.data?.message || data?.message || "Reset code sent to email",
       };
     } catch (error: any) {
       return rejectWithValue(
@@ -1441,8 +1604,8 @@ export const verifyForgotOtp = createAsyncThunk(
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             email: payload.email,
-            otp: payload.otp
-          })
+            otp: payload.otp,
+          }),
         }
       );
 
@@ -1457,7 +1620,7 @@ export const verifyForgotOtp = createAsyncThunk(
       }
 
       return {
-        resetToken: data?.data?.reset_token || ""
+        resetToken: data?.data?.reset_token || "",
       };
     } catch (error: any) {
       console.log(error);
@@ -1478,8 +1641,8 @@ export const resetPasscode = createAsyncThunk(
         body: JSON.stringify({
           reset_token: payload.resetToken,
           new_passcode: payload.newPasscode,
-          confirm_passcode: payload.confirmNewPasscode
-        })
+          confirm_passcode: payload.confirmNewPasscode,
+        }),
       });
 
       const data = await response.json();
@@ -1495,7 +1658,7 @@ export const resetPasscode = createAsyncThunk(
 
       return {
         message:
-          data?.data?.message || data?.message || "Passcode reset successfully"
+          data?.data?.message || data?.message || "Passcode reset successfully",
       };
     } catch (error: any) {
       return rejectWithValue(
@@ -1516,13 +1679,13 @@ export const changePasscode = createAsyncThunk(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           current_passcode: payload.currentPasscode,
           new_passcode: payload.newPasscode,
-          confirm_passcode: payload.confirmNewPasscode
-        })
+          confirm_passcode: payload.confirmNewPasscode,
+        }),
       });
 
       const data = await response.json();
@@ -1540,11 +1703,134 @@ export const changePasscode = createAsyncThunk(
         message:
           data?.data?.message ||
           data?.message ||
-          "Passcode changed successfully"
+          "Passcode changed successfully",
       };
     } catch (error: any) {
       return rejectWithValue(
         error.data?.message || error.message || "Change passcode error"
+      );
+    }
+  }
+);
+
+export const ResetPinOtp = createAsyncThunk(
+  "users/transaction-pin/forgot",
+  async (payload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(
+        RESET_OTP_TRANSACTION_PIN_USERS_ENDPOINT,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({}),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+            data?.message ||
+            `Otp failed (${response.status})`
+        );
+      }
+      return {
+        message:
+          data?.data?.message || data?.message || "Otp sent successfully",
+      };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Otp error"
+      );
+    }
+  }
+);
+
+export const ResetTransaction = createAsyncThunk(
+  "users/transaction-pin/reset",
+  async (payload: ResetPinPasscodePayload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+      console.log(payload)
+
+      const response = await safeFetch(RESET_TRANSACTION_PIN_USERS_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          otp: payload.otp,
+          new_pin: payload.pin,
+          confirm_pin: payload.confirm_pin,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+            data?.message ||
+            `Pin Reset Failed (${response.status})`
+        );
+      }
+      return {
+        message:
+          data?.data?.message || data?.message || "Pin Reset successfully",
+      };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Pin Reset error"
+      );
+    }
+  }
+);
+
+export const MfaReset = createAsyncThunk(
+  "users/mfa",
+  async (payload: MfaResetPayload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+      console.log(payload)
+
+      const response = await safeFetch(RESET_MFA_USERS_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          enabled: payload.enabled,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+            data?.message ||
+            `MFA Reset Failed (${response.status})`
+        );
+      }
+      return {
+        message:
+          data?.data?.message || data?.message || "MFA Reset successfully",
+      };
+    } catch (error: any) {
+      console.log(error)
+      return rejectWithValue(
+        error.data?.message || error.message || "MFA Reset error"
       );
     }
   }
@@ -1565,8 +1851,8 @@ export const searchUsers = createAsyncThunk<any[], { search: string }>(
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       const data = await response.json();

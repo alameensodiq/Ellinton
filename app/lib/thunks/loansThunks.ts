@@ -366,7 +366,7 @@ export const calculateLoan = createAsyncThunk<
     }
     console.log("✅ LOAN CALCULATION RESPONSE:", data);
 
-    return data.data;
+    return data.data.schedule;
   } catch (err: any) {
     return rejectWithValue(err.message || "Loan calculation error");
   }

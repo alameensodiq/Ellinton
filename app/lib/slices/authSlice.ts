@@ -604,6 +604,7 @@ const authSlice = createSlice({
             action.payload.requiresTransactionPinSetup;
           state.pendingUserId = null;
           state.error = null;
+          state.isAuthenticated = true;
         }
       )
       .addCase(MultiFactorOtp.rejected, (state, action) => {
@@ -617,11 +618,48 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(DeviceOtp.fulfilled, (state) => {
-        state.isLoading = false;
-        state.device = true;
-        state.error = null;
-      })
+      .addCase(
+        DeviceOtp.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            user: User | null;
+            token: string;
+            requiresPasscodeSetup?: boolean;
+            requiresTransactionPinSetup?: boolean;
+            message?: string;
+            verified?: boolean;
+          }>
+        ) => {
+          console.log(action.payload);
+          state.isLoading = false;
+          state.device = true;
+
+          // ✅ UPDATE STATE WITH TOKEN AND USER (matching MultiFactorOtp pattern)
+          if (action.payload.token) {
+            state.token = action.payload.token;
+            state.isAuthenticated = true;
+          }
+
+          // if (action.payload.user) {
+          //   state.user = action.payload.user;
+          //   state.isAuthenticated = true;
+          // }
+
+          if (action.payload.requiresPasscodeSetup !== undefined) {
+            state.requiresPasscodeSetup = action.payload.requiresPasscodeSetup;
+          }
+
+          if (action.payload.requiresTransactionPinSetup !== undefined) {
+            state.requiresTransactionPinSetup =
+              action.payload.requiresTransactionPinSetup;
+          }
+
+          state.pendingUserId = null;
+
+          state.error = null;
+        }
+      )
       .addCase(DeviceOtp.rejected, (state, action) => {
         state.isLoading = false;
         state.device = false;
