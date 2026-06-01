@@ -81,13 +81,6 @@ const ConfirmTransactionPinScreen = () => {
     setLoading(true);
 
     try {
-      if (source !== "login") {
-        await dispatch(
-          createUserAccount({
-            userId: userId as string
-          })
-        ).unwrap();
-      }
 
       await dispatch(
         createUserTransactionPin({

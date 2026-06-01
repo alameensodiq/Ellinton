@@ -159,27 +159,36 @@ const DeviceOtpScreen = () => {
         getPushToken()
       ]);
 
-      if (!pushToken) {
-        setErrorMessage(
-          "Unable to get push notification token. Please allow notification in settings and login again"
-        );
-        return;
+      // if (!pushToken) {
+      //   setErrorMessage(
+      //     "Unable to get push notification token. Please allow notification in settings and login again"
+      //   );
+      //   return;
+      // }
+
+      const payload: any = {
+        device_id: deviceId,
+        platform: Platform.OS,
+        app_version: Constants.expoConfig?.version || "2.0.5",
+        device_make: Device.manufacturer || "Unknown",
+        device_model: Device.modelName || Platform.OS,
+        device_name: Device.deviceName || "Unknown",
+        email_otp: otp2,
+        sms_otp: otp,
+        token: authToken
+      };
+
+      // Only add push_token if it's available
+      if (pushToken) {
+        payload.push_token = pushToken;
+        console.log("✅ Push token available and included");
+      } else {
+        console.log("⚠️ Push token not available, skipping");
       }
 
       console.log("📤 Dispatching DeviceOtp...");
       const result = await dispatch(
-        DeviceOtp({
-          push_token: pushToken,
-          device_id: deviceId,
-          platform: Platform.OS,
-          app_version: Constants.expoConfig?.version || "2.0.5",
-          device_make: Device.manufacturer || "Unknown",
-          device_model: Device.modelName || Platform.OS,
-          device_name: Device.deviceName || "Unknown",
-          email_otp: otp2,
-          sms_otp: otp,
-          token: authToken
-        })
+        DeviceOtp(payload)
       ).unwrap();
 
       console.log("✅ DeviceOtp succeeded, result:", result);
@@ -251,7 +260,7 @@ const DeviceOtpScreen = () => {
       setErrorMessage("");
       setErrorMessage2("");
       const errorMsg = error?.message || "Code incorrect. Try again.";
-      console.log("Setting error message:", errorMsg);
+      console.log("Setting error message:", errorMsg, error);
       setErrorMessage(errorMsg);
       setErrorMessage2(errorMsg);
     }
@@ -262,7 +271,7 @@ const DeviceOtpScreen = () => {
       const [deviceId] = await Promise.all([getDeviceId()]);
       console.log(deviceId);
       const token = authToken || undefined;
-      console.log(token)
+      console.log(token);
 
       await dispatch(resendDeviceOtp({ device_id: deviceId, token })).unwrap();
       setErrorMessage("");

@@ -62,6 +62,7 @@ const ApplyLoan = () => {
       tenureInDays: Number(tenure),
       interestRate: Number(interest),
       repaymentFrequency: String(repaymentFrequency),
+      productCode: String(params.productCode ?? ""),
     };
 
     setCalcLoading(true);
