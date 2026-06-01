@@ -45,6 +45,7 @@ const CreditScore = () => {
         if (res.assessment.isApproved !== true) {
           throw new Error(res?.message || "Credit check failed");
         }
+        console.log(res)
 
         loop.stop();
         router.replace({

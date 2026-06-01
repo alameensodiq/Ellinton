@@ -563,6 +563,7 @@ import { AppDispatch, RootState } from "../lib/store";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
 import { restoreAuth } from "../lib/thunks/authThunks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import crashlytics from "@react-native-firebase/crashlytics";
 
 export default function AuthWrapper() {
   const dispatch = useDispatch<AppDispatch>();
@@ -593,6 +594,20 @@ export default function AuthWrapper() {
   const router = useRouter();
   const segments = useSegments();
   const storedDataRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Initialize Crashlytics
+    const initCrashlytics = async () => {
+      if (!__DEV__) {
+        await crashlytics().setCrashlyticsCollectionEnabled(true);
+        crashlytics().log("App started successfully");
+      } else {
+        await crashlytics().setCrashlyticsCollectionEnabled(false);
+      }
+    };
+
+    initCrashlytics();
+  }, []);
 
   useEffect(() => {
     dispatch(restoreAuth());

@@ -69,6 +69,7 @@ const ApplyLoan = () => {
     dispatch(calculateLoan(payload))
       .unwrap()
       .then((res) => {
+        console.log(res)
         setCalc(res);
       })
       .catch(() => {})

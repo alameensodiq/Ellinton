@@ -12,6 +12,8 @@ const CreditSuccess = () => {
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, string>>();
 
+  console.log(params)
+
   let approvedLoanAmount: number | null = null;
   let approvalMessage: string | null = null;
 
