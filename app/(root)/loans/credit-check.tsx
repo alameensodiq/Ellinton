@@ -35,7 +35,7 @@ const CreditScore = () => {
 
     loop.start();
 
-    dispatch(runCreditCheck())
+    dispatch(runCreditCheck({ productCode: String(params.productCode ?? "") }))
       .unwrap()
       .then((res) => {
         if (!res?.assessment) {
@@ -57,6 +57,7 @@ const CreditScore = () => {
         });
       })
       .catch((err) => {
+          console.error("Credit check error:", err); 
         loop.stop();
         router.replace({
           pathname: "/(root)/loans/credit-check-fail",
