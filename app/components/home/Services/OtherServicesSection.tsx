@@ -5,22 +5,45 @@ import CustomText from "../../CustomText";
 
 interface Props {
   items: ServiceItem[];
-  onItemPress?: (item: ServiceItem) => void;
+  onItemPress?: (item: ServiceItem) => boolean;
 }
 
 const OtherServicesSection: React.FC<Props> = ({ items, onItemPress }) => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const handlePress = (item: ServiceItem) => {
-    setActiveId(item.id);
-console.log("Pressed:", item.id, item.label); // 👈 DEBUG
+  //   const handlePress = (item: ServiceItem) => {
+  //     setActiveId(item.id);
+  // console.log("Pressed:", item.id, item.label); // 👈 DEBUG
 
-    // trigger navigation
-    onItemPress?.(item);
+  //     // trigger navigation
+  //     onItemPress?.(item);
 
+  //     setTimeout(() => {
+  //       setActiveId((prev) => (prev === item.id ? null : prev));
+  //     }, 1000);
+  //   };
+
+const handlePress = (item: ServiceItem) => {
+    // 1. If a navigation handler exists, check if it handles this item
+    if (onItemPress) {
+      const hasRoute = onItemPress(item);
+
+      // 2. ONLY show "Coming soon" if it explicitly returns false
+      if (!hasRoute) {
+        triggerComingSoon(item.id);
+      }
+    } else {
+      // 3. Fallback if no handler is provided at all
+      triggerComingSoon(item.id);
+    }
+  };
+
+  // Helper function to handle the "Coming soon" timeout logic cleanly
+  const triggerComingSoon = (itemId: string) => {
+    setActiveId(itemId);
     setTimeout(() => {
-      setActiveId((prev) => (prev === item.id ? null : prev));
-    }, 1000);
+      setActiveId((prev) => (prev === itemId ? null : prev));
+    }, 2000); // Kept it at a clean 2 seconds
   };
 
   return (

@@ -13,6 +13,8 @@ interface OtpInputProps {
   onBlur?: () => void;
   showSoftInputOnFocus?: boolean;
   caretHidden?: boolean;
+textContentType?: "oneTimeCode";
+autoComplete?: "sms-otp";
 }
 
 const OtpInput: React.FC<OtpInputProps> = ({
@@ -27,6 +29,8 @@ const OtpInput: React.FC<OtpInputProps> = ({
   onBlur,
   showSoftInputOnFocus = true,
   caretHidden = false,
+  textContentType = "oneTimeCode",
+  autoComplete = "sms-otp"
 }) => {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
@@ -45,6 +49,7 @@ const OtpInput: React.FC<OtpInputProps> = ({
       inputRefs.current[index - 1]?.focus();
     }
   };
+
 
   useEffect(() => {
     if (autoFocus) {
@@ -78,6 +83,8 @@ const OtpInput: React.FC<OtpInputProps> = ({
             onBlur={onBlur}
             showSoftInputOnFocus={showSoftInputOnFocus}
             caretHidden={caretHidden}
+            textContentType={textContentType as any}
+            autoComplete={autoComplete}
           />
         ))}
       </View>

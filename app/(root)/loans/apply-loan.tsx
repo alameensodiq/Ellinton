@@ -158,6 +158,7 @@ const ApplyLoan = () => {
 
     try {
       const res: any = await dispatch(applyForLoan(payload)).unwrap();
+      console.log(res)
       router.replace({
         pathname: "/(root)/loans/success",
         params: {
@@ -167,6 +168,7 @@ const ApplyLoan = () => {
         },
       });
     } catch (error: any) {
+      console.log(error)
       const message =
         error?.data?.message ||
         error?.message ||

@@ -53,8 +53,16 @@ export default function InternetServicesPayment() {
   const [contactsVisible, setContactsVisible] = useState(false);
   const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
 
-  const safeProviders = useMemo(() => providers ?? [], [providers]);
-  const safePackages = useMemo(() => packages ?? [], [packages]);
+  // const safeProviders = useMemo(() => providers ?? [], [providers]);
+  // const safePackages = useMemo(() => packages ?? [], [packages]);
+
+  const safeProviders = useMemo(() => 
+  Array.isArray(providers) ? providers : [], 
+[providers]);
+
+const safePackages = useMemo(() => 
+  Array.isArray(packages) ? packages : [], 
+[packages]);
 
   const isLoading =
     providersStatus === "loading" || packagesStatus === "loading";

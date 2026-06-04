@@ -394,6 +394,49 @@ export const calculateLoan = createAsyncThunk<
 /* =========================
    APPLY FOR LOAN
 ========================= */
+// export const applyForLoan = createAsyncThunk<
+//   Loan,
+//   ApplyLoanPayload,
+//   { rejectValue: string }
+// >("loans/apply", async (payload, { getState, rejectWithValue }) => {
+//   try {
+//     const token = (getState() as any).auth.token;
+//     const requestBody = JSON.stringify(payload);
+
+//     console.log("📤 LOAN APPLY REQUEST BODY:", requestBody);
+
+//     const res = await safeFetch(LOAN_APPLY_ENDPOINT, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${token}`
+//       },
+//       body: requestBody
+//     });
+
+//     const data = (await res.json()) as ApiResponse<Loan>;
+//     console.log("📥 FULL RESPONSE:", data);
+
+//     // Check if response is successful
+//     if (!res.ok || !data.success) {
+//       const errorData = data as unknown as ErrorResponse;
+//       return rejectWithValue(
+//         errorData?.data?.message ||
+//           data?.message ||
+//           (data as any)?.data?.message ||
+//           "Loan application failed"
+//       );
+//     }
+    
+//     // ✅ Return the loan data (which is at the root level)
+//     // Since data contains the loan properties directly
+//     return data as unknown as Loan;
+    
+//   } catch (err: any) {
+//     return rejectWithValue(err.message || "Apply loan error");
+//   }
+// });
+
 export const applyForLoan = createAsyncThunk<
   Loan,
   ApplyLoanPayload,
@@ -414,20 +457,28 @@ export const applyForLoan = createAsyncThunk<
       body: requestBody
     });
 
-    const data = (await res.json()) as ApiResponse<Loan>;
+    const data = await res.json();
+    console.log("📥 FULL RESPONSE:", JSON.stringify(data, null, 2));
 
-    if (!res.ok || !data.success || !data.data) {
-      const errorData = data as unknown as ErrorResponse;
+    // Check if response is successful
+    if (!res.ok || !data.success) {
+      console.log("❌ LOAN APPLICATION FAILED");
       return rejectWithValue(
-        errorData?.data?.message ||
-          data?.message ||
-          (data as any)?.data?.message ||
-          "Loan application failed"
+        data?.message || 
+        data?.data?.message || 
+        "Loan application failed"
       );
     }
-
-    return data.data;
+    
+    // ✅ The loan data is the entire response (it already contains all loan fields)
+    // Just remove the 'success' field or keep it - the Loan type might not need it
+    const { success, ...loanData } = data;
+    console.log("✅ RETURNING LOAN DATA:", loanData);
+    
+    return loanData as Loan;
+    
   } catch (err: any) {
+    console.error("❌ LOAN APPLICATION EXCEPTION:", err);
     return rejectWithValue(err.message || "Apply loan error");
   }
 });

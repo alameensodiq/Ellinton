@@ -6,7 +6,7 @@ import {
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
-  ScrollView,
+  ScrollView
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -24,12 +24,12 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import {
   getBillerProviders,
   getPackages,
-  validateBillCustomer,
+  validateBillCustomer
 } from "@/app/lib/thunks/billsThunks";
 import {
   clearError,
   clearPackages,
-  clearProviders,
+  clearProviders
 } from "@/app/lib/slices/billsSlice";
 
 export default function CablePayment() {
@@ -51,8 +51,18 @@ export default function CablePayment() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const safeProviders = useMemo(() => providers ?? [], [providers]);
-  const safePackages = useMemo(() => packages ?? [], [packages]);
+  // const safeProviders = useMemo(() => providers ?? [], [providers]);
+  // const safePackages = useMemo(() => packages ?? [], [packages]);
+
+  const safeProviders = useMemo(
+    () => (Array.isArray(providers) ? providers : []),
+    [providers]
+  );
+
+  const safePackages = useMemo(
+    () => (Array.isArray(packages) ? packages : []),
+    [packages]
+  );
   const isLoadingGlobal =
     providersStatus === "loading" || packagesStatus === "loading";
 
@@ -118,7 +128,7 @@ export default function CablePayment() {
         validateBillCustomer({
           customerId: accountId,
           productName: selectedPackageData.slug,
-          billerSlug: selectedProviderData.slug,
+          billerSlug: selectedProviderData.slug
         })
       ).unwrap();
 
@@ -134,8 +144,8 @@ export default function CablePayment() {
           providerSlug: selectedProviderData.slug,
           packageId: String(selectedPackageData.id),
           packageName: selectedPackageData.name,
-          packageSlug: selectedPackageData.slug,
-        },
+          packageSlug: selectedPackageData.slug
+        }
       });
     } catch (err: any) {
       setError(err?.message || "Validation failed");
@@ -146,11 +156,11 @@ export default function CablePayment() {
 
   const serviceOptions = safeProviders.map((p) => ({
     label: p.name,
-    value: p.slug,
+    value: p.slug
   }));
   const productOptions = safePackages.map((p) => ({
     label: p.name,
-    value: p.slug,
+    value: p.slug
   }));
 
   return (

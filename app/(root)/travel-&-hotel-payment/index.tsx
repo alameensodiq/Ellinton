@@ -46,8 +46,16 @@ export default function InternetServicesPayment() {
   const [customAmount, setCustomAmount] = useState("");
   const [validating, setValidating] = useState(false);
 
-  const safeProviders = useMemo(() => providers ?? [], [providers]);
-  const safePackages = useMemo(() => packages ?? [], [packages]);
+  // const safeProviders = useMemo(() => providers ?? [], [providers]);
+  // const safePackages = useMemo(() => packages ?? [], [packages]);
+
+  const safeProviders = useMemo(() => 
+  Array.isArray(providers) ? providers : [], 
+[providers]);
+
+const safePackages = useMemo(() => 
+  Array.isArray(packages) ? packages : [], 
+[packages]);
 
   const isLoading =
     providersStatus === "loading" || packagesStatus === "loading";

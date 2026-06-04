@@ -34,6 +34,7 @@ import {
 } from "@/app/lib/notification.service";
 import { useSelector } from "react-redux";
 
+
 const DeviceOtpScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -56,6 +57,7 @@ const DeviceOtpScreen = () => {
   const [remainingTime, setRemainingTime] = useState(30);
   const [intervalId, setIntervalId] = useState<number | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  
 
   const startCountdown = () => {
     if (intervalId) {
@@ -312,6 +314,8 @@ const DeviceOtpScreen = () => {
               onChange={setOtp}
               error={!!errorMessage}
               autoFocus
+               textContentType="oneTimeCode"  // ✅ iOS
+              autoComplete="sms-otp" 
             />
             {errorMessage && (
               <CustomText className="text-red-500 mt-2 text-sm" weight="medium">
