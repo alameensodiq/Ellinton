@@ -176,7 +176,7 @@ const AccountSettings = () => {
             resizeMode="cover"
           />
         </Pressable>
-        <Text className="text-accent-100 text-sm">Tap to change picture</Text>
+        {/* <Text className="text-accent-100 text-sm">Tap to change picture</Text> */}
       </View>
 
       <CustomText className="text-center">{`${user?.first_name} ${user?.last_name}`}</CustomText>
