@@ -75,7 +75,7 @@ export default function BuyAirtime() {
         }
         try {
             console.log({ amount: numericAmount, idempotencyKey: generateIdempotencyKey(), loanId: loanId, narration: 'Early Repayment', pin })
-            const res: any = await dispatch(LoanRepayment({ amount: numericAmount, idempotencyKey: generateIdempotencyKey(), loanId: loanId, narration: 'Early Repayment', pin })).unwrap();
+            const res: any = await dispatch(LoanRepayment({ amount: numericAmount, idempotencyKey: generateIdempotencyKey(), loanId: loanId, narration: 'Early Repayment',transactionPin: pin })).unwrap();
             console.log(res)
             router.replace({
                 pathname: "/(root)/loans/repayment-success",

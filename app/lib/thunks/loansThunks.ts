@@ -247,7 +247,7 @@ export interface RepayLoanPayload {
   narration: string;
   idempotencyKey: string;
   loanId: string;
-  pin: string;
+  transactionPin: string;
 }
 
 export interface LoanDisbursementWebhookPayload {
@@ -501,7 +501,7 @@ export const LoanRepayment = createAsyncThunk<
   try {
     const token = (getState() as any).auth.token;
     const url = `${LOAN_REPAYMENT_ENDPOINT}/${payload.loanId}/repay`;
-    const { loanId, pin, ...requestBody } = payload;
+    const { loanId, ...requestBody } = payload;
 
 
     console.log("📤 LOAN REPAYMENT REQUEST BODY:", requestBody);
@@ -511,7 +511,6 @@ export const LoanRepayment = createAsyncThunk<
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
-        "Transaction-PIN": `${payload.pin}`
       },
       body: JSON.stringify(requestBody)
     });
