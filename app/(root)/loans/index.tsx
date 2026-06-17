@@ -25,8 +25,11 @@ const Loans = () => {
 
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const [errorMessage, setErrorMessage] = useState("");
 
   const { loans, isLoading } = useAppSelector((s: any) => s.loans);
+
+  console.log(loans)
 
   const [hideAmount, setHideAmount] = useState(false);
 
@@ -82,6 +85,15 @@ const Loans = () => {
         (l: any) => String(l?.status || "").toLowerCase() === "active"
       ) || validLoans[0]
     );
+  }, [loans]);
+
+  const disbursedLoan = useMemo(() => {
+    if (!loans || loans.length === 0) return null;
+
+    // Find first loan with status "disbursed"
+    return loans.find(
+      (l: any) => String(l?.status || "").toLowerCase() === "disbursed"
+    ) || null;
   }, [loans]);
 
   // ✅ placeholder loading (while fetching loans)
@@ -260,12 +272,12 @@ const Loans = () => {
     normalizedStatus === "active"
       ? "Active"
       : normalizedStatus === "pending_disbursement"
-      ? "Pending disbursement"
-      : normalizedStatus === "completed"
-      ? "Completed"
-      : normalizedStatus === "overdue"
-      ? "Overdue"
-      : status;
+        ? "Pending disbursement"
+        : normalizedStatus === "completed"
+          ? "Completed"
+          : normalizedStatus === "overdue"
+            ? "Overdue"
+            : status;
 
   const totalExpected = Number(activeLoan.total_repayment_expected || 0);
   const schedules = Array.isArray(activeLoan?.schedules)
@@ -281,9 +293,9 @@ const Loans = () => {
     nextSchedule?.repaymentDate;
   const nextRepaymentAmount = Number(
     nextSchedule?.amount ??
-      nextSchedule?.repaymentAmountInNaira ??
-      nextSchedule?.total ??
-      0
+    nextSchedule?.repaymentAmountInNaira ??
+    nextSchedule?.total ??
+    0
   );
   const showRepaymentProgress = normalizedStatus !== "pending_disbursement";
   const offerAmount =
@@ -404,7 +416,7 @@ const Loans = () => {
           </View>
         </View>
 
-        <View className="-mt-5 bg-[#575823] rounded-3xl px-5 py-5">
+        <View className="-mt-5 mb-4 bg-[#575823] rounded-3xl px-5 py-5">
           <View className="flex-row items-start">
             <View className="w-6 h-6 rounded-full border border-white/40 items-center justify-center mr-3 mt-1">
               <Ionicons
@@ -440,6 +452,25 @@ const Loans = () => {
             </View>
           </View>
         </View>
+        <Button
+          title={"Repayment"}
+          onPress={() => {
+            if (disbursedLoan) {
+              router.push({
+                pathname: "/(root)/loans/repayment",
+                params: { loanId: disbursedLoan.id }
+              });
+            } else{
+              setErrorMessage("No Disbursed Loan that require Repayment")
+            }
+          }}
+          variant="primary"
+        />
+        {errorMessage && (
+          <CustomText className="text-red-500 mt-2 text-sm" weight="medium">
+            {errorMessage}
+          </CustomText>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

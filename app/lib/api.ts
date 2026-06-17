@@ -92,6 +92,7 @@ const LOAN_COMMERCIAL_BANKS_ENDPOINT = `${BASE_URL}/loans/commercial-banks`;
 const LOAN_CREDIT_CHECK_ENDPOINT = `${BASE_URL}/loans/crc-credit-check`;
 const LOAN_CALCULATE_ENDPOINT = `${BASE_URL}/loans/calculate`;
 const LOAN_APPLY_ENDPOINT = `${BASE_URL}/loans/mida-execute`;
+const LOAN_REPAYMENT_ENDPOINT = `${BASE_URL}/loans`;
 const FETCH_USER_LOANS_ENDPOINT = `${BASE_URL}/loans`;
 const FETCH_SINGLE_LOAN_ENDPOINT = (id: string) => `${BASE_URL}/loans/${id}`;
 
@@ -231,5 +232,6 @@ export {
   WALLET_WITHDRAW_ENDPOINT,
   MULTI_FACTOR_OTP_ENDPOINT,
   DEVICE_ENDPOINT,
-  RESEND_DEVICE_OTP
+  RESEND_DEVICE_OTP,
+  LOAN_REPAYMENT_ENDPOINT
 };

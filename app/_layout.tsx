@@ -1,4 +1,4 @@
-// "use client";
+
 
 // import { Provider } from "react-redux";
 // import "./globals.css";
@@ -22,8 +22,74 @@
 
 // SplashScreen.preventAutoHideAsync();
 
+// // ✅ ADD THIS RIGHT HERE - Before any other code
+// // Configure notification handler for foreground notifications
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: true,
+//     shouldSetBadge: true,
+//     shouldShowBanner: true, // Required for Android
+//     shouldShowList: true, // Required for Android
+//     priority: Notifications.AndroidNotificationPriority.HIGH
+//   })
+// });
+
 // export default function RootLayout() {
-//   // Inside your RootLayout component...
+//   useEffect(() => {
+//     const received = Notifications.addNotificationReceivedListener(
+//       (notification) => {
+//         console.log("📩 RECEIVED", notification);
+//       }
+//     );
+
+//     const response = Notifications.addNotificationResponseReceivedListener(
+//       (response) => {
+//         console.log("👆 TAPPED", response);
+//       }
+//     );
+
+//     return () => {
+//       received.remove();
+//       response.remove();
+//     };
+//   }, []);
+//   // ✅ Add Android channel setup
+//   // In RootLayout, update the setupAndroidChannels function
+//   useEffect(() => {
+//     const setupAndroidChannels = async () => {
+//       if (Platform.OS === "android") {
+//         // Create default channel
+//         await Notifications.setNotificationChannelAsync("default", {
+//           name: "Default Notifications",
+//           importance: Notifications.AndroidImportance.MAX,
+//           vibrationPattern: [0, 250, 250, 250],
+//           lightColor: "#FF231F7C",
+//           sound: "default",
+//           enableVibrate: true,
+//           enableLights: true
+//         });
+
+//         // ✅ CREATE THE TEST CHANNEL
+//         await Notifications.setNotificationChannelAsync("test_channel", {
+//           name: "Test Notifications",
+//           importance: Notifications.AndroidImportance.MAX,
+//           vibrationPattern: [0, 250, 250, 250],
+//           lightColor: "#FF231F7C",
+//           sound: "default",
+//           enableVibrate: true,
+//           enableLights: true,
+//           bypassDnd: true // Bypass Do Not Disturb for tests
+//         });
+
+//         console.log("✅ Android notification channels created");
+//       }
+//     };
+
+//     setupAndroidChannels();
+//   }, []);
+
+//   // Your existing notification listeners
 //   useEffect(() => {
 //     // 1. Listen for notifications that arrive while the app is actively open
 //     const foregroundSubscription =
@@ -31,14 +97,13 @@
 //         console.log("🔔 Notification received in foreground:", notification);
 //       });
 
-//     // 2. Listen for when a user TAPS on a notification from their notification tray
+//     // 2. Listen for when a user TAPS on a notification
 //     const responseSubscription =
 //       Notifications.addNotificationResponseReceivedListener((response) => {
 //         console.log(
 //           "👉 User tapped notification:",
 //           response.notification.request.content.data
 //         );
-//         // Route your user here if needed! (e.g., router.push("/(root)/notifications"))
 //       });
 
 //     return () => {
@@ -54,15 +119,13 @@
 //     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),
 //     OutfitBold: require("./assets/fonts/Outfit-Bold.ttf")
 //   });
+
 //   useEffect(() => {
 //     initializeAppsFlyer().catch((error) => {
 //       console.warn("Failed to initialize AppsFlyer:", error);
 //     });
 //     const initialize = async () => {
-//       // Initialize Firebase (which also initializes notifications)
 //       await firebaseService.initialize();
-
-//       // Start listening to auth changes
 //       authListenerService.startListening();
 //     };
 //     const initEncryption = async () => {
@@ -72,13 +135,11 @@
 //         console.log("✅ Encryption ready");
 //       } catch (error) {
 //         console.error("❌ Failed to initialize encryption:", error);
-//         // You might want to show an error screen here
-//         setEncryptionReady(true); // Set to true to prevent hanging, but log error
+//         setEncryptionReady(true);
 //       }
 //     };
 
 //     initEncryption();
-
 //     initialize();
 
 //     return () => {
@@ -100,11 +161,8 @@
 //             // ignore
 //           }
 
-//           // update redux state
-//           // await notificationService.unregisterDeviceFromBackend();
 //           store.dispatch(logout());
 
-//           // mark session expired so other parts of the app can react
 //           try {
 //             await AsyncStorage.setItem("sessionExpired", "1");
 //           } catch (e) {
@@ -143,6 +201,7 @@
 //   );
 // }
 
+
 import { Provider } from "react-redux";
 import "./globals.css";
 
@@ -162,10 +221,10 @@ import UserInactivityProvider from "./components/UserInactivityProvider";
 import { usePreventScreenCapture } from "expo-screen-capture";
 import { initializeEncryption } from "./lib/initializeEncryption";
 import * as Notifications from "expo-notifications";
+import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 
 SplashScreen.preventAutoHideAsync();
 
-// ✅ ADD THIS RIGHT HERE - Before any other code
 // Configure notification handler for foreground notifications
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -179,98 +238,55 @@ Notifications.setNotificationHandler({
 });
 
 export default function RootLayout() {
-  useEffect(() => {
-    const received = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        console.log("📩 RECEIVED", notification);
-      }
-    );
-
-    const response = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        console.log("👆 TAPPED", response);
-      }
-    );
-
-    return () => {
-      received.remove();
-      response.remove();
-    };
-  }, []);
-  // ✅ Add Android channel setup
-  // In RootLayout, update the setupAndroidChannels function
-  useEffect(() => {
-    const setupAndroidChannels = async () => {
-      if (Platform.OS === "android") {
-        // Create default channel
-        await Notifications.setNotificationChannelAsync("default", {
-          name: "Default Notifications",
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: "#FF231F7C",
-          sound: "default",
-          enableVibrate: true,
-          enableLights: true
-        });
-
-        // ✅ CREATE THE TEST CHANNEL
-        await Notifications.setNotificationChannelAsync("test_channel", {
-          name: "Test Notifications",
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: "#FF231F7C",
-          sound: "default",
-          enableVibrate: true,
-          enableLights: true,
-          bypassDnd: true // Bypass Do Not Disturb for tests
-        });
-
-        console.log("✅ Android notification channels created");
-      }
-    };
-
-    setupAndroidChannels();
-  }, []);
-
-  // Your existing notification listeners
-  useEffect(() => {
-    // 1. Listen for notifications that arrive while the app is actively open
-    const foregroundSubscription =
-      Notifications.addNotificationReceivedListener((notification) => {
-        console.log("🔔 Notification received in foreground:", notification);
-      });
-
-    // 2. Listen for when a user TAPS on a notification
-    const responseSubscription =
-      Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log(
-          "👉 User tapped notification:",
-          response.notification.request.content.data
-        );
-      });
-
-    return () => {
-      foregroundSubscription.remove();
-      responseSubscription.remove();
-    };
-  }, []);
-
-  const [encryptionReady, setEncryptionReady] = useState(false);
-
   const [fontsLoaded] = useFonts({
     Outfit: require("./assets/fonts/Outfit-Bold.ttf"),
     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),
     OutfitBold: require("./assets/fonts/Outfit-Bold.ttf")
   });
 
+  const [encryptionReady, setEncryptionReady] = useState(false);
+  const [initializationComplete, setInitializationComplete] = useState(false);
+
+  // Handle App Tracking Transparency and initialize tracking only after permission
+  const initializeTrackingWithPermission = async () => {
+    if (Platform.OS === 'ios') {
+      try {
+        // ✅ Small delay to ensure app is ready
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const { status } = await requestTrackingPermissionsAsync();
+        if (status === 'granted') {
+          console.log('✅ ATT authorized - initializing AppsFlyer');
+          await initializeAppsFlyer().catch((error) => {
+            console.warn("Failed to initialize AppsFlyer:", error);
+          });
+        } else {
+          console.log('❌ ATT denied - skipping AppsFlyer initialization');
+        }
+      } catch (error) {
+        console.error('ATT request error:', error);
+      }
+    } else {
+      console.log('📱 Android - initializing AppsFlyer');
+      await initializeAppsFlyer().catch((error) => {
+        console.warn("Failed to initialize AppsFlyer:", error);
+      });
+    }
+  };
+
+  // Main initialization
   useEffect(() => {
-    initializeAppsFlyer().catch((error) => {
-      console.warn("Failed to initialize AppsFlyer:", error);
-    });
     const initialize = async () => {
+      // Initialize tracking with ATT permission first
+      await initializeTrackingWithPermission();
+
+      // Then initialize other services
       await firebaseService.initialize();
       authListenerService.startListening();
+
+      setInitializationComplete(true);
     };
+
     const initEncryption = async () => {
       try {
         await initializeEncryption();
@@ -290,6 +306,80 @@ export default function RootLayout() {
     };
   }, []);
 
+  // Notification listeners
+  useEffect(() => {
+    const received = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        console.log("📩 RECEIVED", notification);
+      }
+    );
+
+    const response = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        console.log("👆 TAPPED", response);
+      }
+    );
+
+    return () => {
+      received.remove();
+      response.remove();
+    };
+  }, []);
+
+  // Android notification channels
+  useEffect(() => {
+    const setupAndroidChannels = async () => {
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "Default Notifications",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+          sound: "default",
+          enableVibrate: true,
+          enableLights: true
+        });
+
+        await Notifications.setNotificationChannelAsync("test_channel", {
+          name: "Test Notifications",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: "#FF231F7C",
+          sound: "default",
+          enableVibrate: true,
+          enableLights: true,
+          bypassDnd: true
+        });
+
+        console.log("✅ Android notification channels created");
+      }
+    };
+
+    setupAndroidChannels();
+  }, []);
+
+  // Foreground notification listener
+  useEffect(() => {
+    const foregroundSubscription =
+      Notifications.addNotificationReceivedListener((notification) => {
+        console.log("🔔 Notification received in foreground:", notification);
+      });
+
+    const responseSubscription =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log(
+          "👉 User tapped notification:",
+          response.notification.request.content.data
+        );
+      });
+
+    return () => {
+      foregroundSubscription.remove();
+      responseSubscription.remove();
+    };
+  }, []);
+
+  // Fetch interceptor for 401 responses
   useEffect(() => {
     const originalFetch = (global as any).fetch;
 
@@ -324,7 +414,7 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!fontsLoaded) return null;
+  if (!fontsLoaded || !initializationComplete) return null;
 
   SplashScreen.hideAsync();
 
