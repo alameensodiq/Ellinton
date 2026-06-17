@@ -92,7 +92,7 @@ const Loans = () => {
 
     // Find first loan with status "disbursed"
     return loans.find(
-      (l: any) => String(l?.status || "").toLowerCase() === "initiated"
+      (l: any) => String(l?.status || "").toLowerCase() === "disbursed"
     ) || null;
   }, [loans]);
 

@@ -21,6 +21,7 @@ import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { LoanRepayment } from "@/app/lib/thunks/loansThunks"
 import CustomText from "@/app/components/CustomText";
 import OtpInput from "@/app/components/inputs/OtpInput";
+import Loading from "@/app/components/Loading";
 
 export default function BuyAirtime() {
     const router = useRouter();
@@ -31,6 +32,7 @@ export default function BuyAirtime() {
     // ✅ Get loanId from navigation params
     const loanId = params.loanId as string;
     const [pin, setPin] = useState("");
+    const [validating, setValidating] = useState(false);
 
     console.log(loanId)
     const [error, setError] = useState(false);
@@ -42,7 +44,11 @@ export default function BuyAirtime() {
     const [amount, setAmount] = useState("");
 
     const generateIdempotencyKey = () => {
-        return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     };
 
     const handlePinChange = (value: string) => {
@@ -74,8 +80,9 @@ export default function BuyAirtime() {
             return;
         }
         try {
-            console.log({ amount: numericAmount, idempotencyKey: generateIdempotencyKey(), loanId: loanId, narration: 'Early Repayment', pin })
-            const res: any = await dispatch(LoanRepayment({ amount: numericAmount, idempotencyKey: generateIdempotencyKey(), loanId: loanId, narration: 'Early Repayment',transactionPin: pin })).unwrap();
+            setValidating(true);
+            console.log({ amount: numericAmount, idempotencyKey: generateIdempotencyKey(), loanId: loanId, narration: 'Early Repayment', transactionPin: pin })
+            const res: any = await dispatch(LoanRepayment({ amount: numericAmount, idempotencyKey: generateIdempotencyKey(), loanId: loanId, narration: 'Early Repayment', transactionPin: pin })).unwrap();
             console.log(res)
             router.replace({
                 pathname: "/(root)/loans/repayment-success",
@@ -94,11 +101,13 @@ export default function BuyAirtime() {
                 error?.payload ||
                 "Loan repayment failed.";
             setErrorMessage(message);
+            setValidating(false);
         }
     };
     return (
         <SafeAreaView className="flex-1 bg-primary-100">
             <Header title="Loan Repayment" showClose showBack={false} />
+              <Loading visible={validating} />
 
             <KeyboardAvoidingView
                 className="flex-1"
