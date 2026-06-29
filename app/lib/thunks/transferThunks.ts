@@ -318,7 +318,8 @@ export const fetchAccountTransactions = createAsyncThunk<
         return rejectWithValue(extractError(result, response.status));
       }
 
-      return result.data || [];
+      // return result.data || [];
+      return result.data?.transactions || [];
     } catch (err: any) {
       return rejectWithValue(err.message || "Failed to fetch transactions");
     }
