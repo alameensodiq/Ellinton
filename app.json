@@ -12,10 +12,15 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "98",
+      "buildNumber": "110",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver more relevant ads and measure campaign performance.",
+        "NSCameraUsageDescription": "This app requires access to your camera to scan QR codes and capture verification documents.",
+        "NSContactsUsageDescription": "This app requires access to your contacts to easily select recipients for transfers.",
+        "NSPhotoLibraryUsageDescription": "This app requires access to your photo library to select images for document verification.",
+        "NSPhotoLibraryAddUsageDescription": "This app requires access to save verification documents to your photo library.",
+        "NSMicrophoneUsageDescription": "This app requires access to your microphone when recording video verification clips.",
         "NSAdvertisingAttributionReportEndpoint": "https://appsflyer-skadnetwork.com/",
         "AdAttributionKit": "https://appsflyer-skadnetwork.com/",
         "SKAdNetworkItems": [
@@ -25,6 +30,12 @@
           {
             "SKAdNetworkIdentifier": "n38lu8286q.skadnetwork"
           }
+        ],
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight"
         ]
       }
     },
@@ -76,7 +87,8 @@
             "useFrameworks": "static",
             "forceStaticLinking": [
               "RNFBApp",
-              "RNFBMessaging"
+              "RNFBMessaging",
+              "RNFBCrashlytics"
             ],
             "deploymentTarget": "15.1"
           },
@@ -88,7 +100,8 @@
               "arm64-v8a"
             ],
             "enableProguardInReleaseBuilds": true,
-            "enableShrinkResourcesInReleaseBuilds": true
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableMinifyInReleaseBuilds": true
           }
         }
       ],
@@ -104,7 +117,8 @@
       "@react-native-firebase/crashlytics",
       "@react-native-firebase/messaging",
       "expo-web-browser",
-      "expo-tracking-transparency"
+      "expo-tracking-transparency",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true
@@ -118,6 +132,7 @@
       "eas": {
         "projectId": "2cb6bacc-1e05-4771-81c3-6a9934f26c7d"
       }
-    }
+    },
+    "owner": "ellingtontech"
   }
 }
