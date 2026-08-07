@@ -57,7 +57,7 @@ const DeviceOtpScreen = () => {
   const [remainingTime, setRemainingTime] = useState(30);
   const [intervalId, setIntervalId] = useState<number | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
-  
+
 
   const startCountdown = () => {
     if (intervalId) {
@@ -138,16 +138,16 @@ const DeviceOtpScreen = () => {
   }, [reduxToken, token]);
 
   const handleVerify = async () => {
-    if (otp.length !== 6) {
-      setErrorMessage("Please enter a 6-digit code.");
-      return;
-    }
+    // if (otp.length !== 6) {
+    //   setErrorMessage("Please enter a 6-digit code.");
+    //   return;
+    // }
     if (otp2.length !== 6) {
       setErrorMessage2("Please enter a 6-digit code.");
       return;
     }
 
-    setErrorMessage("");
+    // setErrorMessage("");
     setErrorMessage2("");
 
     if (!authToken) {
@@ -175,8 +175,8 @@ const DeviceOtpScreen = () => {
         device_make: Device.manufacturer || "Unknown",
         device_model: Device.modelName || Platform.OS,
         device_name: Device.deviceName || "Unknown",
-        email_otp: otp2,
-        sms_otp: otp,
+        otp: otp2,
+        // sms_otp: otp,
         token: authToken
       };
 
@@ -259,11 +259,11 @@ const DeviceOtpScreen = () => {
       //   });
       // }
     } catch (error: any) {
-      setErrorMessage("");
+      // setErrorMessage("");
       setErrorMessage2("");
       const errorMsg = error?.message || "Code incorrect. Try again.";
       console.log("Setting error message:", errorMsg, error);
-      setErrorMessage(errorMsg);
+      // setErrorMessage(errorMsg);
       setErrorMessage2(errorMsg);
     }
   };
@@ -276,12 +276,12 @@ const DeviceOtpScreen = () => {
       console.log(token);
 
       await dispatch(resendDeviceOtp({ device_id: deviceId, token })).unwrap();
-      setErrorMessage("");
+      // setErrorMessage("");
       setErrorMessage2("");
       setRemainingTime(30);
       startCountdown();
     } catch {
-      setErrorMessage("Failed to resend code. Please try again.");
+      // setErrorMessage("Failed to resend code. Please try again.");
       setErrorMessage2("Failed to resend code. Please try again.");
     }
   };
@@ -303,9 +303,9 @@ const DeviceOtpScreen = () => {
               Verify your Device and Identity
             </CustomText>
             <CustomText secondary className="mb-8">
-              We've sent a 6-digit code to your phone and email.
+              We've sent a 6-digit code to your  email.
             </CustomText>
-            <CustomText secondary className="mb-2">
+            {/* <CustomText secondary className="mb-2">
               Device Otp
             </CustomText>
             <OtpInput
@@ -316,7 +316,7 @@ const DeviceOtpScreen = () => {
               autoFocus
                textContentType="oneTimeCode"  // ✅ iOS
               autoComplete="sms-otp" 
-            />
+            /> */}
             {errorMessage && (
               <CustomText className="text-red-500 mt-2 text-sm" weight="medium">
                 {errorMessage}
@@ -340,9 +340,8 @@ const DeviceOtpScreen = () => {
             )}
 
             <InfoText
-              text={`Code not received? ${
-                canResend ? "Send again" : `Resend in ${remainingTime}s`
-              }`}
+              text={`Code not received? ${canResend ? "Send again" : `Resend in ${remainingTime}s`
+                }`}
               actionText={canResend ? "Send again" : ""}
               onPress={canResend ? handleResend : undefined}
               disabled={!canResend}
@@ -354,7 +353,7 @@ const DeviceOtpScreen = () => {
               title="Verify"
               variant="primary"
               onPress={handleVerify}
-              disabled={otp.length < 6 || otp2.length < 6 || isLoading}
+              disabled={otp2.length < 6 || isLoading}
               className="w-full"
             />
           </View>

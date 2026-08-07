@@ -90,10 +90,15 @@ const Loans = () => {
   const disbursedLoan = useMemo(() => {
     if (!loans || loans.length === 0) return null;
 
-    // Find first loan with status "disbursed"
-    return loans.find(
-      (l: any) => String(l?.status || "").toLowerCase() === "disbursed"
-    ) || null;
+    const repayableStatuses = ["active", "overdue", "disbursed"];
+
+    return (
+      loans.find((l: any) =>
+        repayableStatuses.includes(
+          String(l?.status || "").toLowerCase()
+        )
+      ) || null
+    );
   }, [loans]);
 
   // ✅ placeholder loading (while fetching loans)
@@ -460,7 +465,7 @@ const Loans = () => {
                 pathname: "/(root)/loans/repayment",
                 params: { loanId: disbursedLoan.id }
               });
-            } else{
+            } else {
               setErrorMessage("No Disbursed Loan that require Repayment")
             }
           }}

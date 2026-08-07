@@ -1,5 +1,4 @@
 import Expo
-import FirebaseCore
 import React
 import ReactAppDependencyProvider
 
@@ -24,9 +23,6 @@ public class AppDelegate: ExpoAppDelegate {
 
 #if os(iOS) || os(tvOS)
     window = UIWindow(frame: UIScreen.main.bounds)
-// @generated begin @react-native-firebase/app-didFinishLaunchingWithOptions - expo prebuild (DO NOT MODIFY) sync-10e8520570672fd76b2403b7e1e27f5198a6349a
-FirebaseApp.configure()
-// @generated end @react-native-firebase/app-didFinishLaunchingWithOptions
     factory.startReactNative(
       withModuleName: "main",
       in: window,
@@ -42,7 +38,6 @@ FirebaseApp.configure()
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
-    AppsFlyerAttribution.shared().handleOpen(url, options: options)
     return super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
   }
 
@@ -52,7 +47,6 @@ FirebaseApp.configure()
     continue userActivity: NSUserActivity,
     restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
   ) -> Bool {
-    AppsFlyerAttribution.shared().continue(userActivity, restorationHandler: nil)
     let result = RCTLinkingManager.application(application, continue: userActivity, restorationHandler: restorationHandler)
     return super.application(application, continue: userActivity, restorationHandler: restorationHandler) || result
   }

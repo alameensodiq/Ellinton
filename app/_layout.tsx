@@ -221,7 +221,6 @@ import UserInactivityProvider from "./components/UserInactivityProvider";
 import { usePreventScreenCapture } from "expo-screen-capture";
 import { initializeEncryption } from "./lib/initializeEncryption";
 import * as Notifications from "expo-notifications";
-import { requestTrackingPermissionsAsync } from 'expo-tracking-transparency';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -254,6 +253,7 @@ export default function RootLayout() {
         // ✅ Small delay to ensure app is ready
         await new Promise(resolve => setTimeout(resolve, 500));
 
+        const { requestTrackingPermissionsAsync } = require('expo-tracking-transparency');
         const { status } = await requestTrackingPermissionsAsync();
         if (status === 'granted') {
           console.log('✅ ATT authorized - initializing AppsFlyer');

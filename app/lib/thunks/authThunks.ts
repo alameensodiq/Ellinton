@@ -158,8 +158,7 @@ interface DeviceOtpPayload {
   device_make: string;
   device_model: string;
   device_name: string;
-  sms_otp: string;
-  email_otp: string;
+  otp: string;
   token?: string;
 }
 
@@ -338,8 +337,8 @@ const getResponseErrorMessage = async (
     typeof responseJson !== "undefined"
       ? responseJson
       : contentType.includes("application/json")
-      ? await response.json().catch(() => null)
-      : parseResponseJson(responseText || "");
+        ? await response.json().catch(() => null)
+        : parseResponseJson(responseText || "");
 
   if (errorData) {
     return errorData?.data?.message || errorData?.message || fallback;
@@ -377,7 +376,7 @@ const persistToken = async (token: string) => {
     if (savedToken === token) {
     } else {
     }
-  } catch (error) {}
+  } catch (error) { }
 };
 
 const persistChallenge = async (challenge: string | null | undefined) => {
@@ -390,7 +389,7 @@ const persistChallenge = async (challenge: string | null | undefined) => {
         await AsyncStorage.removeItem("challenge");
       }
     }
-  } catch (error) {}
+  } catch (error) { }
 };
 
 const persistData = async (data: any) => {
@@ -399,7 +398,7 @@ const persistData = async (data: any) => {
     console.log(data)
     const dataToStore = typeof data === "object" ? JSON.stringify(data) : data;
     await AsyncStorage.setItem("data", dataToStore);
-  } catch (error) {}
+  } catch (error) { }
 };
 
 // Helper function to clear auth token only
@@ -427,8 +426,8 @@ export const registerUser = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Registration failed (${response.status})`
+          data?.message ||
+          `Registration failed (${response.status})`
         );
       }
 
@@ -528,8 +527,8 @@ export const verifyUserOtp = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `OTP verification failed (${response.status})`
+          data?.message ||
+          `OTP verification failed (${response.status})`
         );
       }
 
@@ -562,8 +561,8 @@ export const MultiFactorOtp = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `OTP verification failed (${response.status})`
+          data?.message ||
+          `OTP verification failed (${response.status})`
         );
       }
 
@@ -740,8 +739,8 @@ export const DeviceOtp = createAsyncThunk(
         console.log("❌ Response not OK:", response);
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `OTP verification failed (${response.status})`
+          data?.message ||
+          `OTP verification failed (${response.status})`
         );
       }
 
@@ -893,8 +892,8 @@ export const resendUserOtp = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Resend OTP failed (${response.status})`
+          data?.message ||
+          `Resend OTP failed (${response.status})`
         );
       }
       return {
@@ -982,8 +981,8 @@ export const resendDeviceOtp = createAsyncThunk(
         console.error("❌ Resend OTP failed with status:", response.status);
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Resend OTP failed (${response.status})`
+          data?.message ||
+          `Resend OTP failed (${response.status})`
         );
       }
 
@@ -1027,8 +1026,8 @@ export const verifyUserBvn = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `BVN verification failed (${response.status})`
+          data?.message ||
+          `BVN verification failed (${response.status})`
         );
       }
       console.log("verifyUserBvn API response:", data);
@@ -1123,8 +1122,8 @@ export const createUserAccount = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Account creation failed (${response.status})`
+          data?.message ||
+          `Account creation failed (${response.status})`
         );
       }
 
@@ -1159,8 +1158,8 @@ export const createUserTransactionPin = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Transaction PIN creation failed (${response.status})`
+          data?.message ||
+          `Transaction PIN creation failed (${response.status})`
         );
       }
       return {
@@ -1204,8 +1203,8 @@ export const changeTransactionPin = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Change transaction PIN failed (${response.status})`
+          data?.message ||
+          `Change transaction PIN failed (${response.status})`
         );
       }
 
@@ -1272,8 +1271,8 @@ export const getUserProfile = createAsyncThunk(
         const errorData = responseJson;
         return rejectWithValue(
           errorData?.data?.message ||
-            errorData?.message ||
-            `Profile safeFetch failed (${response.status})`
+          errorData?.message ||
+          `Profile safeFetch failed (${response.status})`
         );
       }
 
@@ -1369,8 +1368,8 @@ export const updateUserProfile = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Profile update failed (${response.status})`
+          data?.message ||
+          `Profile update failed (${response.status})`
         );
       }
 
@@ -1411,8 +1410,8 @@ export const updateUserAddress = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Address update failed (${response.status})`
+          data?.message ||
+          `Address update failed (${response.status})`
         );
       }
 
@@ -1456,8 +1455,8 @@ export const updateProfilePicture = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Profile picture update failed (${response.status})`
+          data?.message ||
+          `Profile picture update failed (${response.status})`
         );
       }
 
@@ -1498,8 +1497,8 @@ export const setupPasscode = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Setup failed (${response.status})`
+          data?.message ||
+          `Setup failed (${response.status})`
         );
       }
 
@@ -1543,8 +1542,8 @@ export const logoutUser = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Logout failed (${response.status})`
+          data?.message ||
+          `Logout failed (${response.status})`
         );
       }
 
@@ -1576,8 +1575,8 @@ export const forgotPasscode = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Forgot passcode request failed (${response.status})`
+          data?.message ||
+          `Forgot passcode request failed (${response.status})`
         );
       }
 
@@ -1614,8 +1613,8 @@ export const verifyForgotOtp = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `OTP verification failed (${response.status})`
+          data?.message ||
+          `OTP verification failed (${response.status})`
         );
       }
 
@@ -1651,8 +1650,8 @@ export const resetPasscode = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Reset failed (${response.status})`
+          data?.message ||
+          `Reset failed (${response.status})`
         );
       }
 
@@ -1693,8 +1692,8 @@ export const changePasscode = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Change failed (${response.status})`
+          data?.message ||
+          `Change failed (${response.status})`
         );
       }
 
@@ -1737,8 +1736,8 @@ export const ResetPinOtp = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Otp failed (${response.status})`
+          data?.message ||
+          `Otp failed (${response.status})`
         );
       }
       return {
@@ -1779,8 +1778,8 @@ export const ResetTransaction = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Pin Reset Failed (${response.status})`
+          data?.message ||
+          `Pin Reset Failed (${response.status})`
         );
       }
       return {
@@ -1819,8 +1818,8 @@ export const MfaReset = createAsyncThunk(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `MFA Reset Failed (${response.status})`
+          data?.message ||
+          `MFA Reset Failed (${response.status})`
         );
       }
       return {
@@ -1860,8 +1859,8 @@ export const searchUsers = createAsyncThunk<any[], { search: string }>(
       if (!response.ok) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Search failed (${response.status})`
+          data?.message ||
+          `Search failed (${response.status})`
         );
       }
 
