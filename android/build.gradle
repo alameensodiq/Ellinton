@@ -1,19 +1,9 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {
-  ext {
-    buildToolsVersion = "35.0.0"
-    minSdkVersion = 24
-    compileSdkVersion = 35
-    targetSdkVersion = 35
-    ndkVersion = "27.1.12297006"
-    kotlinVersion = "2.0.21"
-    kspVersion = "2.0.21-1.0.28"
-  }
   repositories {
     google()
     mavenCentral()
-    gradlePluginPortal()
   }
   dependencies {
         classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.2'
@@ -28,9 +18,9 @@ allprojects {
   repositories {
     google()
     mavenCentral()
-    gradlePluginPortal()
     maven { url 'https://www.jitpack.io' }
   }
 }
 
+apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"

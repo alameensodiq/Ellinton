@@ -17,11 +17,11 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.1.13</string>
+	<string>1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>110</string>
+	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
@@ -44,23 +44,10 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>NSCameraUsageDescription</key>
-	<string>This app requires access to your camera to scan QR codes and capture verification documents.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>This app requires access to your contacts to easily select recipients for transfers.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app requires access to your photo library to select images for document verification.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>This app requires access to save verification documents to your photo library.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>This app requires access to your microphone when recording video verification clips.</string>
 </dict>
 </plist>

@@ -1,5 +1,3 @@
-$RNFirebaseAsStaticFramework = true
-
 require File.join(File.dirname(`node --print "require.resolve('expo/package.json')"`), "scripts/autolinking")
 require File.join(File.dirname(`node --print "require.resolve('react-native/package.json')"`), "scripts/react_native_pods")
 
@@ -61,14 +59,5 @@ target 'EllingtonPersonalBanking' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
-
-    installer.pods_project.targets.each do |target|
-      target.build_configurations.each do |config|
-        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
-        if target.name.start_with?('RNFB')
-          config.build_settings['DEFINES_MODULE'] = 'NO'
-        end
-      end
-    end
   end
 end
