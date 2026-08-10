@@ -21,7 +21,21 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>118</string>
+	<string>119</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app requires access to your camera to scan QR codes and capture verification documents.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>This app requires access to your contacts to easily select recipients for transfers.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app requires access to your photo library to select images for document verification.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app requires access to save verification documents to your photo library.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app requires access to your microphone when recording video verification clips.</string>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>This identifier will be used to deliver more relevant ads and measure campaign performance.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
