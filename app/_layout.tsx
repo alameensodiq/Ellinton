@@ -277,12 +277,20 @@ export default function RootLayout() {
   // Main initialization
   useEffect(() => {
     const initialize = async () => {
-      // Initialize tracking with ATT permission first
-      await initializeTrackingWithPermission();
+      try {
+        // Initialize tracking with ATT permission first
+        await initializeTrackingWithPermission();
+      } catch (error) {
+        console.warn("Tracking initialization failed (non-fatal):", error);
+      }
 
-      // Then initialize other services
-      await firebaseService.initialize();
-      authListenerService.startListening();
+      try {
+        // Then initialize other services
+        await firebaseService.initialize();
+        authListenerService.startListening();
+      } catch (error) {
+        console.warn("Firebase/Auth initialization failed (non-fatal):", error);
+      }
 
       setInitializationComplete(true);
     };
@@ -414,16 +422,22 @@ export default function RootLayout() {
     };
   }, []);
 
+  useEffect(() => {
+    if (fontsLoaded && initializationComplete) {
+      SplashScreen.hideAsync().catch((err) => {
+        console.warn("Failed to hide splash screen:", err);
+      });
+
+      if (Platform.OS === "android") {
+        NavigationBar.setBackgroundColorAsync("#3F401B").catch(() => {});
+        NavigationBar.setButtonStyleAsync("light").catch(() => {});
+        StatusBar.setBackgroundColor("#3F401B", true);
+        StatusBar.setBarStyle("light-content", true);
+      }
+    }
+  }, [fontsLoaded, initializationComplete]);
+
   if (!fontsLoaded || !initializationComplete) return null;
-
-  SplashScreen.hideAsync();
-
-  if (Platform.OS === "android") {
-    NavigationBar.setBackgroundColorAsync("#3F401B");
-    NavigationBar.setButtonStyleAsync("light");
-    StatusBar.setBackgroundColor("#3F401B", true);
-    StatusBar.setBarStyle("light-content", true);
-  }
 
   return (
     <Provider store={store}>
@@ -433,3 +447,4 @@ export default function RootLayout() {
     </Provider>
   );
 }
+

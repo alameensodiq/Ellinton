@@ -9,10 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "buildNumber": "130",
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
-      "buildNumber": "119",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver more relevant ads and measure campaign performance.",

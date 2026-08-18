@@ -596,13 +596,19 @@ export default function AuthWrapper() {
   const storedDataRef = useRef<any>(null);
 
   useEffect(() => {
-    // Initialize Crashlytics
+    // Initialize Crashlytics - wrapped defensively to prevent crashes
+    // if the native module isn't properly linked
     const initCrashlytics = async () => {
-      if (!__DEV__) {
-        await crashlytics().setCrashlyticsCollectionEnabled(true);
-        crashlytics().log("App started successfully");
-      } else {
-        await crashlytics().setCrashlyticsCollectionEnabled(false);
+      try {
+        if (!__DEV__) {
+          await crashlytics().setCrashlyticsCollectionEnabled(true);
+          crashlytics().log("App started successfully");
+        } else {
+          await crashlytics().setCrashlyticsCollectionEnabled(false);
+        }
+      } catch (error) {
+        // Don't crash the app if Crashlytics native module isn't available
+        console.warn("Crashlytics initialization failed (non-fatal):", error);
       }
     };
 

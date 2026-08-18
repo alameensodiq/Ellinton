@@ -1,0 +1,49 @@
+diff --git a/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm b/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
+index 2a67797..b581451 100644
+--- a/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
++++ b/node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios/ReactCommon/RCTTurboModule.mm
+@@ -419,6 +419,7 @@ TraceSection s(
+   const char *moduleName = name_.c_str();
+   std::string methodNameStr{methodName};
+   __block int32_t asyncCallCounter = 0;
++  bool isSyncVoid = shouldVoidMethodsExecuteSync_;
+ 
+   void (^block)() = ^{
+     id<RCTBridgeModule> strongModule = weakModule;
+@@ -426,7 +427,7 @@ TraceSection s(
+       return;
+     }
+ 
+-    if (shouldVoidMethodsExecuteSync_) {
++    if (isSyncVoid) {
+       TurboModulePerfLogger::syncMethodCallExecutionStart(moduleName, methodName);
+     } else {
+       TurboModulePerfLogger::asyncMethodCallExecutionStart(moduleName, methodName, asyncCallCounter);
+@@ -435,12 +436,25 @@ TraceSection s(
+     @try {
+       [inv invokeWithTarget:strongModule];
+     } @catch (NSException *exception) {
+-      throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);
++      if (isSyncVoid) {
++        // Sync void methods run on the JS thread, so accessing the runtime is safe
++        throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);
++      } else {
++        // Async void methods run on a background thread — accessing the Hermes
++        // runtime here is NOT thread-safe and causes EXC_BAD_ACCESS crashes.
++        // Log the error safely instead.
++        RCTLogError(
++            @"Exception thrown while invoking %s on target %s: %@\n%@",
++            methodNameStr.c_str(),
++            moduleName,
++            exception,
++            [exception callStackSymbols]);
++      }
+     } @finally {
+       [retainedObjectsForInvocation removeAllObjects];
+     }
+ 
+-    if (shouldVoidMethodsExecuteSync_) {
++    if (isSyncVoid) {
+       TurboModulePerfLogger::syncMethodCallExecutionEnd(moduleName, methodName);
+     } else {
+       TurboModulePerfLogger::asyncMethodCallExecutionEnd(moduleName, methodName, asyncCallCounter);

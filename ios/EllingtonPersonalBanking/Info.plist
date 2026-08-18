@@ -21,7 +21,7 @@
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>119</string>
+	<string>130</string>
 	<key>NSCameraUsageDescription</key>
 	<string>This app requires access to your camera to scan QR codes and capture verification documents.</string>
 	<key>NSContactsUsageDescription</key>

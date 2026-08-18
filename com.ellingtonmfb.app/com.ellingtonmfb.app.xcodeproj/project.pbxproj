@@ -1,0 +1,586 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		DAC17A4E30350B490014A537 /* com_ellingtonmfb_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAC17A4D30350B490014A537 /* com_ellingtonmfb_appApp.swift */; };
+		DAC17A5030350B490014A537 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAC17A4F30350B490014A537 /* ContentView.swift */; };
+		DAC17A5230350B4B0014A537 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DAC17A5130350B4B0014A537 /* Assets.xcassets */; };
+		DAC17A5530350B4B0014A537 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DAC17A5430350B4B0014A537 /* Preview Assets.xcassets */; };
+		DAC17A6030350B4C0014A537 /* com_ellingtonmfb_appTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAC17A5F30350B4C0014A537 /* com_ellingtonmfb_appTests.swift */; };
+		DAC17A6A30350B4C0014A537 /* com_ellingtonmfb_appUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAC17A6930350B4C0014A537 /* com_ellingtonmfb_appUITests.swift */; };
+		DAC17A6C30350B4C0014A537 /* com_ellingtonmfb_appUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAC17A6B30350B4C0014A537 /* com_ellingtonmfb_appUITestsLaunchTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		DAC17A5C30350B4C0014A537 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DAC17A4230350B490014A537 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DAC17A4930350B490014A537;
+			remoteInfo = com.ellingtonmfb.app;
+		};
+		DAC17A6630350B4C0014A537 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DAC17A4230350B490014A537 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DAC17A4930350B490014A537;
+			remoteInfo = com.ellingtonmfb.app;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		DAC17A4A30350B490014A537 /* com.ellingtonmfb.app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = com.ellingtonmfb.app.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DAC17A4D30350B490014A537 /* com_ellingtonmfb_appApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = com_ellingtonmfb_appApp.swift; sourceTree = "<group>"; };
+		DAC17A4F30350B490014A537 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		DAC17A5130350B4B0014A537 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		DAC17A5430350B4B0014A537 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		DAC17A5630350B4B0014A537 /* com_ellingtonmfb_app.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = com_ellingtonmfb_app.entitlements; sourceTree = "<group>"; };
+		DAC17A5B30350B4C0014A537 /* com.ellingtonmfb.appTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = com.ellingtonmfb.appTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DAC17A5F30350B4C0014A537 /* com_ellingtonmfb_appTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = com_ellingtonmfb_appTests.swift; sourceTree = "<group>"; };
+		DAC17A6530350B4C0014A537 /* com.ellingtonmfb.appUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = com.ellingtonmfb.appUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DAC17A6930350B4C0014A537 /* com_ellingtonmfb_appUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = com_ellingtonmfb_appUITests.swift; sourceTree = "<group>"; };
+		DAC17A6B30350B4C0014A537 /* com_ellingtonmfb_appUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = com_ellingtonmfb_appUITestsLaunchTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		DAC17A4730350B490014A537 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DAC17A5830350B4C0014A537 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DAC17A6230350B4C0014A537 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		DAC17A4130350B490014A537 = {
+			isa = PBXGroup;
+			children = (
+				DAC17A4C30350B490014A537 /* com.ellingtonmfb.app */,
+				DAC17A5E30350B4C0014A537 /* com.ellingtonmfb.appTests */,
+				DAC17A6830350B4C0014A537 /* com.ellingtonmfb.appUITests */,
+				DAC17A4B30350B490014A537 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		DAC17A4B30350B490014A537 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DAC17A4A30350B490014A537 /* com.ellingtonmfb.app.app */,
+				DAC17A5B30350B4C0014A537 /* com.ellingtonmfb.appTests.xctest */,
+				DAC17A6530350B4C0014A537 /* com.ellingtonmfb.appUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DAC17A4C30350B490014A537 /* com.ellingtonmfb.app */ = {
+			isa = PBXGroup;
+			children = (
+				DAC17A4D30350B490014A537 /* com_ellingtonmfb_appApp.swift */,
+				DAC17A4F30350B490014A537 /* ContentView.swift */,
+				DAC17A5130350B4B0014A537 /* Assets.xcassets */,
+				DAC17A5630350B4B0014A537 /* com_ellingtonmfb_app.entitlements */,
+				DAC17A5330350B4B0014A537 /* Preview Content */,
+			);
+			path = com.ellingtonmfb.app;
+			sourceTree = "<group>";
+		};
+		DAC17A5330350B4B0014A537 /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				DAC17A5430350B4B0014A537 /* Preview Assets.xcassets */,
+			);
+			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		DAC17A5E30350B4C0014A537 /* com.ellingtonmfb.appTests */ = {
+			isa = PBXGroup;
+			children = (
+				DAC17A5F30350B4C0014A537 /* com_ellingtonmfb_appTests.swift */,
+			);
+			path = com.ellingtonmfb.appTests;
+			sourceTree = "<group>";
+		};
+		DAC17A6830350B4C0014A537 /* com.ellingtonmfb.appUITests */ = {
+			isa = PBXGroup;
+			children = (
+				DAC17A6930350B4C0014A537 /* com_ellingtonmfb_appUITests.swift */,
+				DAC17A6B30350B4C0014A537 /* com_ellingtonmfb_appUITestsLaunchTests.swift */,
+			);
+			path = com.ellingtonmfb.appUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DAC17A4930350B490014A537 /* com.ellingtonmfb.app */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DAC17A6F30350B4C0014A537 /* Build configuration list for PBXNativeTarget "com.ellingtonmfb.app" */;
+			buildPhases = (
+				DAC17A4630350B490014A537 /* Sources */,
+				DAC17A4730350B490014A537 /* Frameworks */,
+				DAC17A4830350B490014A537 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = com.ellingtonmfb.app;
+			productName = com.ellingtonmfb.app;
+			productReference = DAC17A4A30350B490014A537 /* com.ellingtonmfb.app.app */;
+			productType = "com.apple.product-type.application";
+		};
+		DAC17A5A30350B4C0014A537 /* com.ellingtonmfb.appTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DAC17A7230350B4C0014A537 /* Build configuration list for PBXNativeTarget "com.ellingtonmfb.appTests" */;
+			buildPhases = (
+				DAC17A5730350B4C0014A537 /* Sources */,
+				DAC17A5830350B4C0014A537 /* Frameworks */,
+				DAC17A5930350B4C0014A537 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DAC17A5D30350B4C0014A537 /* PBXTargetDependency */,
+			);
+			name = com.ellingtonmfb.appTests;
+			productName = com.ellingtonmfb.appTests;
+			productReference = DAC17A5B30350B4C0014A537 /* com.ellingtonmfb.appTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		DAC17A6430350B4C0014A537 /* com.ellingtonmfb.appUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DAC17A7530350B4C0014A537 /* Build configuration list for PBXNativeTarget "com.ellingtonmfb.appUITests" */;
+			buildPhases = (
+				DAC17A6130350B4C0014A537 /* Sources */,
+				DAC17A6230350B4C0014A537 /* Frameworks */,
+				DAC17A6330350B4C0014A537 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DAC17A6730350B4C0014A537 /* PBXTargetDependency */,
+			);
+			name = com.ellingtonmfb.appUITests;
+			productName = com.ellingtonmfb.appUITests;
+			productReference = DAC17A6530350B4C0014A537 /* com.ellingtonmfb.appUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DAC17A4230350B490014A537 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 1540;
+				TargetAttributes = {
+					DAC17A4930350B490014A537 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+					DAC17A5A30350B4C0014A537 = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = DAC17A4930350B490014A537;
+					};
+					DAC17A6430350B4C0014A537 = {
+						CreatedOnToolsVersion = 15.4;
+						TestTargetID = DAC17A4930350B490014A537;
+					};
+				};
+			};
+			buildConfigurationList = DAC17A4530350B490014A537 /* Build configuration list for PBXProject "com.ellingtonmfb.app" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DAC17A4130350B490014A537;
+			productRefGroup = DAC17A4B30350B490014A537 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DAC17A4930350B490014A537 /* com.ellingtonmfb.app */,
+				DAC17A5A30350B4C0014A537 /* com.ellingtonmfb.appTests */,
+				DAC17A6430350B4C0014A537 /* com.ellingtonmfb.appUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DAC17A4830350B490014A537 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DAC17A5530350B4B0014A537 /* Preview Assets.xcassets in Resources */,
+				DAC17A5230350B4B0014A537 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DAC17A5930350B4C0014A537 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DAC17A6330350B4C0014A537 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DAC17A4630350B490014A537 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DAC17A5030350B490014A537 /* ContentView.swift in Sources */,
+				DAC17A4E30350B490014A537 /* com_ellingtonmfb_appApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DAC17A5730350B4C0014A537 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DAC17A6030350B4C0014A537 /* com_ellingtonmfb_appTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DAC17A6130350B4C0014A537 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DAC17A6A30350B4C0014A537 /* com_ellingtonmfb_appUITests.swift in Sources */,
+				DAC17A6C30350B4C0014A537 /* com_ellingtonmfb_appUITestsLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DAC17A5D30350B4C0014A537 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DAC17A4930350B490014A537 /* com.ellingtonmfb.app */;
+			targetProxy = DAC17A5C30350B4C0014A537 /* PBXContainerItemProxy */;
+		};
+		DAC17A6730350B4C0014A537 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DAC17A4930350B490014A537 /* com.ellingtonmfb.app */;
+			targetProxy = DAC17A6630350B4C0014A537 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		DAC17A6D30350B4C0014A537 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		DAC17A6E30350B4C0014A537 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		DAC17A7030350B4C0014A537 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = com.ellingtonmfb.app/com_ellingtonmfb_app.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"com.ellingtonmfb.app/Preview Content\"";
+				DEVELOPMENT_TEAM = 79S43P6PHS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ellingtonmfb.app.com-ellingtonmfb-app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		DAC17A7130350B4C0014A537 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = com.ellingtonmfb.app/com_ellingtonmfb_app.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"com.ellingtonmfb.app/Preview Content\"";
+				DEVELOPMENT_TEAM = 79S43P6PHS;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ellingtonmfb.app.com-ellingtonmfb-app";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		DAC17A7330350B4C0014A537 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 79S43P6PHS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ellingtonmfb.app.com-ellingtonmfb-appTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/com.ellingtonmfb.app.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/com.ellingtonmfb.app";
+			};
+			name = Debug;
+		};
+		DAC17A7430350B4C0014A537 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 79S43P6PHS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.3;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ellingtonmfb.app.com-ellingtonmfb-appTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/com.ellingtonmfb.app.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/com.ellingtonmfb.app";
+			};
+			name = Release;
+		};
+		DAC17A7630350B4C0014A537 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 79S43P6PHS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ellingtonmfb.app.com-ellingtonmfb-appUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = com.ellingtonmfb.app;
+			};
+			name = Debug;
+		};
+		DAC17A7730350B4C0014A537 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 79S43P6PHS;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.ellingtonmfb.app.com-ellingtonmfb-appUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_TARGET_NAME = com.ellingtonmfb.app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		DAC17A4530350B490014A537 /* Build configuration list for PBXProject "com.ellingtonmfb.app" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DAC17A6D30350B4C0014A537 /* Debug */,
+				DAC17A6E30350B4C0014A537 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DAC17A6F30350B4C0014A537 /* Build configuration list for PBXNativeTarget "com.ellingtonmfb.app" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DAC17A7030350B4C0014A537 /* Debug */,
+				DAC17A7130350B4C0014A537 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DAC17A7230350B4C0014A537 /* Build configuration list for PBXNativeTarget "com.ellingtonmfb.appTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DAC17A7330350B4C0014A537 /* Debug */,
+				DAC17A7430350B4C0014A537 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DAC17A7530350B4C0014A537 /* Build configuration list for PBXNativeTarget "com.ellingtonmfb.appUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DAC17A7630350B4C0014A537 /* Debug */,
+				DAC17A7730350B4C0014A537 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DAC17A4230350B490014A537 /* Project object */;
+}
