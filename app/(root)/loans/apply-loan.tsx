@@ -62,12 +62,14 @@ const ApplyLoan = () => {
       tenureInDays: Number(tenure),
       interestRate: Number(interest),
       repaymentFrequency: String(repaymentFrequency),
+      productCode: String(params.productCode ?? ""),
     };
 
     setCalcLoading(true);
     dispatch(calculateLoan(payload))
       .unwrap()
       .then((res) => {
+        console.log(res)
         setCalc(res);
       })
       .catch(() => {})
@@ -156,6 +158,7 @@ const ApplyLoan = () => {
 
     try {
       const res: any = await dispatch(applyForLoan(payload)).unwrap();
+      console.log(res)
       router.replace({
         pathname: "/(root)/loans/success",
         params: {
@@ -165,6 +168,7 @@ const ApplyLoan = () => {
         },
       });
     } catch (error: any) {
+      console.log(error)
       const message =
         error?.data?.message ||
         error?.message ||

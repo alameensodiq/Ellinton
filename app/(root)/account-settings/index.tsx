@@ -5,7 +5,7 @@ import {
   Alert,
   Pressable,
   ScrollView,
-  Animated,
+  Animated
 } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -18,6 +18,7 @@ import {
   updateUserProfile,
   getUserProfile,
   forgotPasscode,
+  ResetPinOtp
 } from "@/app/lib/thunks/authThunks";
 import { Dropdown } from "@/app/components/inputs/DropdownInputs";
 import Button from "@/app/components/Button";
@@ -47,7 +48,7 @@ const AccountSettings = () => {
     city: user?.city || "",
     state: user?.state || "",
     localGovernment: user?.local_government || "",
-    dateOfBirth: user?.date_of_birth || "",
+    dateOfBirth: user?.date_of_birth || ""
   });
 
   // 🔹 Referral toast animation state
@@ -64,7 +65,7 @@ const AccountSettings = () => {
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 200,
-      useNativeDriver: true,
+      useNativeDriver: true
     }).start();
 
     // Fade out after delay
@@ -72,20 +73,20 @@ const AccountSettings = () => {
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 300,
-        useNativeDriver: true,
+        useNativeDriver: true
       }).start(() => setCopied(false));
     }, 1500);
   };
 
   const tabs: Tab[] = [
     { label: "Personal", value: "personal" },
-    { label: "Security", value: "security" },
+    { label: "Security", value: "security" }
     // { label: "General", value: "general" },
   ];
 
   const genderOptions = [
     { value: "male", label: "Male" },
-    { value: "female", label: "Female" },
+    { value: "female", label: "Female" }
   ];
 
   const handleInputChange = (field: string, value: string) => {
@@ -99,7 +100,7 @@ const AccountSettings = () => {
       const payload = {
         first_name: formData.firstName.trim(),
         last_name: formData.lastName.trim(),
-        gender: formData.gender || undefined,
+        gender: formData.gender || undefined
       };
 
       Object.keys(payload).forEach(
@@ -134,8 +135,13 @@ const AccountSettings = () => {
     router.push("/(root)/account-settings/change-passcode");
   };
 
-  const handleResetTransactionPin = () => {
-    // router.push("/(root)/account-settings/reset-transaction-pin");
+  const handleResetTransactionPin = async () => {
+    try {
+      await dispatch(ResetPinOtp()).unwrap();
+        router.push("/(root)/account-settings/reset-transaction-pin");
+    } catch (error) {
+      console.error("Failed to send OTP:", error);
+    }
   };
 
   const handleChangeTransactionPin = () => {
@@ -164,13 +170,13 @@ const AccountSettings = () => {
         <Pressable className="mb-2 w-24 h-24 rounded-full overflow-hidden bg-[#FF4D00]">
           <Image
             source={{
-              uri: user?.passport || "",
+              uri: user?.passport || ""
             }}
             className="w-full h-full"
             resizeMode="cover"
           />
         </Pressable>
-        <Text className="text-accent-100 text-sm">Tap to change picture</Text>
+        {/* <Text className="text-accent-100 text-sm">Tap to change picture</Text> */}
       </View>
 
       <CustomText className="text-center">{`${user?.first_name} ${user?.last_name}`}</CustomText>
@@ -306,6 +312,13 @@ const AccountSettings = () => {
             onPress={handleChangeTransactionPin}
           >
             <CustomText>Change Transaction PIN</CustomText>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </Pressable>
+          <Pressable
+            className="flex-row items-center justify-between py-4 border-b border-primary-300 last:border-b-0"
+            onPress={handleResetTransactionPin}
+          >
+            <CustomText>Reset Transaction PIN</CustomText>
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </Pressable>
         </View>

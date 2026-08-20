@@ -8,13 +8,14 @@ import {
   Dimensions,
   Image,
   Animated,
-  Platform
+  Platform,
+  Switch
 } from "react-native";
 import Constants from "expo-constants";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../lib/store";
-import { logoutUser } from "../lib/thunks/authThunks";
+import { logoutUser, MfaReset } from "../lib/thunks/authThunks";
 import { useRouter } from "expo-router";
 
 import Sheet from "./Sheet";
@@ -43,6 +44,7 @@ interface UserProfile {
   name: string;
   email: string;
   avatar?: string;
+  mfa_required?: boolean;
 }
 
 interface BottomMenuProps {
@@ -109,6 +111,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   const [requestErr, setRequestErr] = useState("");
   const [requesting, setRequesting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_required ?? false);
 
   const defaultListItems: MenuItem[] = [
     {
@@ -147,6 +150,10 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       slideAnim.setValue(screenHeight);
     }
   }, [visible]);
+
+  useEffect(() => {
+    setMfaEnabled(user?.mfa_required ?? false);
+  }, [user?.mfa_required]);
 
   const handleItemPress = (item: MenuItem) => {
     item.onPress?.();
@@ -240,6 +247,28 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
     }
   };
 
+  const handleMfaToggle = async (value: boolean) => {
+    try {
+      await dispatch(
+        MfaReset({ enabled: value }) // true = ON, false = OFF
+      ).unwrap();
+      setMfaEnabled(value);
+      const existingData = await AsyncStorage.getItem("data");
+
+      if (existingData) {
+        const parsedData = JSON.parse(existingData);
+
+        parsedData.mfa_required = value;
+
+        await AsyncStorage.setItem("data", JSON.stringify(parsedData));
+      }
+    } catch (err) {
+      // revert UI if API fails
+      setMfaEnabled(!value);
+      console.error("MFA update failed:", err);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -302,6 +331,19 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
                         />
                       </Pressable>
                     ))}
+                  </View>
+
+                  <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
+                    <View className="flex-row items-center px-6 py-4">
+                      <Text className="text-white text-base flex-1">MFA</Text>
+
+                      <Switch
+                        value={mfaEnabled}
+                        onValueChange={handleMfaToggle}
+                        trackColor={{ false: "#555", true: "#63642A" }}
+                        thumbColor={mfaEnabled ? "#fff" : "#ccc"}
+                      />
+                    </View>
                   </View>
 
                   <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">

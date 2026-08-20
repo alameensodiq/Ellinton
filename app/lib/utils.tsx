@@ -14,8 +14,12 @@ import { DropdownOption } from "../components/inputs/DropdownInputs";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import * as Device from "expo-device";
+import * as SecureStore from 'expo-secure-store';
+import * as Crypto from 'expo-crypto';
+
 
 const DEVICE_ID_KEY = "deviceId";
+const DEVICE_ID_BACKUP_KEY = "deviceIdBackup";
 
 const frequencyOptions = [
   { value: "once", label: "Once" },
@@ -1243,32 +1247,76 @@ const formatNigerianPhone = (input: string): string => {
 };
 
 
+
 const getDeviceId = async (): Promise<string> => {
+  // Helper function to validate UUID format
+  const isValidUUID = (id: string): boolean => {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(id);
+  };
+
   try {
-    let deviceId = await AsyncStorage.getItem(DEVICE_ID_KEY);
-    if (!deviceId) {
-      deviceId = `${Device.osBuildId || Platform.OS}-${
-        Device.deviceYearClass || Date.now()
-      }-${Math.random().toString(36).substring(7)}`;
-      await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
+    // Try to get from SecureStore
+    let deviceId = await SecureStore.getItemAsync(DEVICE_ID_KEY);
+    
+    if (deviceId && isValidUUID(deviceId)) {
+      // Valid ID found - return it
+      return deviceId;
     }
-    return deviceId;
+    
+    if (deviceId && !isValidUUID(deviceId)) {
+      // Invalid format - corrupted data, delete it
+      console.warn('Corrupted device ID found, deleting:', deviceId);
+      await SecureStore.deleteItemAsync(DEVICE_ID_KEY);
+    }
+    
+    // Check backup location (in case SecureStore failed)
+    let backupId = await AsyncStorage.getItem(DEVICE_ID_BACKUP_KEY);
+    if (backupId && isValidUUID(backupId)) {
+      // Restore to SecureStore
+      console.log('Restoring device ID from backup:', backupId);
+      await SecureStore.setItemAsync(DEVICE_ID_KEY, backupId);
+      return backupId;
+    }
+    
+    // Generate NEW ID (only on first install OR complete data loss)
+    console.log('Generating new device ID (first time or all data lost)');
+    const newDeviceId = Crypto.randomUUID();
+    await SecureStore.setItemAsync(DEVICE_ID_KEY, newDeviceId);
+    await AsyncStorage.setItem(DEVICE_ID_BACKUP_KEY, newDeviceId);
+    
+    return newDeviceId;
+    
   } catch (error) {
-    console.error("Failed to get/generate device ID:", error);
-    return `${Platform.OS}-${Date.now()}`;
+    console.error("SecureStore error, using backup:", error);
+    
+    // Fallback: try AsyncStorage backup only
+    let backupId = await AsyncStorage.getItem(DEVICE_ID_BACKUP_KEY);
+    if (backupId) {
+      console.log('Using backup ID due to SecureStore error:', backupId);
+      return backupId;
+    }
+    
+    // Generate and store in backup only (last resort)
+    console.log('Creating emergency backup ID');
+    const emergencyId = Crypto.randomUUID();
+    await AsyncStorage.setItem(DEVICE_ID_BACKUP_KEY, emergencyId);
+    return emergencyId;
   }
 };
 
-/**
- * Clear Device ID (useful for logout/reset)
- */
- const clearDeviceId = async (): Promise<void> => {
+
+const clearDeviceId = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(DEVICE_ID_KEY);
+    await SecureStore.deleteItemAsync(DEVICE_ID_KEY);
+    await AsyncStorage.removeItem(DEVICE_ID_BACKUP_KEY);
+    console.log('Device ID cleared successfully');
   } catch (error) {
     console.error("Failed to clear device ID:", error);
   }
 };
+
+
 
 export {
   dayOptions,

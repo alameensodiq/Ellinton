@@ -9,6 +9,7 @@ import {
   FETCH_SINGLE_LOAN_ENDPOINT,
   LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT,
   LOAN_CONFIRM_CONSENT_ENDPOINT,
+  LOAN_REPAYMENT_ENDPOINT
 } from "../api";
 import { encryptedFetch } from "../encryptedFetch";
 import { encryptionClient } from "../encrption.client";
@@ -21,20 +22,21 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   const method = options.method?.toLowerCase() || "get";
   const headers = (options.headers as Record<string, string>) || {};
   const body = options.body ? JSON.parse(options.body as string) : undefined;
-  
-  const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
-  
+
+  const hasAuthToken =
+    headers.Authorization && headers.Authorization.startsWith("Bearer ");
+
   let enhancedHeaders = { ...headers };
-  
+
   if (hasAuthToken) {
     const timestamp = Date.now().toString();
     const nonce = generateNonce();
     const deviceId = await getDeviceId();
-    
+
     // IMPORTANT: Extract ONLY the pathname, not the full URL
     const urlObj = new URL(url);
     const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
-    
+
     // console.log("📡 Request details:", {
     //   fullUrl: url,
     //   path,
@@ -42,7 +44,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     //   hasBody: !!body,
     //   deviceId
     // });
-    
+
     // Generate signature
     const { signature } = await generateSignature(
       method,
@@ -52,16 +54,16 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       timestamp,
       deviceId
     );
-    
+
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {
       ...headers,
-      'x-request-timestamp': timestamp,
-      'x-request-nonce': nonce,
-      'x-signature': signature,
-      'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
+      "x-request-timestamp": timestamp,
+      "x-request-nonce": nonce,
+      "x-signature": signature,
+      "x-device-id": deviceId // ← THIS WAS MISSING - ADD THIS LINE
     };
-    
+
     // console.log("🔐 Added signature headers:", {
     //   timestamp,
     //   noncePreview: nonce.substring(0, 10) + "...",
@@ -71,7 +73,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     // console.log("🔓 No auth token, skipping signature");
   }
-  
+
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
@@ -88,7 +90,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     return await fetch(url, {
       ...options,
-      headers: enhancedHeaders,
+      headers: enhancedHeaders
     });
   }
 };
@@ -240,6 +242,14 @@ export interface ApplyLoanPayload {
   bankCode: string;
 }
 
+export interface RepayLoanPayload {
+  amount: number;
+  narration: string;
+  idempotencyKey: string;
+  loanId: string;
+  transactionPin: string;
+}
+
 export interface LoanDisbursementWebhookPayload {
   loanReference: string;
   status: string;
@@ -262,14 +272,18 @@ export const fetchLoanProducts = createAsyncThunk<
     const token = (getState() as any).auth.token;
 
     const res = await safeFetch(LOAN_PRODUCTS_ENDPOINT, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     const data = (await res.json()) as ApiResponse<LoanProduct[]>;
 
     if (!res.ok || !data.success || !data.data) {
       const errorData = data as unknown as ErrorResponse;
-      return rejectWithValue(errorData?.data?.message || data?.message || "Failed to fetch loan products");
+      return rejectWithValue(
+        errorData?.data?.message ||
+        data?.message ||
+        "Failed to fetch loan products"
+      );
     }
 
     return data.data;
@@ -290,14 +304,16 @@ export const fetchLoanBanks = createAsyncThunk<
     const token = (getState() as any).auth.token;
 
     const res = await safeFetch(LOAN_COMMERCIAL_BANKS_ENDPOINT, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     const data = (await res.json()) as ApiResponse<any[]>;
 
     if (!res.ok || !data.success || !data.data) {
       const errorData = data as unknown as ErrorResponse;
-      return rejectWithValue(errorData?.data?.message || data?.message || "Failed to fetch banks");
+      return rejectWithValue(
+        errorData?.data?.message || data?.message || "Failed to fetch banks"
+      );
     }
     return data.data;
   } catch (err: any) {
@@ -310,33 +326,43 @@ export const fetchLoanBanks = createAsyncThunk<
 ========================= */
 export const runCreditCheck = createAsyncThunk<
   any,
-  void,
+  { productCode: string },
   { rejectValue: string }
->("loans/creditCheck", async (_, { getState, rejectWithValue }) => {
-  try {
-    const token = (getState() as any).auth.token;
+>(
+  "loans/creditCheck",
+  async ({ productCode }, { getState, rejectWithValue }) => {
+    try {
+      const token = (getState() as any).auth.token;
 
-    const res = await safeFetch(LOAN_CREDIT_CHECK_ENDPOINT, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      console.log(productCode)
 
-    const data = (await res.json()) as ApiResponse<any>;
+      const res = await safeFetch(LOAN_CREDIT_CHECK_ENDPOINT, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
 
-    console.log("📥 CREDIT CHECK RESPONSE:", data);
+        body: JSON.stringify({ productCode })
+      });
 
-    if (!res.ok || !data.success) {
-      console.log("❌ CREDIT CHECK ERROR BODY:", data);
-      const errorData = data as unknown as ErrorResponse;
-      return rejectWithValue(errorData?.data?.message || data?.message || "Credit check failed");
+      const data = (await res.json()) as ApiResponse<any>;
+
+      console.log("📥 CREDIT CHECK RESPONSE:", data);
+
+      if (!res.ok || !data.success) {
+        console.log("❌ CREDIT CHECK ERROR BODY:", data);
+        const errorData = data as unknown as ErrorResponse;
+        return rejectWithValue(
+          errorData?.data?.message || data?.message || "Credit check failed"
+        );
+      }
+      return data;
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Credit check error");
     }
-    return data.data;
-  } catch (err: any) {
-    return rejectWithValue(err.message || "Credit check error");
   }
-});
+);
 
 /* =========================
    CALCULATE LOAN
@@ -353,20 +379,22 @@ export const calculateLoan = createAsyncThunk<
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     });
 
     const data = (await res.json()) as ApiResponse<any>;
 
     if (!res.ok || !data.success) {
       const errorData = data as unknown as ErrorResponse;
-      return rejectWithValue(errorData?.data?.message || data?.message || "Loan calculation failed");
+      return rejectWithValue(
+        errorData?.data?.message || data?.message || "Loan calculation failed"
+      );
     }
     console.log("✅ LOAN CALCULATION RESPONSE:", data);
 
-    return data.data;
+    return data.data.schedule;
   } catch (err: any) {
     return rejectWithValue(err.message || "Loan calculation error");
   }
@@ -375,6 +403,49 @@ export const calculateLoan = createAsyncThunk<
 /* =========================
    APPLY FOR LOAN
 ========================= */
+// export const applyForLoan = createAsyncThunk<
+//   Loan,
+//   ApplyLoanPayload,
+//   { rejectValue: string }
+// >("loans/apply", async (payload, { getState, rejectWithValue }) => {
+//   try {
+//     const token = (getState() as any).auth.token;
+//     const requestBody = JSON.stringify(payload);
+
+//     console.log("📤 LOAN APPLY REQUEST BODY:", requestBody);
+
+//     const res = await safeFetch(LOAN_APPLY_ENDPOINT, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${token}`
+//       },
+//       body: requestBody
+//     });
+
+//     const data = (await res.json()) as ApiResponse<Loan>;
+//     console.log("📥 FULL RESPONSE:", data);
+
+//     // Check if response is successful
+//     if (!res.ok || !data.success) {
+//       const errorData = data as unknown as ErrorResponse;
+//       return rejectWithValue(
+//         errorData?.data?.message ||
+//           data?.message ||
+//           (data as any)?.data?.message ||
+//           "Loan application failed"
+//       );
+//     }
+
+//     // ✅ Return the loan data (which is at the root level)
+//     // Since data contains the loan properties directly
+//     return data as unknown as Loan;
+
+//   } catch (err: any) {
+//     return rejectWithValue(err.message || "Apply loan error");
+//   }
+// });
+
 export const applyForLoan = createAsyncThunk<
   Loan,
   ApplyLoanPayload,
@@ -392,24 +463,81 @@ export const applyForLoan = createAsyncThunk<
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: requestBody,
+      body: requestBody
     });
 
-    const data = (await res.json()) as ApiResponse<Loan>;
+    const data = await res.json();
+    console.log("📥 FULL RESPONSE:", JSON.stringify(data, null, 2));
 
-    if (!res.ok || !data.success || !data.data) {
-      const errorData = data as unknown as ErrorResponse;
+    // Check if response is successful
+    if (!res.ok || !data.success) {
+      console.log("❌ LOAN APPLICATION FAILED");
       return rejectWithValue(
-        errorData?.data?.message ||
-          data?.message ||
-          (data as any)?.data?.message ||
-          "Loan application failed"
+        data?.message ||
+        data?.data?.message ||
+        "Loan application failed"
       );
     }
 
-    return data.data;
+    // ✅ The loan data is the entire response (it already contains all loan fields)
+    // Just remove the 'success' field or keep it - the Loan type might not need it
+    const { success, ...loanData } = data;
+    console.log("✅ RETURNING LOAN DATA:", loanData);
+
+    return loanData as Loan;
+
   } catch (err: any) {
+    console.error("❌ LOAN APPLICATION EXCEPTION:", err);
     return rejectWithValue(err.message || "Apply loan error");
+  }
+});
+
+
+export const LoanRepayment = createAsyncThunk<
+  Loan,
+  RepayLoanPayload,
+  { rejectValue: string }
+>("loans/repay", async (payload, { getState, rejectWithValue }) => {
+  try {
+    const token = (getState() as any).auth.token;
+    const url = `${LOAN_REPAYMENT_ENDPOINT}/${payload.loanId}/repay`;
+    const { loanId, ...requestBody } = payload;
+
+
+    console.log("📤 LOAN REPAYMENT REQUEST BODY:", requestBody);
+
+    const res = await safeFetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    const data = await res.json();
+    console.log("📥 FULL RESPONSE:", JSON.stringify(data, null, 2));
+
+    // Check if response is successful
+    if (!res.ok || !data.success) {
+      console.log("❌ LOAN REPAYMENT FAILED");
+      return rejectWithValue(
+        data?.message ||
+        data?.data?.message ||
+        "Loan Repayment failed"
+      );
+    }
+
+    // ✅ The loan data is the entire response (it already contains all loan fields)
+    // Just remove the 'success' field or keep it - the Loan type might not need it
+    const { success, ...loanData } = data;
+    console.log("✅ RETURNING LOAN DATA:", loanData);
+
+    return loanData as Loan;
+
+  } catch (err: any) {
+    console.error("❌ LOAN REPAYMENT EXCEPTION:", err);
+    return rejectWithValue(err.message || "Repayment of loan error");
   }
 });
 
@@ -435,7 +563,7 @@ export const fetchUserLoans = createAsyncThunk<
         : FETCH_USER_LOANS_ENDPOINT;
 
     const res = await safeFetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     const data = (await res.json()) as ApiResponse<any>;
@@ -443,7 +571,10 @@ export const fetchUserLoans = createAsyncThunk<
     if (!res.ok || !data.success || !data.data?.loans) {
       const errorData = data as unknown as ErrorResponse;
       return rejectWithValue(
-        errorData?.data?.message || data?.message || data?.data?.message || "Fetch loans failed"
+        errorData?.data?.message ||
+        data?.message ||
+        data?.data?.message ||
+        "Fetch loans failed"
       );
     }
 
@@ -466,14 +597,16 @@ export const fetchLoanById = createAsyncThunk<
     const token = (getState() as any).auth.token;
 
     const res = await safeFetch(FETCH_SINGLE_LOAN_ENDPOINT(id), {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}` }
     });
 
     const data = (await res.json()) as ApiResponse<any>;
 
     if (!res.ok || !data.success || !data.data) {
       const errorData = data as unknown as ErrorResponse;
-      return rejectWithValue(errorData?.data?.message || data?.message || "Loan not found");
+      return rejectWithValue(
+        errorData?.data?.message || data?.message || "Loan not found"
+      );
     }
 
     // ✅ support both shapes: data.data OR data.data.loan
@@ -502,9 +635,9 @@ export const sendLoanDisbursementWebhook = createAsyncThunk<
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
       const data = (await res.json()) as ApiResponse<any>;
@@ -515,7 +648,10 @@ export const sendLoanDisbursementWebhook = createAsyncThunk<
         console.log("❌ DISBURSEMENT WEBHOOK ERROR BODY:", data);
         const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
-          errorData?.data?.message || data?.message || (data as any)?.data?.message || "Webhook failed"
+          errorData?.data?.message ||
+          data?.message ||
+          (data as any)?.data?.message ||
+          "Webhook failed"
         );
       }
 
@@ -539,8 +675,8 @@ export const confirmLoanConsent = createAsyncThunk<
       method: "POST",
       headers: {
         accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+        Authorization: `Bearer ${token}`
+      }
     });
 
     const data = (await res.json()) as ApiResponse<any>;
@@ -548,7 +684,10 @@ export const confirmLoanConsent = createAsyncThunk<
     if (!res.ok || !data.success || !data.data) {
       const errorData = data as unknown as ErrorResponse;
       return rejectWithValue(
-        errorData?.data?.message || data?.message || data?.data?.message || "Consent confirmation failed"
+        errorData?.data?.message ||
+        data?.message ||
+        data?.data?.message ||
+        "Consent confirmation failed"
       );
     }
 

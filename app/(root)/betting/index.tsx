@@ -204,11 +204,11 @@ export default function BettingBillPayment() {
           />
 
           <TextInputField
-            label="Enter meter number"
+            label="Enter User ID"
             value={meterNumber}
             onChangeText={setMeterNumber}
             keyboardType="number-pad"
-            placeholder="Enter meter number"
+            placeholder="Enter User ID"
           />
 
           {predefinedAmount ? (

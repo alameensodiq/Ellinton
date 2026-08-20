@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { AccountTransaction } from "@/app/lib/thunks/transferThunks";
 
 interface Props {
-  transaction: AccountTransaction;
+  transaction: any; // Changed from AccountTransaction to any to handle both formats
   onPress?: () => void;
   disabled?: boolean;
 }
@@ -15,23 +15,31 @@ export default function TransactionCard({
   disabled = false,
 }: Props) {
   const router = useRouter();
-  const isDebit = transaction.RecordType === "Debit";
-  const rawAmount = isDebit ? transaction.Debit : transaction.Credit;
+  
+  // Support both old and new API formats
+  const isDebit = transaction.RecordType === "Debit" || transaction.type === "inter-bank" || transaction.type === "electricity" || transaction.type === "airtime";
+  const rawAmount = transaction.Debit || transaction.Credit || transaction.amount || 0;
   const amountValue = Number(String(rawAmount || "0").replace(/,/g, "")) || 0;
+  
+  const referenceId = transaction.ReferenceID || transaction.id || "";
+  const dateStr = transaction.CurrentDate || transaction.date || new Date().toISOString();
+  const narration = transaction.Narration || transaction.narration || "Transaction";
+  const status = transaction.IsReversed ? "REVERSED" : (transaction.status || "SUCCESSFUL");
+
   const fallbackReceiptData = JSON.stringify({
     amount: amountValue,
-    type: transaction.RecordType,
-    status: transaction.IsReversed ? "REVERSED" : "SUCCESSFUL",
-    sender: "",
-    beneficiary: "",
-    beneficiaryAccount: "",
-    beneficiaryBank: "",
-    date: transaction.CurrentDate,
-    referenceNo: transaction.ReferenceID || "",
+    type: transaction.RecordType || transaction.type,
+    status: status,
+    sender: transaction.senderName || "",
+    beneficiary: transaction.receiverName || "",
+    beneficiaryAccount: transaction.receiverAccount || "",
+    beneficiaryBank: transaction.receiverBank || "",
+    date: dateStr,
+    referenceNo: referenceId,
   });
 
-  const formattedDate = transaction.CurrentDate
-    ? new Date(transaction.CurrentDate).toLocaleString("en-NG", {
+  const formattedDate = dateStr
+    ? new Date(dateStr).toLocaleString("en-NG", {
         weekday: "long",
         year: "numeric",
         month: "long",
@@ -40,7 +48,8 @@ export default function TransactionCard({
         minute: "2-digit",
       })
     : "";
-  const canOpenReceipt = Boolean(transaction.ReferenceID);
+    
+  const canOpenReceipt = Boolean(referenceId);
   const isDisabled = disabled || !canOpenReceipt;
 
   return (
@@ -48,15 +57,15 @@ export default function TransactionCard({
       activeOpacity={0.8}
       disabled={isDisabled}
       onPress={() => {
-        if (!transaction.ReferenceID) return;
+        if (!referenceId) return;
 
         onPress?.();
 
         router.push({
           pathname: "/(root)/transaction-details",
           params: {
-            reference: transaction.UniqueIdentifier,
-            recordType: transaction.RecordType,
+            reference: transaction.UniqueIdentifier || transaction.id || referenceId,
+            recordType: transaction.RecordType || transaction.type || "Debit",
             fallbackReceiptData,
           },
         });
@@ -67,7 +76,7 @@ export default function TransactionCard({
     >
       <View className="flex-1 mr-3">
         <Text className="text-white text-sm font-medium">
-          {(transaction.Narration || "Transaction").toUpperCase()}
+          {narration.toUpperCase()}
         </Text>
 
         <Text className="text-white/60 text-xs mt-1">{formattedDate}</Text>

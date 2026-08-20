@@ -171,9 +171,9 @@ const handleAuthNavigation = async (path: string) => {
               />
             </View>
 
-            <View className="flex-row items-center justify-center gap-4">
+            <View className="flex-row items-center justify-center gap-2">
               <CustomText size="xs" className="text-accent-100">
-                Regulated by NDIC
+               Licensed by <CustomText size="xs" className="text-[#6266dd]">CBN</CustomText> and Insured by 
               </CustomText>
               <Image
                 source={require("./assets/ndic-logo.png")}

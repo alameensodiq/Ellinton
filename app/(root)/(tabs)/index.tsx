@@ -17,34 +17,102 @@ import { fetchAccountInfo } from "@/app/lib/thunks/accountThunks";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { usePreventScreenCapture } from "expo-screen-capture";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  registerDeviceWithBackend,
+  registerForPushNotificationsAsync
+} from "@/app/lib/notification.service";
 
 const HomeScreen = () => {
-    
   const [menuVisible, setMenuVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [storedProfile, setStoredProfile] = useState<any>(null);
 
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
 
+  // useEffect(() => {
+  //   dispatch(getUserProfile());
+  //   dispatch(fetchAccountInfo());
+  //   const checkUserProfile = async () => {
+  //     try {
+  //       const storedProfile = await AsyncStorage.getItem("data");
+
+  //       if (storedProfile) {
+  //         const parsedProfile = JSON.parse(storedProfile);
+  //         console.log(parsedProfile)
+  //         setStoredProfile(parsedProfile);
+
+  //         console.log("Stored User Profile:", parsedProfile);
+  //       } else {
+  //       }
+  //     } catch (error) {}
+  //   };
+
+  //   checkUserProfile();
+
+  // }, [dispatch]);
+
   useEffect(() => {
-    dispatch(getUserProfile());
-    dispatch(fetchAccountInfo());
-  }, [dispatch]);
+    let isMounted = true;
+
+    const initializeUser = async () => {
+      try {
+        // Dispatch actions
+        dispatch(getUserProfile());
+        dispatch(fetchAccountInfo());
+
+        // Check stored profile
+        const storedProfile = await AsyncStorage.getItem("data");
+        if (storedProfile && isMounted) {
+          const parsedProfile = JSON.parse(storedProfile);
+          console.log(parsedProfile);
+          setStoredProfile(parsedProfile);
+          console.log("Stored User Profile:", parsedProfile);
+        }
+
+        // Register for push notifications
+        const token = await registerForPushNotificationsAsync();
+        console.log(token);
+
+        // Send token to backend if we got one and component is still mounted
+        if (token && isMounted) {
+          const isRegistered = await registerDeviceWithBackend(token);
+          if (isRegistered) {
+            console.log("✅ Push token synced with backend");
+          } else {
+            console.warn("⚠️ Login succeeded, but push registration failed");
+          }
+        }
+      } catch (error) {
+        console.error("Error in user initialization:", error);
+      }
+    };
+
+    initializeUser();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch, registerForPushNotificationsAsync, registerDeviceWithBackend]);
 
   const onRefresh = async () => {
     setRefreshing(true);
     try {
       await Promise.all([
         dispatch(getUserProfile()).unwrap(),
-        dispatch(fetchAccountInfo()).unwrap(),
+        dispatch(fetchAccountInfo()).unwrap()
       ]);
     } catch (error) {
     } finally {
       setRefreshing(false);
     }
   };
+
+  console.log(user);
 
   const showKycBanner = user?.kyc_level === 1;
   const showKycBanner2 = user?.kyc_level === 2;
@@ -100,9 +168,10 @@ const HomeScreen = () => {
         visible={menuVisible}
         onClose={() => setMenuVisible(false)}
         user={{
+          mfa_required: user?.mfa_enabled,
           name: user?.full_name || user?.name || "User",
           email: user?.email || "",
-          avatar: user?.passport || "",
+          avatar: user?.passport || ""
         }}
       />
 

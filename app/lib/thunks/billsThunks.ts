@@ -235,12 +235,13 @@ export const payBill = createAsyncThunk<any, PayBillPayload>(
       });
       const data: ApiResponse<any> = await response.json();
       console.log(data);
-      if (!response.ok || !data.success || !data.data) {
+      if (!response.ok || !data.success) {
         const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(errorData?.data?.message || data.message || "Failed");
       }
-      return data.data;
+      return data;
     } catch (error: any) {
+      console.log(error)
       return rejectWithValue(error.message || "Network error");
     }
   }

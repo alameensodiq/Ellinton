@@ -5,13 +5,12 @@ import { WebView } from "react-native-webview";
 import { useRef, useState } from "react";
 
 export default function ChatScreen() {
-  
   const webviewRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Use the direct chat URL instead of embed script
-  const CHAT_URL = 'https://tawk.to/chat/69cd682b6272c91c348cc16a/1jl55tqi6';
+  const CHAT_URL = "https://tawk.to/chat/69cd682b6272c91c348cc16a/1jl55tqi6";
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#f0f0f0" }}>
@@ -60,7 +59,7 @@ export default function ChatScreen() {
           </View>
         )}
 
-        <WebView
+        {/* <WebView
           ref={webviewRef}
           source={{ uri: CHAT_URL }}
           style={{ flex: 1 }}
@@ -78,6 +77,34 @@ export default function ChatScreen() {
             const { nativeEvent } = syntheticEvent;
             console.error("WebView error:", nativeEvent);
             setError("Failed to load chat. Please check your internet connection.");
+            setLoading(false);
+          }}
+        /> */}
+        <WebView
+          ref={webviewRef}
+          source={{ uri: CHAT_URL }} // Or your HTML wrapper source
+          style={{ flex: 1 }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          // 1. CRITICAL FOR NEW ARCHITECTURE ON iOS
+          menuItems={[]}
+          suppressContextMenu={true}
+          // 2. CRITICAL FOR LOAD PERMISSIONS
+          originWhitelist={["*"]}
+          allowsInlineMediaPlayback={true}
+          onLoadStart={() => {
+            setLoading(true);
+            setError(null);
+          }}
+          onLoadEnd={() => {
+            setLoading(false);
+          }}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            console.error("WebView error:", nativeEvent);
+            setError(
+              "Failed to load chat. Please check your internet connection."
+            );
             setLoading(false);
           }}
         />

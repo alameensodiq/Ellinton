@@ -19,7 +19,7 @@ const groupTransactionsByDate = (transactions: any[]) => {
   const groups: Record<string, any[]> = {};
 
   transactions.forEach((tx) => {
-    const txDate = new Date(tx.CurrentDate || tx.TransactionDate);
+    const txDate = new Date(tx.date || tx.CurrentDate || tx.TransactionDate);
 
     if (Number.isNaN(txDate.getTime())) {
       return;
