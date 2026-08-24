@@ -438,11 +438,14 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
     console.log(pushTokenString, "pushTokenString");
     return pushTokenString;
   } catch (error: any) {
-    const message = error.message;
+    const message = error?.message || "Failed to get push token";
     if (Platform.OS === "android" && message.includes("FirebaseApp is not initialized")) {
       console.warn("Push Notifications: Firebase is not initialized. Ensure google-services.json is present.");
+    } else if (Platform.OS === "ios" && message.includes("aps-environment")) {
+      console.warn("Push Notifications: Missing aps-environment entitlement in iOS build configuration.");
+    } else {
+      console.warn("Push Notifications registration failed:", message);
     }
-    Alert.alert("Notification Error", message);
     return null;
   }
 };

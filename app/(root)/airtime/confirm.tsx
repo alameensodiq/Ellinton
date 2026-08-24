@@ -34,25 +34,25 @@ export default function ConfirmBuyAirtime() {
   const [dayOfWeek, setDayOfWeek] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-const handleContinue = () => {
-  router.push({
-    pathname: "/(root)/airtime/authorize",
-    params: {
-      provider: provider?.toString() || "",
-      phone: Array.isArray(phone) ? phone[0] : phone || "",
-      amount: finalAmount.toString(),
-      fee: fee.toString(),
-      totalDebit: totalDebit.toString(),
+  const handleContinue = () => {
+    router.push({
+      pathname: "/(root)/airtime/authorize",
+      params: {
+        provider: provider?.toString() || "",
+        phone: Array.isArray(phone) ? phone[0] : phone || "",
+        amount: finalAmount.toString(),
+        fee: fee.toString(),
+        totalDebit: totalDebit.toString(),
 
-      scheduleEnabled: scheduleEnabled ? "true" : "false",
-      scheduleName,
-      frequency,
-      dayOfWeek,
-      startDate,
-      endDate,
-    },
-  });
-};
+        scheduleEnabled: scheduleEnabled ? "true" : "false",
+        scheduleName,
+        frequency,
+        dayOfWeek,
+        startDate,
+        endDate,
+      },
+    });
+  };
 
 
   return (
@@ -66,7 +66,7 @@ const handleContinue = () => {
       >
         <AmountCard
           amount={rawAmount}
-          description="Seventy five thousand naira"
+          description=""
         />
 
         <PaymentInfoCard
