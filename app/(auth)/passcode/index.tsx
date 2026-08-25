@@ -110,6 +110,7 @@ const CreatePasscodeScreen = () => {
               onChange={setConfirmPasscode}
               error={!!error}
               inputStyle="h-16 w-14"
+              secure
             />
           </View>
           {error ? (
