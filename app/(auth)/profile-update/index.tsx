@@ -39,6 +39,7 @@ const EmailIdentityScreen = () => {
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [middleName, setMiddleName] = useState("");
   const [bvn, setBvn] = useState("");
   const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
@@ -58,6 +59,7 @@ const EmailIdentityScreen = () => {
 
   const [firstNameError, setFirstNameError] = useState("");
   const [lastNameError, setLastNameError] = useState("");
+  const [middleNameError, setMiddleNameError] = useState("");
   const [bvnError, setBvnError] = useState("");
   const [address1Error, setAddress1Error] = useState("");
   const [stateError, setStateError] = useState("");
@@ -138,6 +140,7 @@ const EmailIdentityScreen = () => {
     // Reset errors
     setGenderError("");
     setFirstNameError("");
+    setMiddleNameError("")
     setLastNameError("");
     setBvnError("");
     setAddress1Error("");
@@ -187,6 +190,7 @@ const EmailIdentityScreen = () => {
           bvn,
           first_name: firstName,
           last_name: lastName,
+          middle_name: middleName,
           gender,
           state,
           city: state,
@@ -201,7 +205,7 @@ const EmailIdentityScreen = () => {
 
       router.push({
         pathname: "/(auth)/facial-verification",
-        params: { userId: userId as string|| user?.id },
+        params: { userId: userId as string || user?.id },
       });
     } catch (err: any) {
       console.error("Profile update API error:", err);
@@ -276,6 +280,15 @@ const EmailIdentityScreen = () => {
                   />
 
                   <TextInputField
+                    label="Middle Name"
+                    value={middleName}
+                    onChangeText={setMiddleName}
+                    placeholder="Doe"
+                    autoCapitalize="words"
+                    error={middleNameError}
+                  />
+
+                  <TextInputField
                     label="BVN"
                     value={bvn}
                     onChangeText={(text) => setBvn(text.replace(/\D/g, ""))}
@@ -303,8 +316,8 @@ const EmailIdentityScreen = () => {
                       loadingLGAs
                         ? "Loading LGAs..."
                         : !state
-                        ? "Select State first"
-                        : "Select Local Government"
+                          ? "Select State first"
+                          : "Select Local Government"
                     }
                     options={localGovernmentOptions}
                     selectedValue={localGovernment}

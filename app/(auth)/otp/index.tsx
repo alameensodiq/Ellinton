@@ -97,9 +97,9 @@ const EmailOtpScreen = () => {
           </View>
 
           <View className="flex-1 space-y-6">
-           
 
-            <CustomText size="xxl"  className="mb-4">
+
+            <CustomText size="xxl" className="mb-4">
               Verify your email address
             </CustomText>
             <CustomText secondary className="mb-8">
@@ -112,6 +112,7 @@ const EmailOtpScreen = () => {
               onChange={setOtp}
               error={!!errorMessage}
               autoFocus
+              secure
             />
 
             {errorMessage && (
@@ -121,9 +122,8 @@ const EmailOtpScreen = () => {
             )}
 
             <InfoText
-              text={`Code not received? ${
-                canResend ? "Send again" : `Resend in ${remainingTime}s`
-              }`}
+              text={`Code not received? ${canResend ? "Send again" : `Resend in ${remainingTime}s`
+                }`}
               actionText={canResend ? "Send again" : ""}
               onPress={canResend ? handleResend : undefined}
               disabled={!canResend}

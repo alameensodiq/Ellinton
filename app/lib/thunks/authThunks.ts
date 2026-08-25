@@ -176,6 +176,7 @@ interface VerifyBvnPayload {
   bvn: string;
   first_name: string;
   last_name: string;
+  middle_name?: string;
   gender: string;
   state: string;
   city: string;
@@ -1012,6 +1013,7 @@ export const verifyUserBvn = createAsyncThunk(
           bvn: payload.bvn,
           first_name: payload.first_name,
           last_name: payload.last_name,
+          middle_name: payload.middle_name,
           gender: payload.gender,
           state: payload.state,
           city: payload.city,

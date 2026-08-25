@@ -127,6 +127,7 @@ const ConfirmTransactionPinScreen = () => {
               error={error}
               autoFocus
               inputStyle="w-20 h-20"
+              secure
             />
 
             {error && (

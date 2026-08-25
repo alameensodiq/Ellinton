@@ -100,6 +100,7 @@ const CreatePasscodeScreen = () => {
               onChange={setPasscode}
               error={!!error}
               inputStyle="h-16 w-14"
+              secure
             />
           </View>
           <View className="mb-6">

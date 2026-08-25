@@ -74,6 +74,7 @@ const CreateTransactionPinScreen = () => {
               onChange={handleOtpChange}
               error={error}
               autoFocus
+              secure
               inputStyle="w-20 h-20"
             />
 
