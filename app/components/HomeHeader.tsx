@@ -41,7 +41,7 @@ const HomeHeader: React.FC<HeaderProps> = ({
       </View>
 
       <TouchableOpacity className="relative">
-        <MaterialCommunityIcons name="bell-outline" size={26} color="#FFFFFF" />
+        {/* <MaterialCommunityIcons name="bell-outline" size={26} color="#FFFFFF" /> */}
 
         {/* <View className="absolute -top-1 -right-1 bg-red-600 w-4 h-4 rounded-full justify-center items-center">
           <Text className="text-white text-[10px] font-rubik-bold">2</Text>

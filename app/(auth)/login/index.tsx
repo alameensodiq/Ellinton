@@ -126,52 +126,52 @@ const Login = () => {
   };
 
   // Add this function INSIDE your Login component
-//  const testLocalNotification = async () => {
-//   try {
-//     console.log("📱 Testing LOCAL notification...");
-    
-//     // Create a channel specifically for this test (Vivo needs this)
-//     if (Platform.OS === "android") {
-//       await Notifications.setNotificationChannelAsync('local_test', {
-//         name: 'Local Test Channel',
-//         importance: Notifications.AndroidImportance.MAX,
-//         vibrationPattern: [0, 250, 250, 250],
-//         lightColor: '#FF231F7C',
-//         sound: 'default',
-//         enableVibrate: true,
-//         enableLights: true,
-//         bypassDnd: true, // Force through Do Not Disturb
-//       });
-//     }
-    
-//     // Send a local notification immediately
-//     const notificationId = await Notifications.scheduleNotificationAsync({
-//       content: {
-//         title: "🔔 Local Test Success!",
-//         body: "If you see this, your device CAN show notifications!",
-//         sound: true,
-//         priority: Notifications.AndroidNotificationPriority.HIGH,
-//         data: { source: "local_test", timestamp: Date.now() }
-//       },
-//       trigger: null, // null = show immediately
-//     });
-    
-//     console.log("✅ Local notification sent with ID:", notificationId);
-//     console.log("📱 CHECK YOUR NOTIFICATION SHADE NOW!");
-    
-//   } catch (error) {
-//     console.error("❌ Local notification failed:", error);
-//   }
-// };
+  //  const testLocalNotification = async () => {
+  //   try {
+  //     console.log("📱 Testing LOCAL notification...");
 
-// const testFCM = async () => {
-//   try {
-//     const token = await Notifications.getDevicePushTokenAsync();
-//     console.log("FCM TOKEN:", token);
-//   } catch (e) {
-//     console.error("FCM ERROR:", e);
-//   }
-// };
+  //     // Create a channel specifically for this test (Vivo needs this)
+  //     if (Platform.OS === "android") {
+  //       await Notifications.setNotificationChannelAsync('local_test', {
+  //         name: 'Local Test Channel',
+  //         importance: Notifications.AndroidImportance.MAX,
+  //         vibrationPattern: [0, 250, 250, 250],
+  //         lightColor: '#FF231F7C',
+  //         sound: 'default',
+  //         enableVibrate: true,
+  //         enableLights: true,
+  //         bypassDnd: true, // Force through Do Not Disturb
+  //       });
+  //     }
+
+  //     // Send a local notification immediately
+  //     const notificationId = await Notifications.scheduleNotificationAsync({
+  //       content: {
+  //         title: "🔔 Local Test Success!",
+  //         body: "If you see this, your device CAN show notifications!",
+  //         sound: true,
+  //         priority: Notifications.AndroidNotificationPriority.HIGH,
+  //         data: { source: "local_test", timestamp: Date.now() }
+  //       },
+  //       trigger: null, // null = show immediately
+  //     });
+
+  //     console.log("✅ Local notification sent with ID:", notificationId);
+  //     console.log("📱 CHECK YOUR NOTIFICATION SHADE NOW!");
+
+  //   } catch (error) {
+  //     console.error("❌ Local notification failed:", error);
+  //   }
+  // };
+
+  // const testFCM = async () => {
+  //   try {
+  //     const token = await Notifications.getDevicePushTokenAsync();
+  //     console.log("FCM TOKEN:", token);
+  //   } catch (e) {
+  //     console.error("FCM ERROR:", e);
+  //   }
+  // };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -241,6 +241,7 @@ const Login = () => {
                 onBlur={() => setInputFocused(false)}
               />
             </View>
+
 
             <View className="mb-10 mt-6">
               <Button

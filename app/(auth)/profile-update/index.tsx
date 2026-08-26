@@ -7,8 +7,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Keyboard,
-  TouchableWithoutFeedback,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -221,141 +219,142 @@ const EmailIdentityScreen = () => {
 
   return (
     <>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <SafeAreaView className="flex-1 bg-primary-100">
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            className="flex-1"
+      <SafeAreaView className="flex-1 bg-primary-100">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="flex-1"
+        >
+          <View className="flex-row items-center justify-between px-4 pt-4 pb-6">
+            <TouchableOpacity onPress={handleBack}>
+              <Ionicons name="close" size={30} color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={{
+              flexGrow: 1,
+              justifyContent: "space-between",
+              paddingHorizontal: 24,
+              paddingBottom: 10,
+            }}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets={true}
+            showsVerticalScrollIndicator={false}
           >
-            <View className="flex-row items-center justify-between px-4 pt-4 pb-6">
-              <TouchableOpacity onPress={handleBack}>
-                <Ionicons name="close" size={30} color="#fff" />
-              </TouchableOpacity>
-            </View>
+            <View>
+              <Text className="text-2xl font-bold text-white mb-4">
+                Enter your details
+              </Text>
 
-            <ScrollView
-              contentContainerStyle={{
-                flexGrow: 1,
-                justifyContent: "space-between",
-                paddingHorizontal: 24,
-              }}
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-            >
-              <View>
-                <Text className="text-2xl font-bold text-white mb-4">
-                  Enter your details
-                </Text>
+              {fetchError ? (
+                <Text className="text-red-500 mb-4">{fetchError}</Text>
+              ) : null}
 
-                {fetchError ? (
-                  <Text className="text-red-500 mb-4">{fetchError}</Text>
-                ) : null}
+              <View className="space-y-6">
+                <Dropdown
+                  label="Gender"
+                  placeholder="Select"
+                  options={genderOptions}
+                  selectedValue={gender}
+                  onSelect={setGender}
+                  error={genderError}
+                />
 
-                <View className="space-y-6">
-                  <Dropdown
-                    label="Gender"
-                    placeholder="Select"
-                    options={genderOptions}
-                    selectedValue={gender}
-                    onSelect={setGender}
-                    error={genderError}
-                  />
+                <TextInputField
+                  label="First Name"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="John"
+                  autoCapitalize="words"
+                  error={firstNameError}
+                />
 
-                  <TextInputField
-                    label="First Name"
-                    value={firstName}
-                    onChangeText={setFirstName}
-                    placeholder="John"
-                    autoCapitalize="words"
-                    error={firstNameError}
-                  />
+                <TextInputField
+                  label="Last Name"
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Doe"
+                  autoCapitalize="words"
+                  error={lastNameError}
+                />
 
-                  <TextInputField
-                    label="Last Name"
-                    value={lastName}
-                    onChangeText={setLastName}
-                    placeholder="Doe"
-                    autoCapitalize="words"
-                    error={lastNameError}
-                  />
+                <TextInputField
+                  label="Middle Name"
+                  value={middleName}
+                  onChangeText={setMiddleName}
+                  placeholder="Doe"
+                  autoCapitalize="words"
+                  error={middleNameError}
+                />
 
-                  <TextInputField
-                    label="Middle Name"
-                    value={middleName}
-                    onChangeText={setMiddleName}
-                    placeholder="Doe"
-                    autoCapitalize="words"
-                    error={middleNameError}
-                  />
+                <TextInputField
+                  label="BVN"
+                  value={bvn}
+                  onChangeText={(text) => setBvn(text.replace(/\D/g, ""))}
+                  placeholder="12345678901"
+                  keyboardType="numeric"
+                  maxLength={11}
+                  error={bvnError}
+                />
 
-                  <TextInputField
-                    label="BVN"
-                    value={bvn}
-                    onChangeText={(text) => setBvn(text.replace(/\D/g, ""))}
-                    placeholder="12345678901"
-                    keyboardType="numeric"
-                    maxLength={11}
-                    error={bvnError}
-                  />
+                <Dropdown
+                  label="State*"
+                  placeholder={
+                    loadingStates ? "Loading states..." : "Select State"
+                  }
+                  options={stateOptions}
+                  selectedValue={state}
+                  onSelect={setState}
+                  error={stateError}
+                  disabled={loadingStates}
+                />
 
-                  <Dropdown
-                    label="State*"
-                    placeholder={
-                      loadingStates ? "Loading states..." : "Select State"
-                    }
-                    options={stateOptions}
-                    selectedValue={state}
-                    onSelect={setState}
-                    error={stateError}
-                    disabled={loadingStates}
-                  />
+                <Dropdown
+                  label="Local Government*"
+                  placeholder={
+                    loadingLGAs
+                      ? "Loading LGAs..."
+                      : !state
+                        ? "Select State first"
+                        : "Select Local Government"
+                  }
+                  options={localGovernmentOptions}
+                  selectedValue={localGovernment}
+                  onSelect={setLocalGovernment}
+                  error={localGovernmentError}
+                  disabled={!state || loadingLGAs}
+                />
 
-                  <Dropdown
-                    label="Local Government*"
-                    placeholder={
-                      loadingLGAs
-                        ? "Loading LGAs..."
-                        : !state
-                          ? "Select State first"
-                          : "Select Local Government"
-                    }
-                    options={localGovernmentOptions}
-                    selectedValue={localGovernment}
-                    onSelect={setLocalGovernment}
-                    error={localGovernmentError}
-                    disabled={!state || loadingLGAs}
-                  />
+                <TextInputField
+                  label="Address Line 1*"
+                  value={address1}
+                  onChangeText={setAddress1}
+                  placeholder="123 Main St"
+                  error={address1Error}
+                />
 
-                  <TextInputField
-                    label="Address Line 1*"
-                    value={address1}
-                    onChangeText={setAddress1}
-                    placeholder="123 Main St"
-                    error={address1Error}
-                  />
-
-                  <TextInputField
-                    label="Address Line 2"
-                    value={address2}
-                    onChangeText={setAddress2}
-                    placeholder="Apt/Suite (Optional)"
-                  />
-                </View>
-              </View>
-
-              <View className="mb-6">
-                <Button
-                  title="Continue"
-                  variant="primary"
-                  onPress={handleContinue}
-                  className="w-full mt-4"
-                  disabled={authLoading || loadingStates}
+                <TextInputField
+                  label="Address Line 2"
+                  value={address2}
+                  onChangeText={setAddress2}
+                  placeholder="Apt/Suite (Optional)"
                 />
               </View>
-            </ScrollView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
-      </TouchableWithoutFeedback>
+            </View>
+
+            <View className="mb-6">
+              <Button
+                title="Continue"
+                variant="primary"
+                onPress={handleContinue}
+                className="w-full mt-60"
+                disabled={authLoading || loadingStates}
+              />
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
 
       <Loading visible={authLoading || loadingStates || loadingLGAs} />
       <ErrorModal
