@@ -198,7 +198,7 @@ const authSlice = createSlice({
           }>
         ) => {
           state.isLoading = false;
-          state.user = action.payload.user;
+          state.user = { ...state.user, ...action.payload.user };
           state.token = action.payload.token;
           state.requiresPasscodeSetup = action.payload.requiresPasscodeSetup;
           state.requiresTransactionPinSetup =

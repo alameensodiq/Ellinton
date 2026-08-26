@@ -29,6 +29,8 @@ export default function CurrentUser() {
   const { user, isLoading, isRestoring } = useAppSelector(
     (state) => state.auth
   );
+
+  console.log(user)
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
 
