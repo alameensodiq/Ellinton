@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import TextInputField from "@/app/components/inputs/TextInputField";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Button from "@/app/components/Button";
+import { svgIcons } from "@/app/assets/icons/icons";
 import ErrorModal from "@/app/components/ErrorModal";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InfoText from "@/app/components/InfoText";
@@ -33,15 +34,20 @@ import {
 } from "@/app/lib/notification.service";
 import { getDeviceId } from "@/app/lib/utils";
 import * as Notifications from "expo-notifications";
+import * as LocalAuthentication from "expo-local-authentication";
+import { Switch } from "react-native";
 
 const Login = () => {
+  const FingerprintIcon = svgIcons.fingerprint;
   const [pin, setPin] = useState("");
   const [email, setEmail] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [customError, setCustomError] = useState("");
 
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const BIOMETRIC_STORAGE_KEY = "biometricEnabled";
 
   const { isLoading, error } = useAppSelector((state) => state.auth);
 
@@ -61,6 +67,21 @@ const Login = () => {
       }
     };
     loadSavedEmail();
+    const loadBiometricState = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(BIOMETRIC_STORAGE_KEY);
+        if (stored !== null) {
+          setMfaEnabled(JSON.parse(stored)); // parse to boolean
+        } else {
+          // Default value (e.g., false) – you can also check with API if needed
+          setMfaEnabled(false);
+        }
+      } catch (error) {
+        console.error("Failed to load biometric state:", error);
+        setMfaEnabled(false); // fallback
+      }
+    };
+    loadBiometricState();
   }, []);
 
   useEffect(() => {
@@ -85,6 +106,7 @@ const Login = () => {
       ).unwrap();
 
       await AsyncStorage.setItem("userPin", pin);
+      await AsyncStorage.setItem("userEmail", email.trim().toLowerCase());
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 2. Request/Get the Push Token
@@ -122,56 +144,132 @@ const Login = () => {
 
   const handleDismissError = () => {
     setShowErrorModal(false);
+    setCustomError("");
     dispatch(clearError());
   };
 
-  // Add this function INSIDE your Login component
-  //  const testLocalNotification = async () => {
-  //   try {
-  //     console.log("📱 Testing LOCAL notification...");
+  const [mfaEnabled, setMfaEnabled] = useState(false);
 
-  //     // Create a channel specifically for this test (Vivo needs this)
-  //     if (Platform.OS === "android") {
-  //       await Notifications.setNotificationChannelAsync('local_test', {
-  //         name: 'Local Test Channel',
-  //         importance: Notifications.AndroidImportance.MAX,
-  //         vibrationPattern: [0, 250, 250, 250],
-  //         lightColor: '#FF231F7C',
-  //         sound: 'default',
-  //         enableVibrate: true,
-  //         enableLights: true,
-  //         bypassDnd: true, // Force through Do Not Disturb
-  //       });
-  //     }
+  const handleBiometricAuth = async () => {
+    try {
+      if (!LocalAuthentication || !LocalAuthentication.hasHardwareAsync) {
+        setCustomError(
+          "Biometric native module not found in the current app build. Please rebuild the app (npx expo run:android or npx expo run:ios)."
+        );
+        setShowErrorModal(true);
+        return;
+      }
 
-  //     // Send a local notification immediately
-  //     const notificationId = await Notifications.scheduleNotificationAsync({
-  //       content: {
-  //         title: "🔔 Local Test Success!",
-  //         body: "If you see this, your device CAN show notifications!",
-  //         sound: true,
-  //         priority: Notifications.AndroidNotificationPriority.HIGH,
-  //         data: { source: "local_test", timestamp: Date.now() }
-  //       },
-  //       trigger: null, // null = show immediately
-  //     });
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
 
-  //     console.log("✅ Local notification sent with ID:", notificationId);
-  //     console.log("📱 CHECK YOUR NOTIFICATION SHADE NOW!");
+      if (!hasHardware || !isEnrolled) {
+        setCustomError(
+          "Biometric authentication is not supported or not enrolled on this device."
+        );
+        setShowErrorModal(true);
+        return;
+      }
 
-  //   } catch (error) {
-  //     console.error("❌ Local notification failed:", error);
-  //   }
-  // };
+      const supportedTypes =
+        await LocalAuthentication.supportedAuthenticationTypesAsync();
+      const isIOS = Platform.OS === "ios";
+      const isAndroid = Platform.OS === "android";
 
-  // const testFCM = async () => {
-  //   try {
-  //     const token = await Notifications.getDevicePushTokenAsync();
-  //     console.log("FCM TOKEN:", token);
-  //   } catch (e) {
-  //     console.error("FCM ERROR:", e);
-  //   }
-  // };
+      let promptMessage = "Authenticate to log in";
+      if (
+        isIOS ||
+        supportedTypes.includes(
+          LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
+        )
+      ) {
+        promptMessage = "Use Face Recognition to log in";
+      } else if (
+        isAndroid ||
+        supportedTypes.includes(
+          LocalAuthentication.AuthenticationType.FINGERPRINT
+        )
+      ) {
+        promptMessage = "Scan Fingerprint to log in";
+      }
+
+      const authResult = await LocalAuthentication.authenticateAsync({
+        promptMessage,
+        cancelLabel: "Cancel",
+        disableDeviceFallback: true,
+      });
+
+      if (!authResult.success) {
+        console.log("Biometric authentication cancelled or failed:", authResult.error);
+        return;
+      }
+
+      const [deviceId, savedPin, userProfile, storedEmail] = await Promise.all([
+        getDeviceId(),
+        AsyncStorage.getItem("userPin"),
+        AsyncStorage.getItem("userProfile"),
+        AsyncStorage.getItem("userEmail"),
+      ]);
+
+      const parsedProfile = userProfile ? JSON.parse(userProfile) : null;
+      const targetEmail = (
+        email ||
+        storedEmail ||
+        parsedProfile?.email ||
+        ""
+      ).trim().toLowerCase();
+      const targetPin = pin || savedPin;
+
+      if (!targetEmail || !targetPin) {
+        setCustomError(
+          "No saved credentials found. Please log in with your passcode first."
+        );
+        setShowErrorModal(true);
+        return;
+      }
+
+      await dispatch(
+        loginUser({
+          email: targetEmail,
+          passcode: targetPin,
+          device_id: deviceId,
+        })
+      ).unwrap();
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        const isRegistered = await registerDeviceWithBackend(token);
+        if (isRegistered) {
+          console.log("✅ Push token synced with backend");
+        }
+      }
+    } catch (error: any) {
+      console.error("❌ Biometric login failed:", error);
+      setCustomError(
+        typeof error === "string"
+          ? error
+          : error?.message || "Biometric authentication failed. Please try again."
+      );
+      setShowErrorModal(true);
+    }
+  };
+
+
+  const handleMfaToggle = async (value: boolean) => {
+    // Optimistic update
+    setMfaEnabled(value);
+
+    try {
+      // Call your API
+      await AsyncStorage.setItem(BIOMETRIC_STORAGE_KEY, JSON.stringify(value));
+    } catch (err) {
+      // Revert UI on failure
+      setMfaEnabled(!value);
+      console.error("MFA update failed:", err);
+    }
+  };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -186,7 +284,7 @@ const Login = () => {
             }}
             keyboardShouldPersistTaps="handled"
           >
-            <View className="mt-10">
+            <View className="mt-9">
               <View className="bg-primary-400 h-80 rounded-3xl overflow-hidden">
                 <ImageBackground
                   source={images.login_bg}
@@ -212,7 +310,7 @@ const Login = () => {
               </View>
             </View>
 
-            <View className="w-full">
+            <View className="w-full mt-2">
               <CustomText weight="bold" className="mb-4" size="lg">
                 Login to your account
               </CustomText>
@@ -242,8 +340,33 @@ const Login = () => {
               />
             </View>
 
+            <View className="rounded-2xl overflow-hidden mt-1">
 
-            <View className="mb-10 mt-6">
+              <View className="flex-row justify-center items-center px-6 py-2">
+                {
+                  mfaEnabled && (
+                    <Pressable onPress={handleBiometricAuth}>
+                      <FingerprintIcon
+                        width={60} height={60}
+                      />
+                    </Pressable>
+
+                  )
+                }
+
+              </View>
+              <View className="flex-row items-center px-6">
+                <Text className="text-white text-base flex-1">Biometric</Text>
+                <Switch
+                  value={mfaEnabled}
+                  onValueChange={handleMfaToggle}
+                  trackColor={{ false: "#555", true: "#63642A" }}
+                  thumbColor={mfaEnabled ? "#fff" : "#ccc"}
+                />
+              </View>
+            </View>
+
+            <View className="mb-10 mt-2">
               <Button
                 title={isLoading ? "Logging in..." : "Login"}
                 variant="primary"
@@ -277,7 +400,9 @@ const Login = () => {
           visible={showErrorModal}
           title="Login Error"
           message={
-            error || "We could not complete your login, give it another shot"
+            customError ||
+            error ||
+            "We could not complete your login, give it another shot"
           }
           onDismiss={handleDismissError}
         />

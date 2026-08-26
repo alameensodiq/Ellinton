@@ -23,8 +23,8 @@ import Box from "./box.svg"
 import Shipping from "./shipping.svg"
 import chip from "./chip.svg"
 import FixedSavings from "./fixed-savings.svg"
-import BasicSavings from  "./basic-savings.svg"
-import TargetSavings from  "./target-savings.svg"
+import BasicSavings from "./basic-savings.svg"
+import TargetSavings from "./target-savings.svg"
 import GroupSavings from "./group-savings.svg"
 import loans from "./loans.svg"
 import gift from "./gift.svg"
@@ -36,6 +36,7 @@ import loanCondtion3 from "./loan-condition3.svg"
 import loanCondtion4 from "./loan-condition4.svg"
 import loanCondtion5 from "./loan-condition5.svg"
 import calenderPay from "./calendar-payment-loan.svg"
+import fingerprint from './fingerprint.svg'
 
 
 export default {
@@ -47,7 +48,7 @@ export default {
   visa: require("./visa.svg"),
   master_card: require("./master-card.svg"),
   verve: require("./verve-3.svg"),
-  
+
 };
 
 export const svgIcons = {
@@ -80,6 +81,7 @@ export const svgIcons = {
   target_savings: TargetSavings,
   group_savings: GroupSavings,
   loans: loans,
+  fingerprint: fingerprint,
   gift,
   glo: require("./glo.jpg"),
   ninemobile: require("./9mobile.jpg"),
