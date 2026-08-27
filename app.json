@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "134",
+      "buildNumber": "135",
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
