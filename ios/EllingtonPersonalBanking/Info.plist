@@ -37,6 +37,8 @@
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>This app requires access to your camera to scan QR codes and capture verification documents.</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Allow Ellington Personal Banking to use Face ID for fast and secure login and transaction authorization.</string>
     <key>NSContactsUsageDescription</key>
     <string>This app requires access to your contacts to easily select recipients for transfers.</string>
     <key>NSMicrophoneUsageDescription</key>
