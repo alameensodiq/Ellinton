@@ -1,7 +1,9 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView } from "react-native";
+import { ScrollView, View, Text, ActivityIndicator, Vibration } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
 
 import Header from "@/app/components/header-back";
 import AmountCard from "@/app/components/home/cards/AmountCard";
@@ -17,6 +19,11 @@ import {
   utilityserviceItems
 } from "@/app/lib/utils";
 import ValidationResultCard from "@/app/components/VerificationResultCard";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { payBill } from "@/app/lib/thunks/billsThunks";
+
+const TRANS_BIOMETRIC_KEY = "transBiometricEnabled";
+const TRANS_PIN_KEY = "transBiometricPin";
 
 export default function ConfirmBuyAirtime() {
   const {
@@ -27,7 +34,9 @@ export default function ConfirmBuyAirtime() {
     providerName,
     validationResult
   } = useLocalSearchParams();
-  console.log(validationResult);
+
+  const dispatch = useAppDispatch();
+  const router = useRouter();
 
   const parsedValidationResult = React.useMemo(() => {
     try {
@@ -40,7 +49,6 @@ export default function ConfirmBuyAirtime() {
       return null;
     }
   }, [validationResult]);
-  const router = useRouter();
 
   const rawAmount = Array.isArray(amount)
     ? amount[0]
@@ -68,8 +76,104 @@ export default function ConfirmBuyAirtime() {
   const [dayOfWeek, setDayOfWeek] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const storedBiometric = await AsyncStorage.getItem(TRANS_BIOMETRIC_KEY);
+      const storedPin = await AsyncStorage.getItem(TRANS_PIN_KEY);
+
+      let isBiometricEnabled = false;
+      if (storedBiometric) {
+        try {
+          isBiometricEnabled = JSON.parse(storedBiometric) === true;
+        } catch {
+          isBiometricEnabled = storedBiometric === "true";
+        }
+      }
+
+      if (isBiometricEnabled && storedPin && storedPin.length === 4) {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (hasHardware && isEnrolled) {
+          const authResult = await LocalAuthentication.authenticateAsync({
+            promptMessage: "Authenticate to complete payment",
+            cancelLabel: "Use PIN",
+            disableDeviceFallback: true,
+          });
+
+          if (!authResult.success) {
+            setLoading(false);
+            return;
+          }
+
+          const meterStr = Array.isArray(meterNumber)
+            ? meterNumber[0]
+            : meterNumber || "";
+          const serviceStr = Array.isArray(service)
+            ? service[0]
+            : service || "";
+          const productStr = Array.isArray(product)
+            ? product[0]
+            : product || "";
+
+          const payload = {
+            type: "electricity",
+            provider: serviceStr,
+            amount: finalAmount,
+            bundleSlug: productStr,
+            customerId: meterStr,
+            transactionPin: storedPin,
+          };
+
+          try {
+            const result = await dispatch(payBill(payload)).unwrap();
+
+            router.replace({
+              pathname: "/(root)/utility/success",
+              params: {
+                service,
+                product,
+                meterNumber,
+                amount: rawAmount,
+                fee,
+                totalDebit,
+                reference: result?.reference,
+                status: "success",
+              },
+            });
+            setLoading(false);
+            return;
+          } catch (err: any) {
+            const errorMessage =
+              err?.message ||
+              err?.data?.message ||
+              err?.error ||
+              (typeof err === "string" ? err : null) ||
+              "Service not available at this time, please try again later";
+            setError(errorMessage);
+            Vibration.vibrate(400);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch (err: any) {
+      console.log("Biometric payment process error:", err);
+      setError(
+        err?.message || "An error occurred during biometric authentication"
+      );
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+
     router.push({
       pathname: "/(root)/utility/authorize",
       params: {
@@ -138,7 +242,17 @@ export default function ConfirmBuyAirtime() {
           dayOptions={dayOptions}
         />
 
-        <Button title="Pay" variant="primary" onPress={handleContinue} />
+        {error && (
+          <Text className="text-red-500 text-sm mb-4 text-center">
+            {error}
+          </Text>
+        )}
+
+        {loading ? (
+          <ActivityIndicator size="large" color="#fff" className="my-4" />
+        ) : (
+          <Button title="Pay" variant="primary" onPress={handleContinue} />
+        )}
       </ScrollView>
     </SafeAreaView>
   );

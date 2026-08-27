@@ -22,6 +22,7 @@ import Sheet from "./Sheet";
 import TextInputField from "./inputs/TextInputField";
 import Button from "./Button";
 import CustomText from "./CustomText";
+import OtpInput from "./inputs/OtpInput";
 import ErrorModal from "./ErrorModal";
 import SuccessModal from "./SuccessModal";
 
@@ -113,6 +114,16 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_required ?? false);
 
+  // Transaction Pin Biometric
+  const [transBiometric, setTransBiometric] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [pinValue, setPinValue] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [savingPin, setSavingPin] = useState(false);
+
+  const TRANS_BIOMETRIC_KEY = "transBiometricEnabled";
+  const TRANS_PIN_KEY = "transBiometricPin";
+
   const defaultListItems: MenuItem[] = [
     {
       id: "2",
@@ -154,6 +165,21 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   useEffect(() => {
     setMfaEnabled(user?.mfa_required ?? false);
   }, [user?.mfa_required]);
+
+  // Load transBiometric state from AsyncStorage on mount
+  useEffect(() => {
+    const loadTransBiometric = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(TRANS_BIOMETRIC_KEY);
+        if (stored !== null) {
+          setTransBiometric(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error("Failed to load transBiometric state:", error);
+      }
+    };
+    loadTransBiometric();
+  }, []);
 
   const handleItemPress = (item: MenuItem) => {
     item.onPress?.();
@@ -269,6 +295,47 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
     }
   };
 
+  const handleTransBiometricToggle = (value: boolean) => {
+    if (value) {
+      // Enabling: show PIN modal
+      setPinValue("");
+      setPinError("");
+      setShowPinModal(true);
+    } else {
+      // Disabling: clear stored values
+      (async () => {
+        try {
+          await AsyncStorage.removeItem(TRANS_PIN_KEY);
+          await AsyncStorage.setItem(TRANS_BIOMETRIC_KEY, JSON.stringify(false));
+          setTransBiometric(false);
+        } catch (error) {
+          console.error("Failed to disable transBiometric:", error);
+        }
+      })();
+    }
+  };
+
+  const handlePinSubmit = async () => {
+    if (pinValue.length !== 4) {
+      setPinError("Please enter a 4-digit PIN");
+      return;
+    }
+    try {
+      setSavingPin(true);
+      await AsyncStorage.setItem(TRANS_PIN_KEY, pinValue);
+      await AsyncStorage.setItem(TRANS_BIOMETRIC_KEY, JSON.stringify(true));
+      setTransBiometric(true);
+      setShowPinModal(false);
+      setPinValue("");
+      setPinError("");
+    } catch (error) {
+      console.error("Failed to save transaction PIN:", error);
+      setPinError("Failed to save PIN. Please try again.");
+    } finally {
+      setSavingPin(false);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -310,11 +377,10 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
                       <Pressable
                         key={item.id}
                         onPress={() => handleItemPress(item)}
-                        className={`flex-row items-center px-6 py-4 border-b border-white/10 ${
-                          index === displayListItems.length - 1
+                        className={`flex-row items-center px-6 py-4 border-b border-white/10 ${index === displayListItems.length - 1
                             ? "border-b-0"
                             : ""
-                        }`}
+                          }`}
                       >
                         <MaterialCommunityIcons
                           name={item.icon}
@@ -342,6 +408,19 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
                         onValueChange={handleMfaToggle}
                         trackColor={{ false: "#555", true: "#63642A" }}
                         thumbColor={mfaEnabled ? "#fff" : "#ccc"}
+                      />
+                    </View>
+                  </View>
+
+                  <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
+                    <View className="flex-row items-center px-6 py-4">
+                      <Text className="text-white text-base flex-1">Transaction Pin Biometric</Text>
+
+                      <Switch
+                        value={transBiometric}
+                        onValueChange={handleTransBiometricToggle}
+                        trackColor={{ false: "#555", true: "#63642A" }}
+                        thumbColor={transBiometric ? "#fff" : "#ccc"}
                       />
                     </View>
                   </View>
@@ -402,7 +481,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
             <TextInputField
               label="Start date"
               value={startDateText}
-              onChangeText={() => {}}
+              onChangeText={() => { }}
               placeholder="Select start date"
               disabled
               error={startErr}
@@ -429,7 +508,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
             <TextInputField
               label="End date"
               value={endDateText}
-              onChangeText={() => {}}
+              onChangeText={() => { }}
               placeholder="Select end date"
               disabled
               error={endErr}
@@ -524,6 +603,66 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
         message="Your bank statement request was submitted successfully."
         onDismiss={() => setShowSuccessModal(false)}
       />
+
+      {/* Transaction PIN Modal */}
+      <Modal
+        visible={showPinModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowPinModal(false);
+          setPinValue("");
+          setPinError("");
+        }}
+      >
+        <Pressable
+          className="flex-1 bg-black/60 justify-center items-center"
+          onPress={() => {
+            setShowPinModal(false);
+            setPinValue("");
+            setPinError("");
+          }}
+        >
+          <Pressable
+            onPress={(e) => e.stopPropagation()}
+            className="bg-primary-100 rounded-3xl mx-6 px-6 py-8 w-[90%]"
+          >
+            <CustomText size="lg" weight="bold" className="text-white text-center mb-2">
+              Enter Transaction PIN
+            </CustomText>
+            <CustomText size="sm" secondary className="text-center mb-6">
+              Enter your 4-digit transaction PIN to enable biometric.
+            </CustomText>
+
+            <OtpInput
+              digitCount={4}
+              value={pinValue}
+              onChange={(val) => {
+                setPinValue(val);
+                setPinError("");
+              }}
+              secure={true}
+              autoFocus={true}
+              inputStyle="w-14 h-14"
+            />
+
+            {pinError ? (
+              <Text className="text-red-500 text-sm text-center mt-3">
+                {pinError}
+              </Text>
+            ) : null}
+
+            <View className="mt-6">
+              <Button
+                title={savingPin ? "Saving..." : "Confirm"}
+                variant="primary"
+                onPress={handlePinSubmit}
+                disabled={pinValue.length !== 4 || savingPin}
+              />
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </>
   );
 };

@@ -4,7 +4,7 @@ import icons from "@/app/assets/icons/icons";
 import Header from "@/app/components/header-back";
 import AmountCard from "@/app/components/home/cards/AmountCard";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, Text, ActivityIndicator, Vibration } from "react-native";
 import PaymentInfoCard from "@/app/components/home/biils/PaymentInfoCard";
 import TransferSummaryCard from "@/app/components/TransferSummaryCard";
 import SenderCard from "@/app/components/home/cards/sender-card.tsx";
@@ -15,6 +15,11 @@ import {
   eventServiceItems,
 } from "@/app/lib/utils";
 import Button from "@/app/components/Button";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
+
+const TRANS_BIOMETRIC_KEY = "transBiometricEnabled";
+const TRANS_PIN_KEY = "transBiometricPin";
 
 export default function ConfirmGeneralPayment() {
   const { serviceType, service, product, email, amount } =
@@ -44,8 +49,66 @@ export default function ConfirmGeneralPayment() {
   const [dayOfWeek, setDayOfWeek] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const storedBiometric = await AsyncStorage.getItem(TRANS_BIOMETRIC_KEY);
+      const storedPin = await AsyncStorage.getItem(TRANS_PIN_KEY);
+
+      let isBiometricEnabled = false;
+      if (storedBiometric) {
+        try {
+          isBiometricEnabled = JSON.parse(storedBiometric) === true;
+        } catch {
+          isBiometricEnabled = storedBiometric === "true";
+        }
+      }
+
+      if (isBiometricEnabled && storedPin && storedPin.length === 4) {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (hasHardware && isEnrolled) {
+          const authResult = await LocalAuthentication.authenticateAsync({
+            promptMessage: "Authenticate to complete payment",
+            cancelLabel: "Use PIN",
+            disableDeviceFallback: true,
+          });
+
+          if (!authResult.success) {
+            setLoading(false);
+            return;
+          }
+
+          router.replace({
+            pathname: "/(root)/other-bills/success",
+            params: {
+              amount: rawAmount,
+              description: "Seventy five thousand naira",
+              service,
+              status: "success",
+            },
+          });
+          setLoading(false);
+          return;
+        }
+      }
+    } catch (err: any) {
+      console.log("Biometric payment process error:", err);
+      setError(
+        err?.message || "An error occurred during biometric authentication"
+      );
+      setLoading(false);
+      return;
+    }
+
+    setLoading(false);
+
     router.push({
       pathname: "/(root)/other-bills/authorize",
       params: {
@@ -100,7 +163,18 @@ export default function ConfirmGeneralPayment() {
           frequencyOptions={frequencyOptions}
           dayOptions={dayOptions}
         />
-        <Button title="Pay" variant="primary" onPress={handleContinue} />
+
+        {error && (
+          <Text className="text-red-500 text-sm mb-4 text-center">
+            {error}
+          </Text>
+        )}
+
+        {loading ? (
+          <ActivityIndicator size="large" color="#fff" className="my-4" />
+        ) : (
+          <Button title="Pay" variant="primary" onPress={handleContinue} />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
