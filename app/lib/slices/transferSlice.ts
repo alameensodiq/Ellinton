@@ -6,6 +6,8 @@ import {
   AccountTransaction,
   fetchSingleTransactionReceipt,
   TransactionReceipt,
+  fetchTransferFee,
+  TransferFee
 } from "../thunks/transferThunks";
 
 export interface TransferResult {
@@ -31,6 +33,7 @@ export interface TransferState {
   transactionReceipt: TransactionReceipt | null;
   isLoading: boolean;
   error: string | null;
+  transferfee: TransferFee | null
 }
 
 const initialState: TransferState = {
@@ -39,6 +42,7 @@ const initialState: TransferState = {
   transactionReceipt: null,
   isLoading: false,
   error: null,
+  transferfee: null
 };
 
 const transferSlice = createSlice({
@@ -56,6 +60,9 @@ const transferSlice = createSlice({
     },
     clearTransactionReceipt: (state) => {
       state.transactionReceipt = null;
+    },
+    clearTransferFee: (state) => {
+      state.transferfee = null;
     },
   },
 
@@ -155,6 +162,29 @@ const transferSlice = createSlice({
             : "Transfer failed";
         state.transferResult = null;
       });
+
+    builder
+      .addCase(fetchTransferFee.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.transferfee = null;
+      })
+      .addCase(
+        fetchTransferFee.fulfilled,
+        (state, action: PayloadAction<TransferFee>) => {
+          state.isLoading = false;
+          state.transferfee = action.payload;
+          state.error = null;
+        }
+      )
+      .addCase(fetchTransferFee.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error =
+          typeof action.payload === "string"
+            ? action.payload
+            : "Transfer failed";
+        state.transferfee = null;
+      });
   },
 });
 
@@ -163,6 +193,7 @@ export const {
   clearTransfer,
   clearTransactions,
   clearTransactionReceipt,
+  clearTransferFee
 } =
   transferSlice.actions;
 

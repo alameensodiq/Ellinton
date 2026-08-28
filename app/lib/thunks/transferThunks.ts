@@ -4,6 +4,7 @@ import {
   TRANSFER_OTHER_BANK,
   FETCH_ACCOUNT_TRANSACTIONS,
   FETCH_SINGLE_ACCOUNT_TRANSACTION,
+  FETCH_TRANSFER_FEE,
 } from "../api";
 import { encryptedFetch } from "../encryptedFetch";
 import { encryptionClient } from "../encrption.client";
@@ -16,20 +17,20 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   const method = options.method?.toLowerCase() || "get";
   const headers = (options.headers as Record<string, string>) || {};
   const body = options.body ? JSON.parse(options.body as string) : undefined;
-  
+
   const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
-  
+
   let enhancedHeaders = { ...headers };
-  
+
   if (hasAuthToken) {
     const timestamp = Date.now().toString();
     const nonce = generateNonce();
     const deviceId = await getDeviceId();
-    
+
     // IMPORTANT: Extract ONLY the pathname, not the full URL
     const urlObj = new URL(url);
     const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
-    
+
     // console.log("📡 Request details:", {
     //   fullUrl: url,
     //   path,
@@ -37,7 +38,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     //   hasBody: !!body,
     //   deviceId
     // });
-    
+
     // Generate signature
     const { signature } = await generateSignature(
       method,
@@ -47,7 +48,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       timestamp,
       deviceId
     );
-    
+
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {
       ...headers,
@@ -56,7 +57,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       'x-signature': signature,
       'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
     };
-    
+
     // console.log("🔐 Added signature headers:", {
     //   timestamp,
     //   noncePreview: nonce.substring(0, 10) + "...",
@@ -66,7 +67,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     // console.log("🔓 No auth token, skipping signature");
   }
-  
+
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
@@ -183,6 +184,15 @@ export interface TransactionReceipt {
   receiverName: string;
   receiverAccount: string;
   senderAccount: string;
+}
+
+
+export interface TransferFee {
+  amount: number;
+  fee: number;
+  vat: number;
+  emtl: number;
+  totalDebit: number;
 }
 
 function extractError(errorData: any, status: number) {
@@ -353,6 +363,44 @@ export const fetchSingleTransactionReceipt = createAsyncThunk<
       return rejectWithValue(
         err.message || "Failed to fetch transaction receipt"
       );
+    }
+  }
+);
+
+
+export const fetchTransferFee = createAsyncThunk<
+  TransferFee,
+  { transferType?: string; amount?: string | number }
+>(
+  "transfer-fees/quote",
+  async (params, { rejectWithValue, getState }) => {
+    try {
+      const token = (getState() as any).auth.token;
+
+      const query = new URLSearchParams();
+      if (params?.transferType) query.append("transferType", params.transferType);
+      if (params?.amount) query.append("amount", params.amount);
+
+      const response = await safeFetch(
+        `${FETCH_TRANSFER_FEE}?${query.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        return rejectWithValue(extractError(result, response.status));
+      }
+
+      // return result.data || [];
+      return result.data || [];
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Failed to fetch transactions");
     }
   }
 );

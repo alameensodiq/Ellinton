@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,10 @@ import ScheduleTransaction from "@/app/components/ScheduleTransaction";
 import { dayOptions, frequencyOptions } from "@/app/lib/utils";
 import { svgIcons } from "@/app/assets/icons/icons";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/app/lib/store";
+import { fetchTransferFee } from "@/app/lib/thunks/transferThunks";
+import { clearGoldError } from "@/app/lib/slices/goldSlice";
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "zero naira";
@@ -98,6 +102,7 @@ const numberToWords = (num: number): string => {
 export default function ConfirmTransfer() {
   const params = useLocalSearchParams();
   const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   console.log(params);
   const accountNumber = params.accountNumber as string;
   const bank = params.bank as string;
@@ -130,9 +135,28 @@ export default function ConfirmTransfer() {
   const [endDate, setEndDate] = useState("");
   const [remark, setRemark] = useState("");
 
-  const fee = 10;
+
   const numericAmount = parseFloat(amount.replace(/,/g, ""));
-  const totalDebit = numericAmount + fee;
+  console.log(numericAmount)
+
+  useEffect(() => {
+    if (amount && bank) {
+      dispatch(fetchTransferFee({
+        amount: numericAmount, transferType: bank === 'Ellington MFB' ? 'intra_bank' : 'inter_bank'
+      }));
+    }
+  }, [dispatch, amount, bank]);
+
+
+  const transferfee = useSelector(
+    (state: RootState) => state.transfers.transferfee
+  );
+  console.log(transferfee)
+
+  // const fee = 10;
+  const fee = transferfee?.fee ?? 0;
+  // const totalDebit = numericAmount + fee;
+  const totalDebit = numericAmount + (transferfee?.fee ?? 0);
 
   const goldBalance = useAppSelector((s: any) => s.gold.dashboard?.wallet?.balance_grams ?? 0);
   const amountGramsParam = params.amount_grams as string | undefined;
