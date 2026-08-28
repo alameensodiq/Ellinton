@@ -33,8 +33,7 @@ import {
   registerForPushNotificationsAsync
 } from "@/app/lib/notification.service";
 import { getDeviceId } from "@/app/lib/utils";
-import * as Notifications from "expo-notifications";
-
+import * as LocalAuthentication from "expo-local-authentication";
 
 const Login = () => {
   const [pin, setPin] = useState("");
