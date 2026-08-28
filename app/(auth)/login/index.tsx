@@ -34,54 +34,50 @@ import {
 } from "@/app/lib/notification.service";
 import { getDeviceId } from "@/app/lib/utils";
 import * as Notifications from "expo-notifications";
-import * as LocalAuthentication from "expo-local-authentication";
-import { Switch } from "react-native";
+
 
 const Login = () => {
-  const FingerprintIcon = svgIcons.fingerprint;
   const [pin, setPin] = useState("");
   const [email, setEmail] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [customError, setCustomError] = useState("");
+  const [hasLoggedInBefore, setHasLoggedInBefore] = useState(false);
+  const [showPasscodeInput, setShowPasscodeInput] = useState(false);
 
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const BIOMETRIC_STORAGE_KEY = "biometricEnabled";
 
   const { isLoading, error } = useAppSelector((state) => state.auth);
 
-  // Auto-fill email if user profile is saved
+  // Auto-fill email and check if user has logged in before
   useEffect(() => {
-    const loadSavedEmail = async () => {
+    const checkLoginStatus = async () => {
       try {
-        const userProfile = await AsyncStorage.getItem("userProfile");
+        const [savedPin, savedEmail, userProfile, loggedInFlag] = await Promise.all([
+          AsyncStorage.getItem("userPin"),
+          AsyncStorage.getItem("userEmail"),
+          AsyncStorage.getItem("userProfile"),
+          AsyncStorage.getItem("hasLoggedInBefore"),
+        ]);
+
+        const returningUser = Boolean(savedPin || loggedInFlag === "true");
+        setHasLoggedInBefore(returningUser);
+        setShowPasscodeInput(!returningUser);
+
         if (userProfile) {
           const parsedUser = JSON.parse(userProfile);
           if (parsedUser?.email) {
             setEmail(parsedUser.email);
           }
+        } else if (savedEmail) {
+          setEmail(savedEmail);
         }
       } catch (e) {
-        // ignore
+        setShowPasscodeInput(true);
       }
     };
-    loadSavedEmail();
-    const loadBiometricState = async () => {
-      try {
-        const stored = await AsyncStorage.getItem(BIOMETRIC_STORAGE_KEY);
-        if (stored !== null) {
-          setMfaEnabled(JSON.parse(stored)); // parse to boolean
-        } else {
-          // Default value (e.g., false) – you can also check with API if needed
-          setMfaEnabled(false);
-        }
-      } catch (error) {
-        console.error("Failed to load biometric state:", error);
-        setMfaEnabled(false); // fallback
-      }
-    };
-    loadBiometricState();
+    checkLoginStatus();
   }, []);
 
   useEffect(() => {
@@ -89,42 +85,50 @@ const Login = () => {
   }, [error]);
 
   const handleLogin = async () => {
-    if (!email || !pin) return;
+    // If user is returning and hasn't toggled manual passcode entry, trigger biometric auth
+    if (hasLoggedInBefore && !showPasscodeInput) {
+      await handleBiometricAuth();
+      return;
+    }
 
-    try {
-      const [deviceId] = await Promise.all([getDeviceId()]);
-      console.log(deviceId);
-      console.log(email, pin);
+    // If 6-digit passcode is entered, use passcode login directly
+    if (email && pin.length === 6) {
+      try {
+        const deviceId = await getDeviceId();
+        console.log(deviceId);
+        console.log(email, pin);
 
-      // 1. Log in to your app
-      await dispatch(
-        loginUser({
-          email: email.trim().toLowerCase(),
-          passcode: pin,
-          device_id: deviceId
-        })
-      ).unwrap();
+        await dispatch(
+          loginUser({
+            email: email.trim().toLowerCase(),
+            passcode: pin,
+            device_id: deviceId
+          })
+        ).unwrap();
 
-      await AsyncStorage.setItem("userPin", pin);
-      await AsyncStorage.setItem("userEmail", email.trim().toLowerCase());
-      await new Promise((resolve) => setTimeout(resolve, 500));
+        await AsyncStorage.setItem("userPin", pin);
+        await AsyncStorage.setItem("userEmail", email.trim().toLowerCase());
+        await AsyncStorage.setItem("hasLoggedInBefore", "true");
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 2. Request/Get the Push Token
-      const token = await registerForPushNotificationsAsync();
-      console.log("Push Token:", token);
-
-      // 3. If we got a token, send it to the backend immediately
-      if (token) {
-        const isRegistered = await registerDeviceWithBackend(token);
-        if (isRegistered) {
-          console.log("✅ Push token synced with backend");
-          console.log("📱 Ready to receive push notifications from backend");
-        } else {
-          console.warn("⚠️ Login succeeded, but push registration failed");
+        const token = await registerForPushNotificationsAsync();
+        if (token) {
+          const isRegistered = await registerDeviceWithBackend(token);
+          if (isRegistered) {
+            console.log("✅ Push token synced with backend");
+          }
         }
+      } catch (error) {
+        console.error("❌ Login failed:", error);
       }
-    } catch (error) {
-      console.error("❌ Login failed:", error);
+      return;
+    }
+
+    // Validation for passcode input
+    if (!email || !pin) {
+      setCustomError("Please enter your email and 6-digit passcode.");
+      setShowErrorModal(true);
+      return;
     }
   };
 
@@ -148,67 +152,12 @@ const Login = () => {
     dispatch(clearError());
   };
 
-  const [mfaEnabled, setMfaEnabled] = useState(false);
-
   const handleBiometricAuth = async () => {
     try {
-      if (!LocalAuthentication || !LocalAuthentication.hasHardwareAsync) {
-        setCustomError(
-          "Biometric native module not found in the current app build. Please rebuild the app (npx expo run:android or npx expo run:ios)."
-        );
-        setShowErrorModal(true);
-        return;
-      }
-
-      const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-      if (!hasHardware || !isEnrolled) {
-        setCustomError(
-          "Biometric authentication is not supported or not enrolled on this device."
-        );
-        setShowErrorModal(true);
-        return;
-      }
-
-      const supportedTypes =
-        await LocalAuthentication.supportedAuthenticationTypesAsync();
-      const isIOS = Platform.OS === "ios";
-      const isAndroid = Platform.OS === "android";
-
-      let promptMessage = "Authenticate to log in";
-      if (
-        isIOS ||
-        supportedTypes.includes(
-          LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
-        )
-      ) {
-        promptMessage = "Use Face Recognition to log in";
-      } else if (
-        isAndroid ||
-        supportedTypes.includes(
-          LocalAuthentication.AuthenticationType.FINGERPRINT
-        )
-      ) {
-        promptMessage = "Scan Fingerprint to log in";
-      }
-
-      const authResult = await LocalAuthentication.authenticateAsync({
-        promptMessage,
-        cancelLabel: "Cancel",
-        disableDeviceFallback: true,
-      });
-
-      if (!authResult.success) {
-        console.log("Biometric authentication cancelled or failed:", authResult.error);
-        return;
-      }
-
-      const [deviceId, savedPin, userProfile, storedEmail] = await Promise.all([
-        getDeviceId(),
+      const [savedPin, storedEmail, userProfile] = await Promise.all([
         AsyncStorage.getItem("userPin"),
-        AsyncStorage.getItem("userProfile"),
         AsyncStorage.getItem("userEmail"),
+        AsyncStorage.getItem("userProfile"),
       ]);
 
       const parsedProfile = userProfile ? JSON.parse(userProfile) : null;
@@ -222,11 +171,66 @@ const Login = () => {
 
       if (!targetEmail || !targetPin) {
         setCustomError(
-          "No saved credentials found. Please log in with your passcode first."
+          "No saved passcode found. Please enter your passcode to log in for the first time."
+        );
+        setShowPasscodeInput(true);
+        setShowErrorModal(true);
+        return;
+      }
+
+      if (!LocalAuthentication || !LocalAuthentication.hasHardwareAsync) {
+        setCustomError(
+          "Biometric native module not found in the current app build."
         );
         setShowErrorModal(true);
         return;
       }
+
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        setCustomError(
+          "Biometric authentication is not supported or not set up on this device. Please enter your passcode."
+        );
+        setShowPasscodeInput(true);
+        setShowErrorModal(true);
+        return;
+      }
+
+      const supportedTypes =
+        await LocalAuthentication.supportedAuthenticationTypesAsync();
+
+      let promptMessage = "Authenticate to log in";
+      if (
+        supportedTypes.includes(
+          LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
+        )
+      ) {
+        promptMessage = "Use Face ID to log in";
+      } else if (
+        supportedTypes.includes(
+          LocalAuthentication.AuthenticationType.FINGERPRINT
+        )
+      ) {
+        promptMessage =
+          Platform.OS === "ios"
+            ? "Use Touch ID to log in"
+            : "Scan Fingerprint to log in";
+      }
+
+      const authResult = await LocalAuthentication.authenticateAsync({
+        promptMessage,
+        cancelLabel: "Cancel",
+        disableDeviceFallback: true,
+      });
+
+      if (!authResult.success) {
+        console.log("Biometric authentication cancelled or failed:", authResult.error);
+        return;
+      }
+
+      const deviceId = await getDeviceId();
 
       await dispatch(
         loginUser({
@@ -253,21 +257,6 @@ const Login = () => {
           : error?.message || "Biometric authentication failed. Please try again."
       );
       setShowErrorModal(true);
-    }
-  };
-
-
-  const handleMfaToggle = async (value: boolean) => {
-    // Optimistic update
-    setMfaEnabled(value);
-
-    try {
-      // Call your API
-      await AsyncStorage.setItem(BIOMETRIC_STORAGE_KEY, JSON.stringify(value));
-    } catch (err) {
-      // Revert UI on failure
-      setMfaEnabled(!value);
-      console.error("MFA update failed:", err);
     }
   };
 
@@ -325,45 +314,23 @@ const Login = () => {
                 onBlur={() => setInputFocused(false)}
               />
 
-              <CustomText weight="bold" className="mb-2" size="sm" secondary>
-                Enter your passcode
-              </CustomText>
+              {showPasscodeInput && (
+                <>
+                  <CustomText weight="bold" className="mb-2" size="sm" secondary>
+                    Enter your passcode
+                  </CustomText>
 
-              <OtpInput
-                digitCount={6}
-                value={pin}
-                onChange={handlePinChange}
-                inputStyle="h-16 w-14"
-                secure
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-              />
-            </View>
-
-            <View className="rounded-2xl overflow-hidden mt-1">
-
-              <View className="flex-row justify-center items-center px-6 py-2">
-                {
-                  mfaEnabled && (
-                    <Pressable onPress={handleBiometricAuth}>
-                      <FingerprintIcon
-                        width={60} height={60}
-                      />
-                    </Pressable>
-
-                  )
-                }
-
-              </View>
-              <View className="flex-row items-center px-6">
-                <Text className="text-white text-base flex-1">Biometric</Text>
-                <Switch
-                  value={mfaEnabled}
-                  onValueChange={handleMfaToggle}
-                  trackColor={{ false: "#555", true: "#63642A" }}
-                  thumbColor={mfaEnabled ? "#fff" : "#ccc"}
-                />
-              </View>
+                  <OtpInput
+                    digitCount={6}
+                    value={pin}
+                    onChange={handlePinChange}
+                    inputStyle="h-16 w-14"
+                    secure
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                  />
+                </>
+              )}
             </View>
 
             <View className="mb-10 mt-2">
@@ -374,12 +341,14 @@ const Login = () => {
                 disabled={isLoading}
                 onPress={handleLogin}
               />
-              {/* <Button
-                title="📱 Test Push Notification"
-                variant="secondary"
-                className="w-full mt-2"
-                onPress={testFCM}
-              /> */}
+
+              {hasLoggedInBefore && !showPasscodeInput && (
+                <Pressable onPress={() => setShowPasscodeInput(true)}>
+                  <Text className="text-primary-200 text-center font-semibold text-md mt-3">
+                    Use passcode instead
+                  </Text>
+                </Pressable>
+              )}
 
               <Pressable onPress={() => router.push("/(auth)/forget-password")}>
                 <Text className="text-primary-200 text-center font-semibold text-md mt-4">
