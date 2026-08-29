@@ -222,7 +222,7 @@ export default function TransferScreen() {
 
     try {
       const validation = await dispatch(
-        validateEllingtonAccount({ accountNumber})
+        validateEllingtonAccount({ accountNumber })
       ).unwrap();
 
       setSelectedBankellington(bankName);
@@ -327,7 +327,7 @@ export default function TransferScreen() {
                       Validating account...
                     </Text>
                   </View>
-                ) :  (
+                ) : (
                   <View>
                     <TouchableOpacity
                       onPress={() => setBankSheetOpen(true)}
@@ -374,28 +374,28 @@ export default function TransferScreen() {
                   </Text>
                 ) : (
                   filteredBeneficiaries
-                  .filter((b) => b.bank !== "Ellington MFB")
-                  .map((b) => (
-                    <TouchableOpacity
-                      key={`${b.accountNumber}-${b.bank}`}
-                      onPress={() => handleBeneficiarySelect(b)}
-                      className="bg-[#4a4a28] rounded-3xl p-5 flex-row justify-between mb-3"
-                    >
-                      <View>
-                        <Text className="text-white font-semibold">
-                          {b.name}
-                        </Text>
-                        <Text className="text-white/60 mt-1">
-                          {b.bank} • {b.accountNumber}
-                        </Text>
-                      </View>
-                      <MaterialIcons
-                        name="chevron-right"
-                        size={20}
-                        color="rgba(255,255,255,0.5)"
-                      />
-                    </TouchableOpacity>
-                  ))
+                    .filter((b) => b.bank !== "Ellington MFB")
+                    .map((b, index) => (
+                      <TouchableOpacity
+                        key={`${b.accountNumber}-${b.bank}-${index}`}
+                        onPress={() => handleBeneficiarySelect(b)}
+                        className="bg-[#4a4a28] rounded-3xl p-5 flex-row justify-between mb-3"
+                      >
+                        <View>
+                          <Text className="text-white font-semibold">
+                            {b.name}
+                          </Text>
+                          <Text className="text-white/60 mt-1">
+                            {b.bank} • {b.accountNumber}
+                          </Text>
+                        </View>
+                        <MaterialIcons
+                          name="chevron-right"
+                          size={20}
+                          color="rgba(255,255,255,0.5)"
+                        />
+                      </TouchableOpacity>
+                    ))
                 )}
               </View>
             )}
@@ -429,14 +429,13 @@ export default function TransferScreen() {
                 ) : (
                   <View>
                     <TouchableOpacity
-                      key={`"Ellington bank-no-code"}`}
                       onPress={() =>
                         handleBankSelectEllington("Ellington Bank")
                       }
                       className="py-4 bg-primary-200 rounded-sm w-full justify-center items-center"
                     >
                       <Text className="text-base text-white">
-                         Validate
+                        Validate
                       </Text>
                     </TouchableOpacity>
                     {/* <TouchableOpacity
@@ -485,9 +484,9 @@ export default function TransferScreen() {
                 ) : (
                   filteredBeneficiaries
                     .filter((b) => b.bank === "Ellington MFB")
-                    .map((b) => (
+                    .map((b, index) => (
                       <TouchableOpacity
-                        key={`${b.accountNumber}-${b.bank}`}
+                        key={`${b.accountNumber}-${b.bank}-${index}`}
                         onPress={() => handleBeneficiarySelectEllington(b)}
                         className="bg-[#4a4a28] rounded-3xl p-5 flex-row justify-between mb-3"
                       >
@@ -532,9 +531,9 @@ export default function TransferScreen() {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {filteredBanks.map((bank) => (
+            {filteredBanks.map((bank, index) => (
               <TouchableOpacity
-                key={`${bank.name}-${bank.code ?? "no-code"}`}
+                key={`${bank.name}-${bank.code ?? "no-code"}-${index}`}
                 onPress={() => handleBankSelect(bank.name)}
                 className="py-4 "
               >
@@ -568,7 +567,6 @@ export default function TransferScreen() {
             showsVerticalScrollIndicator={false}
           >
             <TouchableOpacity
-              key={`"Ellington bank-no-code"}`}
               onPress={() => handleBankSelectEllington("Ellington Bank")}
               className="py-4"
             >

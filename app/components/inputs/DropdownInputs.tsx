@@ -61,7 +61,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
     if (isSelected) {
       return (
         <View
-          key={option.value}
+          key={`${option.value}-${index}`}
           className={`flex-row items-center justify-between py-4 px-4 rounded-lg bg-accent-100/20 ${
             !isLast ? "border-b border-primary-300" : ""
           }`}
@@ -76,7 +76,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
     return (
       <Pressable
-        key={option.value}
+        key={`${option.value}-${index}`}
         onPress={() => {
           onSelect(option.value);
           setShowDropdown(false);
