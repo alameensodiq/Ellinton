@@ -379,7 +379,7 @@ export const fetchTransferFee = createAsyncThunk<
 
       const query = new URLSearchParams();
       if (params?.transferType) query.append("transferType", params.transferType);
-      if (params?.amount) query.append("amount", params.amount);
+      if (params?.amount) query.append("amount", String(params.amount));
 
       const response = await safeFetch(
         `${FETCH_TRANSFER_FEE}?${query.toString()}`,
