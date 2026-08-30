@@ -9,8 +9,10 @@ import {
   Image,
   Animated,
   Platform,
-  Switch
+  Switch,
+  Alert
 } from "react-native";
+import * as LocalAuthentication from "expo-local-authentication";
 import Constants from "expo-constants";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
@@ -142,8 +144,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       label: "Request bank statement",
       icon: "file-document",
       onPress: () => {
-        onClose();
-        setTimeout(() => setStatementSheetOpen(true), 200);
+        setStatementSheetOpen(true);
       }
     }
   ];
@@ -166,20 +167,22 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
     setMfaEnabled(user?.mfa_required ?? false);
   }, [user?.mfa_required]);
 
-  // Load transBiometric state from AsyncStorage on mount
+  // Load transBiometric state from AsyncStorage when menu becomes visible
   useEffect(() => {
-    const loadTransBiometric = async () => {
-      try {
-        const stored = await AsyncStorage.getItem(TRANS_BIOMETRIC_KEY);
-        if (stored !== null) {
-          setTransBiometric(JSON.parse(stored));
+    if (visible) {
+      const loadTransBiometric = async () => {
+        try {
+          const stored = await AsyncStorage.getItem(TRANS_BIOMETRIC_KEY);
+          if (stored !== null) {
+            setTransBiometric(JSON.parse(stored));
+          }
+        } catch (error) {
+          console.error("Failed to load transBiometric state:", error);
         }
-      } catch (error) {
-        console.error("Failed to load transBiometric state:", error);
-      }
-    };
-    loadTransBiometric();
-  }, []);
+      };
+      loadTransBiometric();
+    }
+  }, [visible]);
 
   const handleItemPress = (item: MenuItem) => {
     item.onPress?.();
@@ -295,23 +298,37 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
     }
   };
 
-  const handleTransBiometricToggle = (value: boolean) => {
+  const handleTransBiometricToggle = async (value: boolean) => {
     if (value) {
-      // Enabling: show PIN modal
-      setPinValue("");
-      setPinError("");
-      setShowPinModal(true);
-    } else {
-      // Disabling: clear stored values
-      (async () => {
-        try {
-          await AsyncStorage.removeItem(TRANS_PIN_KEY);
-          await AsyncStorage.setItem(TRANS_BIOMETRIC_KEY, JSON.stringify(false));
+      try {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (!hasHardware || !isEnrolled) {
+          Alert.alert(
+            "Biometrics Not Available",
+            "Please ensure Face ID or Fingerprint authentication is enabled in your device settings."
+          );
           setTransBiometric(false);
-        } catch (error) {
-          console.error("Failed to disable transBiometric:", error);
+          return;
         }
-      })();
+
+        setPinValue("");
+        setPinError("");
+        setShowPinModal(true);
+      } catch (error) {
+        console.error("Biometrics check error:", error);
+        Alert.alert("Error", "Could not verify biometric support on this device.");
+        setTransBiometric(false);
+      }
+    } else {
+      try {
+        await AsyncStorage.removeItem(TRANS_PIN_KEY);
+        await AsyncStorage.setItem(TRANS_BIOMETRIC_KEY, JSON.stringify(false));
+        setTransBiometric(false);
+      } catch (error) {
+        console.error("Failed to disable transBiometric:", error);
+      }
     }
   };
 
@@ -530,25 +547,23 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
           disabled={!canSubmit || requesting}
         />
 
-        {/* ✅ Native pickers */}
+        {/* Native pickers */}
         {openStartPicker && (
           <DateTimePicker
             value={startDateObj || new Date()}
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
             onChange={(_, date) => {
-              setOpenStartPicker(Platform.OS === "ios"); // keep open on iOS until user closes sheet? (simple)
+              if (Platform.OS !== "ios") {
+                setOpenStartPicker(false);
+              }
               if (date) {
                 setStartDateObj(date);
                 setStartErr("");
-                // if endDate exists but now invalid, clear it
                 if (endDateObj && endDateObj.getTime() < date.getTime()) {
                   setEndDateObj(null);
                 }
-              } else {
-                setOpenStartPicker(false);
               }
-              if (Platform.OS !== "ios") setOpenStartPicker(false);
             }}
           />
         )}
@@ -560,14 +575,13 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
             display={Platform.OS === "ios" ? "spinner" : "default"}
             minimumDate={startDateObj || undefined}
             onChange={(_, date) => {
-              setOpenEndPicker(Platform.OS === "ios");
+              if (Platform.OS !== "ios") {
+                setOpenEndPicker(false);
+              }
               if (date) {
                 setEndDateObj(date);
                 setEndErr("");
-              } else {
-                setOpenEndPicker(false);
               }
-              if (Platform.OS !== "ios") setOpenEndPicker(false);
             }}
           />
         )}

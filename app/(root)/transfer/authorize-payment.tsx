@@ -4,6 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/app/lib/store";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
 
 import Header from "@/app/components/header-back";
 import OtpInput from "@/app/components/inputs/OtpInput";
@@ -117,8 +119,9 @@ export default function AuthorizePayment() {
     dispatch(clearError());
   }, [clearLocalErrorState, dispatch]);
 
-  const handleTransfer = useCallback(async () => {
-    if (passcode.length !== 4 || isVerifying) {
+  const handleTransfer = useCallback(async (overridePin?: string) => {
+    const pinToUse = overridePin || passcode;
+    if (pinToUse.length !== 4 || isVerifying) {
       return;
     }
 
@@ -144,15 +147,15 @@ export default function AuthorizePayment() {
       amount: transferData.amount,
       narration:
         transferData.remark || transferData.narration || "transfer",
-      transactionPin: passcode,
+      transactionPin: pinToUse,
       uniqueReference,
       isScheduled: transferData.isScheduled || false,
       saveBeneficiary: transferData.addAsBeneficiary || false,
       ...(transferData.scheduleType || transferData.frequency
         ? {
-            scheduleType:
-              transferData.scheduleType || transferData.frequency,
-          }
+          scheduleType:
+            transferData.scheduleType || transferData.frequency,
+        }
         : {}),
       ...(transferData.dayOfWeek && { dayOfWeek: transferData.dayOfWeek }),
       ...(transferData.dateOfTransfer && {
@@ -170,22 +173,22 @@ export default function AuthorizePayment() {
 
     const action = transferData.bankCode
       ? performInterBankTransfer({
-          ...payloadBase,
-          beneficiaryBankName: transferData.bank || "",
-          beneficiaryBankCode: transferData.bankCode,
-          beneficiaryName: transferData.receiverName,
-          ...(transferData.amount_grams && {
-            amount_grams: transferData.amount_grams,
-          }),
-          ...(transferData.gift && { gift: true }),
-        } as InterBankTransferPayload)
+        ...payloadBase,
+        beneficiaryBankName: transferData.bank || "",
+        beneficiaryBankCode: transferData.bankCode,
+        beneficiaryName: transferData.receiverName,
+        ...(transferData.amount_grams && {
+          amount_grams: transferData.amount_grams,
+        }),
+        ...(transferData.gift && { gift: true }),
+      } as InterBankTransferPayload)
       : performIntraBankTransfer({
-          ...payloadBase,
-          ...(transferData.amount_grams && {
-            amount_grams: transferData.amount_grams,
-          }),
-          ...(transferData.gift && { gift: true }),
-        } as TransferPayload);
+        ...payloadBase,
+        ...(transferData.amount_grams && {
+          amount_grams: transferData.amount_grams,
+        }),
+        ...(transferData.gift && { gift: true }),
+      } as TransferPayload);
 
     try {
       const result = await dispatch(action).unwrap();
@@ -253,6 +256,40 @@ export default function AuthorizePayment() {
       }
     }
   }, [dispatch, isVerifying, passcode, router, transferData]);
+
+  useEffect(() => {
+    const checkBiometric = async () => {
+      try {
+        const storedBiometric = await AsyncStorage.getItem("transBiometricEnabled");
+        const storedPin = await AsyncStorage.getItem("transBiometricPin");
+        let isEnabled = false;
+        if (storedBiometric) {
+          try {
+            isEnabled = JSON.parse(storedBiometric) === true;
+          } catch {
+            isEnabled = storedBiometric === "true";
+          }
+        }
+        if (isEnabled && storedPin && storedPin.length === 4) {
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+          if (hasHardware && isEnrolled) {
+            const authResult = await LocalAuthentication.authenticateAsync({
+              promptMessage: "Authenticate to complete transfer",
+              cancelLabel: "Use PIN",
+              disableDeviceFallback: true,
+            });
+            if (authResult.success) {
+              handleTransfer(storedPin);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Biometric check failed:", err);
+      }
+    };
+    checkBiometric();
+  }, [handleTransfer]);
 
   useEffect(() => {
     if (passcode.length === 4) {
