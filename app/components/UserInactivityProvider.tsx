@@ -9,8 +9,30 @@ import { auth } from "../firebase";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
 import { useAppDispatch } from "../lib/hooks/useAppDispatch";
 
-const INACTIVITY_TIMEOUT = 2 * 60 * 1000; // 2 min timeout
+const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 2 min timeout
 const LAST_ACTIVE_KEY = "lastActiveTime";
+
+const KEYS_TO_PRESERVE = new Set([
+  "userPin",
+  "userEmail",
+  "userProfile",
+  "hasLoggedInBefore",
+  "transBiometricEnabled",
+  "transBiometricPin",
+  "deviceIdBackup",
+]);
+
+const clearSessionStorage = async () => {
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const keysToRemove = allKeys.filter((key) => !KEYS_TO_PRESERVE.has(key));
+    if (keysToRemove.length > 0) {
+      await AsyncStorage.multiRemove(keysToRemove);
+    }
+  } catch (error) {
+    console.error("Error clearing session storage:", error);
+  }
+};
 
 const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => {
   const appState = useRef<AppStateStatus>(AppState.currentState);
@@ -19,7 +41,7 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
   const router = useRouter();
   const pathname = usePathname();
   const dispatch = useAppDispatch();
-  
+
   const { isAuthenticated } = useAppSelector((state) => state.auth);
 
   const isPublicRoute = pathname?.startsWith("/(auth)") || pathname === "/";
@@ -39,9 +61,8 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
       dispatch(clearError());
       router.replace("/(auth)/current-user");
 
-      // 2. Perform backend & Firebase sign-out and storage cleanup asynchronously in background
-      AsyncStorage.removeItem(LAST_ACTIVE_KEY).catch(console.error);
-      AsyncStorage.clear().catch(console.error);
+      // 2. Perform backend & Firebase sign-out and selective storage cleanup asynchronously in background
+      clearSessionStorage();
       dispatch(logoutUser());
       signOut(auth).catch(console.error);
     } catch (error) {
@@ -65,7 +86,7 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
 
   const checkInactivity = useCallback(async () => {
     if (isPublicRoute || !isAuthenticated) return;
-    
+
     try {
       const lastActiveTime = await AsyncStorage.getItem(LAST_ACTIVE_KEY);
       if (lastActiveTime) {
@@ -84,13 +105,13 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
 
   const resetTimer = useCallback(async () => {
     if (isPublicRoute || !isAuthenticated) return;
-    
+
     await recordStartTime();
-    
+
     if (inactivityTimer.current) {
       clearTimeout(inactivityTimer.current);
     }
-    
+
     inactivityTimer.current = setTimeout(() => {
       checkInactivity();
     }, INACTIVITY_TIMEOUT);
@@ -111,14 +132,14 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
           inactivityTimer.current = null;
         }
       }
-      
+
       if (nextAppState === "active" && appState.current === "background") {
         const didLogout = await checkInactivity();
         if (!didLogout) {
           await resetTimer();
         }
       }
-      
+
       appState.current = nextAppState;
     };
 
