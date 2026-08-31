@@ -177,8 +177,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
           if (stored !== null) {
             setTransBiometric(JSON.parse(stored));
           }
-        } catch (error) {
-          console.error("Failed to load transBiometric state:", error);
+        } catch (err: any) {
+          console.error("Failed to load transBiometric state:", err);
         }
       };
       loadTransBiometric();
@@ -199,8 +199,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
 
       // 4. Navigate to login screen
       router.replace("/(auth)/current-user");
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch (err: any) {
+      console.error("Logout failed:", err);
     }
   };
 
@@ -329,8 +329,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
         setPinValue("");
         setPinError("");
         setShowPinModal(true);
-      } catch (error) {
-        console.error("Biometrics check error:", error);
+      } catch (err: any) {
+        console.error("Biometrics check error:", err);
         Alert.alert("Error", "Could not verify biometric support on this device.");
         setTransBiometric(false);
       }
@@ -339,8 +339,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
         await AsyncStorage.removeItem(TRANS_PIN_KEY);
         await AsyncStorage.setItem(TRANS_BIOMETRIC_KEY, JSON.stringify(false));
         setTransBiometric(false);
-      } catch (error) {
-        console.error("Failed to disable transBiometric:", error);
+      } catch (err: any) {
+        console.error("Failed to disable transBiometric:", err);
       }
     }
   };
@@ -358,8 +358,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       setShowPinModal(false);
       setPinValue("");
       setPinError("");
-    } catch (error) {
-      console.error("Failed to save transaction PIN:", error);
+    } catch (err: any) {
+      console.error("Failed to save transaction PIN:", err);
       setPinError("Failed to save PIN. Please try again.");
     } finally {
       setSavingPin(false);
