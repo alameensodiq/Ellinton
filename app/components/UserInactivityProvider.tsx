@@ -29,29 +29,21 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
     isHandlingLogout.current = true;
 
     try {
-      await AsyncStorage.removeItem(LAST_ACTIVE_KEY);
-
       if (inactivityTimer.current) {
         clearTimeout(inactivityTimer.current);
         inactivityTimer.current = null;
       }
 
-      try {
-         await AsyncStorage.clear();
-        await dispatch(logoutUser()).unwrap();
-      } catch (error) {
-        console.error("Backend inactivity logout failed:", error);
-      }
-
-      try {
-        await signOut(auth);
-      } catch (error) {
-        console.error("Firebase inactivity logout failed:", error);
-      }
-
+      // 1. Immediately update auth state and navigate to prevent UI delay
       dispatch(logout());
       dispatch(clearError());
       router.replace("/(auth)/current-user");
+
+      // 2. Perform backend & Firebase sign-out and storage cleanup asynchronously in background
+      AsyncStorage.removeItem(LAST_ACTIVE_KEY).catch(console.error);
+      AsyncStorage.clear().catch(console.error);
+      dispatch(logoutUser());
+      signOut(auth).catch(console.error);
     } catch (error) {
       console.error("Logout error:", error);
       dispatch(logout());
