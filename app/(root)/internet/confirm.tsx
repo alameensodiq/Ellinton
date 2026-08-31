@@ -100,6 +100,26 @@ export default function ConfirmInternetPayment() {
 
           if (!authResult.success) {
             setLoading(false);
+            router.push({
+              pathname: "/(root)/internet/authorize",
+              params: {
+                amount: rawAmount,
+                accountId: accountIdStr,
+                providerId,
+                providerName,
+                providerSlug,
+                packageId,
+                packageSlug,
+                packageName,
+                packageAmount,
+                scheduleEnabled: scheduleEnabled.toString(),
+                scheduleName,
+                frequency,
+                dayOfWeek,
+                startDate,
+                endDate,
+              },
+            });
             return;
           }
 

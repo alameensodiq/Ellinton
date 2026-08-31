@@ -88,6 +88,22 @@ export default function ConfirmBuyAirtime() {
 
           if (!authResult.success) {
             setLoading(false);
+            router.push({
+              pathname: "/(root)/airtime/authorize",
+              params: {
+                provider: provider?.toString() || "",
+                phone: Array.isArray(phone) ? phone[0] : phone || "",
+                amount: finalAmount.toString(),
+                fee: fee.toString(),
+                totalDebit: totalDebit.toString(),
+                scheduleEnabled: scheduleEnabled ? "true" : "false",
+                scheduleName,
+                frequency,
+                dayOfWeek,
+                startDate,
+                endDate,
+              },
+            });
             return;
           }
 

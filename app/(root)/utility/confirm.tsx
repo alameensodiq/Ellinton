@@ -109,6 +109,22 @@ export default function ConfirmBuyAirtime() {
 
           if (!authResult.success) {
             setLoading(false);
+            router.push({
+              pathname: "/(root)/utility/authorize",
+              params: {
+                service,
+                product,
+                meterNumber,
+                amount: rawAmount,
+                fee,
+                totalDebit,
+                scheduleName,
+                frequency,
+                dayOfWeek,
+                startDate,
+                endDate,
+              },
+            });
             return;
           }
 

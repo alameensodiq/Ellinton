@@ -99,6 +99,24 @@ export default function ConfirmBuyData() {
 
           if (!authResult.success) {
             setLoading(false);
+            router.push({
+              pathname: "/(root)/data/authorize",
+              params: {
+                amount: rawAmount,
+                phone: phoneStr,
+                provider: providerStr,
+                productName,
+                billerSlug,
+                bundle,
+                validatedName: validatedNameStr,
+                scheduleEnabled: scheduleEnabled.toString(),
+                scheduleName,
+                frequency,
+                dayOfWeek,
+                startDate,
+                endDate,
+              },
+            });
             return;
           }
 

@@ -14,7 +14,7 @@ interface TextInputFieldProps extends TextInputProps {
   error?: string;
   onChangeText: (text: string) => void;
   disabled?: boolean;
-  rightIcon?: React.ReactNode; 
+  rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
 }
 
@@ -30,11 +30,9 @@ const TextInputField: React.FC<TextInputFieldProps> = ({
     <View className="mb-6">
       <Text className="text-white text-sm mb-3">{label}</Text>
       <View
-        className={`flex-row items-center bg-primary-400 rounded-2xl p-2 ${
-          Platform.OS === "ios" ? "p-5" : ""
-        } border-2 ${error ? "border-error" : "border-transparent"} ${
-          disabled ? "opacity-50 bg-primary-300" : ""
-        }`}
+        className={`flex-row items-center bg-primary-400 rounded-2xl p-2 ${Platform.OS === "ios" ? "p-6" : ""
+          } border-2 ${error ? "border-error" : "border-transparent"} ${disabled ? "opacity-50 bg-primary-300" : ""
+          }`}
       >
         <TextInput
           {...props}

@@ -99,6 +99,25 @@ export default function ConfirmCablePayment() {
 
           if (!authResult.success) {
             setLoading(false);
+            router.push({
+              pathname: "/(root)/cable-and-payment/authorize",
+              params: {
+                amount: rawAmount,
+                accountId: accountIdStr,
+                providerId,
+                providerName,
+                providerSlug,
+                packageId,
+                packageName: packageNameStr,
+                packageSlug,
+                scheduleEnabled: scheduleEnabled.toString(),
+                scheduleName,
+                frequency,
+                dayOfWeek,
+                startDate,
+                endDate,
+              },
+            });
             return;
           }
 

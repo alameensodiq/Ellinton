@@ -82,6 +82,14 @@ export default function ConfirmGeneralPayment() {
 
           if (!authResult.success) {
             setLoading(false);
+            router.push({
+              pathname: "/(root)/other-bills/authorize",
+              params: {
+                amount: rawAmount,
+                description: "Seventy five thousand naira",
+                service,
+              },
+            });
             return;
           }
 
