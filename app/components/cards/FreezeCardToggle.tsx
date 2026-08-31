@@ -19,6 +19,7 @@ const FreezeCardToggle: React.FC<FreezeCardToggleProps> = ({
       onValueChange={onChange}
       trackColor={{ false: "#6B6D33", true: "#88894B" }}
       thumbColor="#FFF"
+      ios_backgroundColor="#6B6D33"
     />
   </View>
 );

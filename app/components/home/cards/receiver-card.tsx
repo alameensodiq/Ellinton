@@ -63,6 +63,7 @@ export default function ReceiverCard({
             true: "#5a5a35",
           }}
           thumbColor={addAsBeneficiary ? "white" : "rgba(255,255,255,0.5)"}
+          ios_backgroundColor="rgba(255,255,255,0.2)"
         />
       </View>
     </View>

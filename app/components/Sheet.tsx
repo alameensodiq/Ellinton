@@ -6,15 +6,17 @@ import { Ionicons } from "@expo/vector-icons";
 interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
+  onModalHide?: () => void;
   children: React.ReactNode;
 }
 
-const Sheet = ({ visible, onClose, children }: BottomSheetProps) => {
+const Sheet = ({ visible, onClose, onModalHide, children }: BottomSheetProps) => {
   return (
     <Modal
       isVisible={visible}
       onBackdropPress={onClose}
       onSwipeComplete={onClose}
+      onModalHide={onModalHide}
       swipeDirection="down"
       style={{ margin: 0, justifyContent: "flex-end" }}
       backdropOpacity={0.4}

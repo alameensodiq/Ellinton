@@ -66,6 +66,7 @@ export default function ScheduleTransaction({
           onValueChange={setScheduleEnabled}
           trackColor={{ false: "#767577", true: "#9da855" }}
           thumbColor="#fff"
+          ios_backgroundColor="#767577"
         />
       </View>
 

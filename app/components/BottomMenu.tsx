@@ -114,6 +114,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   const [requestErr, setRequestErr] = useState("");
   const [requesting, setRequesting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [pendingSuccessModal, setPendingSuccessModal] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_required ?? false);
 
   // Transaction Pin Biometric
@@ -260,13 +261,13 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       await dispatch(requestStatement(payload)).unwrap();
 
       // reset
-      setStatementSheetOpen(false);
       setStartDateObj(null);
       setEndDateObj(null);
       setStartErr("");
       setEndErr("");
       setRequestErr("");
-      setShowSuccessModal(true);
+      setPendingSuccessModal(true);
+      setStatementSheetOpen(false);
     } catch (err: any) {
       setRequestErr(
         typeof err === "string" ? err : err?.message || "Request failed"
@@ -276,12 +277,21 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
     }
   };
 
+  const handleSheetHide = () => {
+    if (pendingSuccessModal) {
+      setPendingSuccessModal(false);
+      setTimeout(() => {
+        setShowSuccessModal(true);
+      }, 100);
+    }
+  };
+
   const handleMfaToggle = async (value: boolean) => {
+    setMfaEnabled(value);
     try {
       await dispatch(
         MfaReset({ enabled: value }) // true = ON, false = OFF
       ).unwrap();
-      setMfaEnabled(value);
       const existingData = await AsyncStorage.getItem("data");
 
       if (existingData) {
@@ -294,7 +304,10 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
     } catch (err) {
       // revert UI if API fails
       setMfaEnabled(!value);
-      console.error("MFA update failed:", err);
+      Alert.alert(
+        "MFA Error",
+        typeof err === "string" ? err : (err as any)?.message || "MFA update failed"
+      );
     }
   };
 
@@ -361,122 +374,125 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
         animationType="none"
         onRequestClose={onClose}
       >
-        <Pressable className="flex-1 bg-black/50 justify-end" onPress={onClose}>
-          <View className="flex-1 justify-end">
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <Animated.View
-                className="bg-primary-100 rounded-t-[32px] overflow-hidden"
-                style={{
-                  transform: [{ translateY: slideAnim }],
-                  height: screenHeight * 0.9
-                }}
-              >
-                <View className="rounded-t-[32px] px-6 py-4">
-                  <View className="flex-row justify-between items-center mb-4">
-                    <Text className="text-white text-xl">Menu</Text>
-                    <Pressable
-                      onPress={onClose}
-                      className="p-2 rounded-full bg-primary-500"
-                    >
-                      <MaterialCommunityIcons
-                        name="close"
-                        size={24}
-                        color="#FFFFFF"
-                      />
-                    </Pressable>
-                  </View>
-                  <UserProfileSection {...user} />
+        <View className="flex-1 justify-end">
+          <Pressable
+            className="absolute inset-0 bg-black/50"
+            onPress={onClose}
+          />
+          <Animated.View
+            className="bg-primary-100 rounded-t-[32px] overflow-hidden"
+            style={{
+              transform: [{ translateY: slideAnim }],
+              height: screenHeight * 0.9
+            }}
+          >
+            <View className="rounded-t-[32px] px-6 py-4">
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-white text-xl">Menu</Text>
+                <Pressable
+                  onPress={onClose}
+                  className="p-2 rounded-full bg-primary-500"
+                >
+                  <MaterialCommunityIcons
+                    name="close"
+                    size={24}
+                    color="#FFFFFF"
+                  />
+                </Pressable>
+              </View>
+              <UserProfileSection {...user} />
+            </View>
+
+            <ScrollView className="flex-1 px-4">
+              <View className="bg-primary-400 rounded-2xl overflow-hidden mt-2">
+                {displayListItems.map((item, index) => (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => handleItemPress(item)}
+                    className={`flex-row items-center px-6 py-4 border-b border-white/10 ${index === displayListItems.length - 1
+                        ? "border-b-0"
+                        : ""
+                      }`}
+                  >
+                    <MaterialCommunityIcons
+                      name={item.icon}
+                      size={24}
+                      color="#FFFFFF"
+                    />
+                    <Text className="text-white text-base flex-1 ml-4">
+                      {item.label}
+                    </Text>
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={20}
+                      color="#FFFFFF"
+                    />
+                  </Pressable>
+                ))}
+              </View>
+
+              <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
+                <View className="flex-row items-center px-6 py-4">
+                  <Text className="text-white text-base flex-1">MFA</Text>
+
+                  <Switch
+                    value={mfaEnabled}
+                    onValueChange={handleMfaToggle}
+                    trackColor={{ false: "#555", true: "#63642A" }}
+                    thumbColor={mfaEnabled ? "#fff" : "#ccc"}
+                    ios_backgroundColor="#555"
+                  />
                 </View>
+              </View>
 
-                <ScrollView className="flex-1 px-4">
-                  <View className="bg-primary-400 rounded-2xl overflow-hidden mt-2">
-                    {displayListItems.map((item, index) => (
-                      <Pressable
-                        key={item.id}
-                        onPress={() => handleItemPress(item)}
-                        className={`flex-row items-center px-6 py-4 border-b border-white/10 ${index === displayListItems.length - 1
-                            ? "border-b-0"
-                            : ""
-                          }`}
-                      >
-                        <MaterialCommunityIcons
-                          name={item.icon}
-                          size={24}
-                          color="#FFFFFF"
-                        />
-                        <Text className="text-white text-base flex-1 ml-4">
-                          {item.label}
-                        </Text>
-                        <MaterialCommunityIcons
-                          name="chevron-right"
-                          size={20}
-                          color="#FFFFFF"
-                        />
-                      </Pressable>
-                    ))}
-                  </View>
+              <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
+                <View className="flex-row items-center px-6 py-4">
+                  <Text className="text-white text-base flex-1">Transaction Pin Biometric</Text>
 
-                  <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
-                    <View className="flex-row items-center px-6 py-4">
-                      <Text className="text-white text-base flex-1">MFA</Text>
+                  <Switch
+                    value={transBiometric}
+                    onValueChange={handleTransBiometricToggle}
+                    trackColor={{ false: "#555", true: "#63642A" }}
+                    thumbColor={transBiometric ? "#fff" : "#ccc"}
+                    ios_backgroundColor="#555"
+                  />
+                </View>
+              </View>
 
-                      <Switch
-                        value={mfaEnabled}
-                        onValueChange={handleMfaToggle}
-                        trackColor={{ false: "#555", true: "#63642A" }}
-                        thumbColor={mfaEnabled ? "#fff" : "#ccc"}
-                      />
-                    </View>
-                  </View>
-
-                  <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
-                    <View className="flex-row items-center px-6 py-4">
-                      <Text className="text-white text-base flex-1">Transaction Pin Biometric</Text>
-
-                      <Switch
-                        value={transBiometric}
-                        onValueChange={handleTransBiometricToggle}
-                        trackColor={{ false: "#555", true: "#63642A" }}
-                        thumbColor={transBiometric ? "#fff" : "#ccc"}
-                      />
-                    </View>
-                  </View>
-
-                  <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
-                    <Pressable
-                      onPress={handleLogout}
-                      className="flex-row items-center px-6 py-4"
-                    >
-                      <MaterialCommunityIcons
-                        name="logout"
-                        size={24}
-                        color="#FFFFFF"
-                      />
-                      <Text className="text-white text-base flex-1 ml-4">
-                        Logout
-                      </Text>
-                      <MaterialCommunityIcons
-                        name="chevron-right"
-                        size={20}
-                        color="#FFFFFF"
-                      />
-                    </Pressable>
-                  </View>
-
-                  <Text className="text-accent-100 text-sm px-6 pt-8 pb-8">
-                    Version {resolvedVersion}
+              <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
+                <Pressable
+                  onPress={handleLogout}
+                  className="flex-row items-center px-6 py-4"
+                >
+                  <MaterialCommunityIcons
+                    name="logout"
+                    size={24}
+                    color="#FFFFFF"
+                  />
+                  <Text className="text-white text-base flex-1 ml-4">
+                    Logout
                   </Text>
-                </ScrollView>
-              </Animated.View>
-            </Pressable>
-          </View>
-        </Pressable>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={20}
+                    color="#FFFFFF"
+                  />
+                </Pressable>
+              </View>
+
+              <Text className="text-accent-100 text-sm px-6 pt-8 pb-8">
+                Version {resolvedVersion}
+              </Text>
+            </ScrollView>
+          </Animated.View>
+        </View>
       </Modal>
 
       {/* ✅ Statement request sheet */}
       <Sheet
         visible={statementSheetOpen}
         onClose={() => setStatementSheetOpen(false)}
+        onModalHide={handleSheetHide}
       >
         <CustomText size="lg" weight="bold" className="text-white mb-2">
           Request bank statement
