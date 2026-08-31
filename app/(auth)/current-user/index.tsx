@@ -47,6 +47,8 @@ export default function CurrentUser() {
 
   const email = user?.email || "";
   const FingerprintIcon = svgIcons.fingerprint;
+  const FaceIcon = svgIcons.faceicon;
+  const BiometricIcon = Platform.OS === "ios" ? FaceIcon : FingerprintIcon;
 
   const handleNumberPress = (num: string) => {
     if (passcode.length < 6) {
@@ -237,7 +239,7 @@ export default function CurrentUser() {
                 activeOpacity={0.8}
                 className="w-28 h-28 rounded-full bg-primary-400 justify-center items-center border-2 border-accent-100/40 mb-6 shadow-lg"
               >
-                <FingerprintIcon width={56} height={56} fill="#D4FF00" />
+                <BiometricIcon width={56} height={56} fill="#D4FF00" />
               </TouchableOpacity>
 
               <Text className="text-white text-lg font-semibold text-center mb-1">

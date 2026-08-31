@@ -37,6 +37,7 @@ import loanCondtion4 from "./loan-condition4.svg"
 import loanCondtion5 from "./loan-condition5.svg"
 import calenderPay from "./calendar-payment-loan.svg"
 import fingerprint from './fingerprint.svg'
+import faceicon from './faceicon.svg'
 
 
 export default {
@@ -82,6 +83,7 @@ export const svgIcons = {
   group_savings: GroupSavings,
   loans: loans,
   fingerprint: fingerprint,
+  faceicon: faceicon,
   gift,
   glo: require("./glo.jpg"),
   ninemobile: require("./9mobile.jpg"),
