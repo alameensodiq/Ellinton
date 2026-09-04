@@ -257,39 +257,8 @@ export default function AuthorizePayment() {
     }
   }, [dispatch, isVerifying, passcode, router, transferData]);
 
-  useEffect(() => {
-    const checkBiometric = async () => {
-      try {
-        const storedBiometric = await AsyncStorage.getItem("transBiometricEnabled");
-        const storedPin = await AsyncStorage.getItem("transBiometricPin");
-        let isEnabled = false;
-        if (storedBiometric) {
-          try {
-            isEnabled = JSON.parse(storedBiometric) === true;
-          } catch {
-            isEnabled = storedBiometric === "true";
-          }
-        }
-        if (isEnabled && storedPin && storedPin.length === 4) {
-          const hasHardware = await LocalAuthentication.hasHardwareAsync();
-          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-          if (hasHardware && isEnrolled) {
-            const authResult = await LocalAuthentication.authenticateAsync({
-              promptMessage: "Authenticate to complete transfer",
-              cancelLabel: "Use PIN",
-              disableDeviceFallback: true,
-            });
-            if (authResult.success) {
-              handleTransfer(storedPin);
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Biometric check failed:", err);
-      }
-    };
-    checkBiometric();
-  }, [handleTransfer]);
+
+
 
   useEffect(() => {
     if (passcode.length === 4) {

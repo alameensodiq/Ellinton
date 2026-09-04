@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { AccountTransaction } from "@/app/lib/thunks/transferThunks";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface Props {
   transaction: any; // Changed from AccountTransaction to any to handle both formats
@@ -15,12 +16,17 @@ export default function TransactionCard({
   disabled = false,
 }: Props) {
   const router = useRouter();
-  
+  const [userAccountNumber, setUserAccountNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem("userAccountNumber").then(setUserAccountNumber);
+  }, []);
+
   // Support both old and new API formats
-  const isDebit = transaction.RecordType === "Debit" || transaction.type === "inter-bank" || transaction.type === "electricity" || transaction.type === "airtime";
+  const isDebit = (userAccountNumber && transaction.senderAccount === userAccountNumber);
   const rawAmount = transaction.Debit || transaction.Credit || transaction.amount || 0;
   const amountValue = Number(String(rawAmount || "0").replace(/,/g, "")) || 0;
-  
+
   const referenceId = transaction.ReferenceID || transaction.id || "";
   const dateStr = transaction.CurrentDate || transaction.date || new Date().toISOString();
   const narration = transaction.Narration || transaction.narration || "Transaction";
@@ -40,15 +46,15 @@ export default function TransactionCard({
 
   const formattedDate = dateStr
     ? new Date(dateStr).toLocaleString("en-NG", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "";
-    
+
   const canOpenReceipt = Boolean(referenceId);
   const isDisabled = disabled || !canOpenReceipt;
 
@@ -70,9 +76,8 @@ export default function TransactionCard({
           },
         });
       }}
-      className={`bg-primary-400 rounded-xl p-4 mb-3 flex-row justify-between items-center ${
-        isDisabled ? "opacity-70" : ""
-      }`}
+      className={`bg-primary-400 rounded-xl p-4 mb-3 flex-row justify-between items-center ${isDisabled ? "opacity-70" : ""
+        }`}
     >
       <View className="flex-1 mr-3">
         <Text className="text-white text-sm font-medium">
@@ -83,9 +88,8 @@ export default function TransactionCard({
       </View>
 
       <Text
-        className={`text-sm font-bold ${
-          isDebit ? "text-red-400" : "text-green-400"
-        }`}
+        className={`text-sm font-bold ${isDebit ? "text-red-400" : "text-green-400"
+          }`}
       >
         {isDebit ? "-" : "+"}₦
         {amountValue.toLocaleString("en-NG", {

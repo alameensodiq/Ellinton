@@ -357,6 +357,9 @@ const getResponseErrorMessage = async (
 const persistUserProfile = async (user: User) => {
   try {
     await AsyncStorage.setItem("userProfile", JSON.stringify(user));
+    if (user.account_number) {
+      await AsyncStorage.setItem("userAccountNumber", String(user.account_number));
+    }
   } catch (error) {
     console.error("Failed to persist user profile:", error);
   }

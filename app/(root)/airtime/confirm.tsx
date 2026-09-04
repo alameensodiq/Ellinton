@@ -58,6 +58,25 @@ export default function ConfirmBuyAirtime() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const navigateToAuthorize = () => {
+    router.push({
+      pathname: "/(root)/airtime/authorize",
+      params: {
+        provider: provider?.toString() || "",
+        phone: Array.isArray(phone) ? phone[0] : phone || "",
+        amount: finalAmount.toString(),
+        fee: fee.toString(),
+        totalDebit: totalDebit.toString(),
+        scheduleEnabled: scheduleEnabled ? "true" : "false",
+        scheduleName,
+        frequency,
+        dayOfWeek,
+        startDate,
+        endDate,
+      },
+    });
+  };
+
   const handleContinue = async () => {
     setError(null);
     setLoading(true);
@@ -65,6 +84,11 @@ export default function ConfirmBuyAirtime() {
     try {
       const storedBiometric = await AsyncStorage.getItem(TRANS_BIOMETRIC_KEY);
       const storedPin = await AsyncStorage.getItem(TRANS_PIN_KEY);
+
+      console.log("🔑 Biometric debug:", {
+        storedBiometric,
+        storedPin: storedPin ? `${storedPin.length} chars` : "null",
+      });
 
       let isBiometricEnabled = false;
       if (storedBiometric) {
@@ -75,106 +99,80 @@ export default function ConfirmBuyAirtime() {
         }
       }
 
-      if (isBiometricEnabled && storedPin && storedPin.length === 4) {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      console.log("🔑 isBiometricEnabled:", isBiometricEnabled);
 
-        if (hasHardware && isEnrolled) {
-          const authResult = await LocalAuthentication.authenticateAsync({
-            promptMessage: "Authenticate to complete payment",
-            cancelLabel: "Use PIN",
-            disableDeviceFallback: true,
-          });
-
-          if (!authResult.success) {
-            setLoading(false);
-            router.push({
-              pathname: "/(root)/airtime/authorize",
-              params: {
-                provider: provider?.toString() || "",
-                phone: Array.isArray(phone) ? phone[0] : phone || "",
-                amount: finalAmount.toString(),
-                fee: fee.toString(),
-                totalDebit: totalDebit.toString(),
-                scheduleEnabled: scheduleEnabled ? "true" : "false",
-                scheduleName,
-                frequency,
-                dayOfWeek,
-                startDate,
-                endDate,
-              },
-            });
-            return;
-          }
-
-          const providerStr = provider?.toString() || "";
-          const phoneStr = Array.isArray(phone) ? phone[0] : phone || "";
-          const payload = {
-            type: "airtime",
-            provider: normalizeAirtimeProvider(providerStr),
-            amount: finalAmount,
-            bundleSlug: normalizeAirtimeProvider(providerStr),
-            customerId: phoneStr,
-            transactionPin: storedPin,
-          };
-
-          try {
-            const result = await dispatch(payBill(payload)).unwrap();
-            dispatch(clearError());
-
-            router.replace({
-              pathname: "/(root)/airtime/success",
-              params: {
-                provider: providerStr,
-                phone: phoneStr,
-                amount: finalAmount.toString(),
-                fee: fee.toString(),
-                totalDebit: totalDebit.toString(),
-                reference: result?.reference,
-                status: "success",
-              },
-            });
-            setLoading(false);
-            return;
-          } catch (err: any) {
-            setError(
-              err?.message ||
-                "Service not available at this time, please try again later"
-            );
-            Vibration.vibrate(400);
-            setLoading(false);
-            return;
-          }
-        }
+      // If biometric is NOT enabled, go straight to authorize (PIN entry)
+      if (!isBiometricEnabled || !storedPin || storedPin.length !== 4) {
+        console.log("🔑 Biometric NOT enabled, going to authorize");
+        setLoading(false);
+        navigateToAuthorize();
+        return;
       }
+
+      console.log("🔑 Biometric IS enabled, checking hardware...");
+
+      // Biometric IS enabled — check hardware support
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        // Device doesn't support biometric, fall back to authorize
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Trigger biometric authentication
+      const authResult = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate to complete payment",
+        cancelLabel: "Use PIN",
+        disableDeviceFallback: true,
+      });
+
+      if (!authResult.success) {
+        // Biometric cancelled/failed — fall back to authorize (PIN entry)
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Biometric succeeded — call API directly, skip authorize
+      const providerStr = provider?.toString() || "";
+      const phoneStr = Array.isArray(phone) ? phone[0] : phone || "";
+      const payload = {
+        type: "airtime",
+        provider: normalizeAirtimeProvider(providerStr),
+        amount: finalAmount,
+        bundleSlug: normalizeAirtimeProvider(providerStr),
+        customerId: phoneStr,
+        transactionPin: storedPin,
+      };
+
+      const result = await dispatch(payBill(payload)).unwrap();
+      dispatch(clearError());
+
+      router.replace({
+        pathname: "/(root)/airtime/success",
+        params: {
+          provider: providerStr,
+          phone: phoneStr,
+          amount: finalAmount.toString(),
+          fee: fee.toString(),
+          totalDebit: totalDebit.toString(),
+          reference: result?.reference,
+          status: "success",
+        },
+      });
     } catch (err: any) {
       console.log("Biometric payment process error:", err);
       setError(
-        err?.message || "An error occurred during biometric authentication"
+        err?.message ||
+          "Service not available at this time, please try again later"
       );
+      Vibration.vibrate(400);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setLoading(false);
-
-    router.push({
-      pathname: "/(root)/airtime/authorize",
-      params: {
-        provider: provider?.toString() || "",
-        phone: Array.isArray(phone) ? phone[0] : phone || "",
-        amount: finalAmount.toString(),
-        fee: fee.toString(),
-        totalDebit: totalDebit.toString(),
-
-        scheduleEnabled: scheduleEnabled ? "true" : "false",
-        scheduleName,
-        frequency,
-        dayOfWeek,
-        startDate,
-        endDate,
-      },
-    });
   };
 
   return (

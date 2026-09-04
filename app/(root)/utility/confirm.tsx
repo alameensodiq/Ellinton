@@ -79,6 +79,25 @@ export default function ConfirmBuyAirtime() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const navigateToAuthorize = () => {
+    router.push({
+      pathname: "/(root)/utility/authorize",
+      params: {
+        service,
+        product,
+        meterNumber,
+        amount: rawAmount,
+        fee,
+        totalDebit,
+        scheduleName,
+        frequency,
+        dayOfWeek,
+        startDate,
+        endDate,
+      },
+    });
+  };
+
   const handleContinue = async () => {
     setError(null);
     setLoading(true);
@@ -96,116 +115,85 @@ export default function ConfirmBuyAirtime() {
         }
       }
 
-      if (isBiometricEnabled && storedPin && storedPin.length === 4) {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-        if (hasHardware && isEnrolled) {
-          const authResult = await LocalAuthentication.authenticateAsync({
-            promptMessage: "Authenticate to complete payment",
-            cancelLabel: "Use PIN",
-            disableDeviceFallback: true,
-          });
-
-          if (!authResult.success) {
-            setLoading(false);
-            router.push({
-              pathname: "/(root)/utility/authorize",
-              params: {
-                service,
-                product,
-                meterNumber,
-                amount: rawAmount,
-                fee,
-                totalDebit,
-                scheduleName,
-                frequency,
-                dayOfWeek,
-                startDate,
-                endDate,
-              },
-            });
-            return;
-          }
-
-          const meterStr = Array.isArray(meterNumber)
-            ? meterNumber[0]
-            : meterNumber || "";
-          const serviceStr = Array.isArray(service)
-            ? service[0]
-            : service || "";
-          const productStr = Array.isArray(product)
-            ? product[0]
-            : product || "";
-
-          const payload = {
-            type: "electricity",
-            provider: serviceStr,
-            amount: finalAmount,
-            bundleSlug: productStr,
-            customerId: meterStr,
-            transactionPin: storedPin,
-          };
-
-          try {
-            const result = await dispatch(payBill(payload)).unwrap();
-
-            router.replace({
-              pathname: "/(root)/utility/success",
-              params: {
-                service,
-                product,
-                meterNumber,
-                amount: rawAmount,
-                fee,
-                totalDebit,
-                reference: result?.reference,
-                status: "success",
-              },
-            });
-            setLoading(false);
-            return;
-          } catch (err: any) {
-            const errorMessage =
-              err?.message ||
-              err?.data?.message ||
-              err?.error ||
-              (typeof err === "string" ? err : null) ||
-              "Service not available at this time, please try again later";
-            setError(errorMessage);
-            Vibration.vibrate(400);
-            setLoading(false);
-            return;
-          }
-        }
+      // If biometric is NOT enabled, go straight to authorize (PIN entry)
+      if (!isBiometricEnabled || !storedPin || storedPin.length !== 4) {
+        setLoading(false);
+        navigateToAuthorize();
+        return;
       }
+
+      // Biometric IS enabled — check hardware support
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Trigger biometric authentication
+      const authResult = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate to complete payment",
+        cancelLabel: "Use PIN",
+        disableDeviceFallback: true,
+      });
+
+      if (!authResult.success) {
+        // Biometric cancelled/failed — fall back to authorize (PIN entry)
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Biometric succeeded — call API directly, skip authorize
+      const meterStr = Array.isArray(meterNumber)
+        ? meterNumber[0]
+        : meterNumber || "";
+      const serviceStr = Array.isArray(service)
+        ? service[0]
+        : service || "";
+      const productStr = Array.isArray(product)
+        ? product[0]
+        : product || "";
+
+      const payload = {
+        type: "electricity",
+        provider: serviceStr,
+        amount: finalAmount,
+        bundleSlug: productStr,
+        customerId: meterStr,
+        transactionPin: storedPin,
+      };
+
+      const result = await dispatch(payBill(payload)).unwrap();
+
+      router.replace({
+        pathname: "/(root)/utility/success",
+        params: {
+          service,
+          product,
+          meterNumber,
+          amount: rawAmount,
+          fee,
+          totalDebit,
+          reference: result?.reference,
+          status: "success",
+        },
+      });
     } catch (err: any) {
       console.log("Biometric payment process error:", err);
-      setError(
-        err?.message || "An error occurred during biometric authentication"
-      );
+      const errorMessage =
+        err?.message ||
+        err?.data?.message ||
+        err?.error ||
+        (typeof err === "string" ? err : null) ||
+        "Service not available at this time, please try again later";
+      setError(errorMessage);
+      Vibration.vibrate(400);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setLoading(false);
-
-    router.push({
-      pathname: "/(root)/utility/authorize",
-      params: {
-        service,
-        product,
-        meterNumber,
-        amount: rawAmount,
-        fee,
-        totalDebit,
-        scheduleName,
-        frequency,
-        dayOfWeek,
-        startDate,
-        endDate
-      }
-    });
   };
 
   return (

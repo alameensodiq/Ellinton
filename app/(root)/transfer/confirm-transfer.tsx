@@ -7,6 +7,8 @@ import {
   StatusBar,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
+  Vibration,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -23,8 +25,20 @@ import { svgIcons } from "@/app/assets/icons/icons";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/lib/store";
-import { fetchTransferFee } from "@/app/lib/thunks/transferThunks";
+import {
+  fetchTransferFee,
+  performInterBankTransfer,
+  performIntraBankTransfer,
+  InterBankTransferPayload,
+  TransferPayload,
+} from "@/app/lib/thunks/transferThunks";
 import { clearGoldError } from "@/app/lib/slices/goldSlice";
+import { clearError, clearTransfer } from "@/app/lib/slices/transferSlice";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
+
+const TRANS_BIOMETRIC_KEY = "transBiometricEnabled";
+const TRANS_PIN_KEY = "transBiometricPin";
 
 const numberToWords = (num: number): string => {
   if (num === 0) return "zero naira";
@@ -134,6 +148,8 @@ export default function ConfirmTransfer() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [remark, setRemark] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
 
   const numericAmount = parseFloat(amount.replace(/,/g, ""));
@@ -167,34 +183,8 @@ export default function ConfirmTransfer() {
     return words.charAt(0).toUpperCase() + words.slice(1);
   }, [numericAmount]);
 
-  const handlePay = () => {
-    if (
-      scheduleEnabled &&
-      (!scheduleName || !frequency || !startDate || !endDate)
-    ) {
-      Alert.alert("Incomplete Schedule", "Please fill all schedule details");
-      return;
-    }
-    if (scheduleEnabled && frequency === "weekly" && !dayOfWeek) {
-      Alert.alert("Incomplete Schedule", "Please select day of week");
-      return;
-    }
-
-    console.log({
-      accountNumber,
-      bank,
-      amount,
-      remark,
-      scheduleEnabled,
-      scheduleName,
-      frequency,
-      dayOfWeek,
-      startDate,
-      endDate,
-      addAsBeneficiary,
-    });
-
-    const transferData = {
+  const buildTransferData = () => {
+    return {
       accountNumber,
       bankCode: bankCodeParam || undefined,
       bank,
@@ -213,7 +203,10 @@ export default function ConfirmTransfer() {
         endDate,
       }),
     };
+  };
 
+  const navigateToAuthorize = () => {
+    const transferData = buildTransferData();
     router.push({
       pathname: "/(root)/transfer/authorize-payment",
       params: {
@@ -221,6 +214,158 @@ export default function ConfirmTransfer() {
         transferData: JSON.stringify(transferData),
       },
     });
+  };
+
+  const handlePay = async () => {
+    if (
+      scheduleEnabled &&
+      (!scheduleName || !frequency || !startDate || !endDate)
+    ) {
+      Alert.alert("Incomplete Schedule", "Please fill all schedule details");
+      return;
+    }
+    if (scheduleEnabled && frequency === "weekly" && !dayOfWeek) {
+      Alert.alert("Incomplete Schedule", "Please select day of week");
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      const storedBiometric = await AsyncStorage.getItem(TRANS_BIOMETRIC_KEY);
+      const storedPin = await AsyncStorage.getItem(TRANS_PIN_KEY);
+
+      let isBiometricEnabled = false;
+      if (storedBiometric) {
+        try {
+          isBiometricEnabled = JSON.parse(storedBiometric) === true;
+        } catch {
+          isBiometricEnabled = storedBiometric === "true";
+        }
+      }
+
+      // If biometric is NOT enabled, go straight to authorize (PIN entry)
+      if (!isBiometricEnabled || !storedPin || storedPin.length !== 4) {
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Biometric IS enabled — check hardware support
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Trigger biometric authentication
+      const authResult = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate to complete transfer",
+        cancelLabel: "Use PIN",
+        disableDeviceFallback: true,
+      });
+
+      if (!authResult.success) {
+        // Biometric cancelled/failed — fall back to authorize (PIN entry)
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Biometric succeeded — call transfer API directly, skip authorize
+      const transferData = buildTransferData();
+      const uniqueReference = `TXN_${Date.now()}`;
+
+      const payloadBase: TransferPayload = {
+        beneficiaryAccountNumber: transferData.accountNumber,
+        amount: transferData.amount,
+        narration: transferData.remark || "transfer",
+        transactionPin: storedPin,
+        uniqueReference,
+        isScheduled: transferData.isScheduled || false,
+        saveBeneficiary: transferData.addAsBeneficiary || false,
+        ...(transferData.frequency
+          ? { scheduleType: transferData.frequency }
+          : {}),
+        ...(transferData.dayOfWeek && { dayOfWeek: transferData.dayOfWeek }),
+        ...(transferData.startDate && { startDate: transferData.startDate }),
+        ...(transferData.endDate && { endDate: transferData.endDate }),
+        ...(transferData.scheduleName && {
+          scheduleName: transferData.scheduleName,
+        }),
+      };
+
+      const action = transferData.bankCode
+        ? performInterBankTransfer({
+          ...payloadBase,
+          beneficiaryBankName: transferData.bank || "",
+          beneficiaryBankCode: transferData.bankCode,
+          beneficiaryName: transferData.receiverName,
+          ...(transferData.amount_grams && {
+            amount_grams: transferData.amount_grams,
+          }),
+          ...(transferData.gift && { gift: true }),
+        } as InterBankTransferPayload)
+        : performIntraBankTransfer({
+          ...payloadBase,
+          ...(transferData.amount_grams && {
+            amount_grams: transferData.amount_grams,
+          }),
+          ...(transferData.gift && { gift: true }),
+        } as TransferPayload);
+
+      const result = await dispatch(action).unwrap();
+
+      const receiptPayload = {
+        amount: result.amount ?? transferData.amount,
+        status: result.status ?? "SUCCESSFUL",
+        sender: result.sender,
+        senderBank: result.senderBank ?? "Ellington Bank",
+        beneficiaryName: result.beneficiaryName ?? transferData.receiverName,
+        beneficiaryAccount:
+          result.beneficiaryAccount ?? transferData.accountNumber,
+        beneficiaryBankName: result.beneficiaryBankName ?? transferData.bank,
+        remark: result.remark ?? transferData.remark ?? "transfer",
+        transactionReference:
+          result.transactionReference ??
+          result.reference ??
+          result.ReferenceID ??
+          uniqueReference,
+        date:
+          result.date ??
+          result.TransactionDate ??
+          new Date().toISOString(),
+        currency: result.currency ?? "NGN",
+      };
+
+      dispatch(clearTransfer());
+      dispatch(clearError());
+
+      router.replace({
+        pathname: "/(root)/transfer/transfer-success",
+        params: {
+          amount: String(transferData.amount),
+          receiverName: transferData.receiverName,
+          accountNumber: transferData.accountNumber,
+          receiptData: JSON.stringify(receiptPayload),
+          transferResult: JSON.stringify(result),
+        },
+      });
+    } catch (err: any) {
+      console.log("Biometric transfer error:", err);
+      const message =
+        typeof err === "string" && err.trim()
+          ? err
+          : err?.message || "Transfer failed. Please try again.";
+      setError(message);
+      Vibration.vibrate(400);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const Transfer = svgIcons.chip;
@@ -272,12 +417,23 @@ export default function ConfirmTransfer() {
           frequencyOptions={frequencyOptions}
           dayOptions={dayOptions}
         />
-        <Button
-          title="Authorize Payment"
-          variant="primary"
-          onPress={handlePay}
-          className="bg-accent-100 w-full"
-        />
+
+        {error && (
+          <Text className="text-red-500 text-sm mb-4 text-center">
+            {error}
+          </Text>
+        )}
+
+        {loading ? (
+          <ActivityIndicator size="large" color="#fff" className="my-4" />
+        ) : (
+          <Button
+            title="Authorize Payment"
+            variant="primary"
+            onPress={handlePay}
+            className="bg-accent-100 w-full"
+          />
+        )}
       </ScrollView>
 
     </SafeAreaView>

@@ -52,6 +52,17 @@ export default function ConfirmGeneralPayment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const navigateToAuthorize = () => {
+    router.push({
+      pathname: "/(root)/other-bills/authorize",
+      params: {
+        amount: rawAmount,
+        description: "Seventy five thousand naira",
+        service,
+      },
+    });
+  };
+
   const handleContinue = async () => {
     setError(null);
     setLoading(true);
@@ -69,62 +80,56 @@ export default function ConfirmGeneralPayment() {
         }
       }
 
-      if (isBiometricEnabled && storedPin && storedPin.length === 4) {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-
-        if (hasHardware && isEnrolled) {
-          const authResult = await LocalAuthentication.authenticateAsync({
-            promptMessage: "Authenticate to complete payment",
-            cancelLabel: "Use PIN",
-            disableDeviceFallback: true,
-          });
-
-          if (!authResult.success) {
-            setLoading(false);
-            router.push({
-              pathname: "/(root)/other-bills/authorize",
-              params: {
-                amount: rawAmount,
-                description: "Seventy five thousand naira",
-                service,
-              },
-            });
-            return;
-          }
-
-          router.replace({
-            pathname: "/(root)/other-bills/success",
-            params: {
-              amount: rawAmount,
-              description: "Seventy five thousand naira",
-              service,
-              status: "success",
-            },
-          });
-          setLoading(false);
-          return;
-        }
+      // If biometric is NOT enabled, go straight to authorize (PIN entry)
+      if (!isBiometricEnabled || !storedPin || storedPin.length !== 4) {
+        setLoading(false);
+        navigateToAuthorize();
+        return;
       }
+
+      // Biometric IS enabled — check hardware support
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+      if (!hasHardware || !isEnrolled) {
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Trigger biometric authentication
+      const authResult = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Authenticate to complete payment",
+        cancelLabel: "Use PIN",
+        disableDeviceFallback: true,
+      });
+
+      if (!authResult.success) {
+        // Biometric cancelled/failed — fall back to authorize (PIN entry)
+        setLoading(false);
+        navigateToAuthorize();
+        return;
+      }
+
+      // Biometric succeeded — skip authorize, go straight to success
+      router.replace({
+        pathname: "/(root)/other-bills/success",
+        params: {
+          amount: rawAmount,
+          description: "Seventy five thousand naira",
+          service,
+          status: "success",
+        },
+      });
     } catch (err: any) {
       console.log("Biometric payment process error:", err);
       setError(
         err?.message || "An error occurred during biometric authentication"
       );
+      Vibration.vibrate(400);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setLoading(false);
-
-    router.push({
-      pathname: "/(root)/other-bills/authorize",
-      params: {
-        amount: rawAmount,
-        description: "Seventy five thousand naira",
-        service,
-      },
-    });
   };
 
   return (
