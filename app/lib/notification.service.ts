@@ -427,14 +427,49 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
       Constants?.easConfig?.projectId ??
       "2cb6bacc-1e05-4771-81c3-6a9934f26c7d";
 
-    const pushTokenString = (await Notifications.getExpoPushTokenAsync({
-      projectId,
-      applicationId: Platform.OS === "ios" ? "com.ellingtonmfb.app" : undefined
-    })).data;
-    
-    await AsyncStorage.setItem(TOKEN_KEY, pushTokenString);
-    console.log(pushTokenString, "pushTokenString");
-    return pushTokenString;
+    let pushTokenString: string | null = null;
+
+    try {
+      // 1. Try standard Expo push token with projectId
+      const tokenResult = await Notifications.getExpoPushTokenAsync({
+        projectId,
+      });
+      pushTokenString = tokenResult.data;
+    } catch (expoTokenError: any) {
+      console.warn("Primary getExpoPushTokenAsync failed:", expoTokenError?.message);
+
+      // 2. Retry with explicit development mode flag on iOS / Sandbox APNs environment
+      try {
+        const tokenResult = await Notifications.getExpoPushTokenAsync({
+          projectId,
+          development: __DEV__,
+        });
+        pushTokenString = tokenResult.data;
+      } catch (retryError: any) {
+        console.warn("Secondary getExpoPushTokenAsync failed:", retryError?.message);
+
+        // 3. Fallback to native device push token (APNs token on iOS / FCM token on Android)
+        try {
+          const deviceTokenResult = await Notifications.getDevicePushTokenAsync();
+          if (deviceTokenResult?.data) {
+            pushTokenString = typeof deviceTokenResult.data === "string"
+              ? deviceTokenResult.data
+              : JSON.stringify(deviceTokenResult.data);
+            console.log("✅ Fallback to native device token succeeded:", pushTokenString);
+          }
+        } catch (deviceTokenError: any) {
+          console.error("❌ Fallback device push token failed:", deviceTokenError?.message);
+        }
+      }
+    }
+
+    if (pushTokenString) {
+      await AsyncStorage.setItem(TOKEN_KEY, pushTokenString);
+      console.log(pushTokenString, "pushTokenString");
+      return pushTokenString;
+    }
+
+    return null;
   } catch (error: any) {
     const message = error?.message || "Failed to get push token";
     if (Platform.OS === "android" && message.includes("FirebaseApp is not initialized")) {

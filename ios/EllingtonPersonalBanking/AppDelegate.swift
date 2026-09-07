@@ -21,7 +21,6 @@ public class AppDelegate: ExpoAppDelegate, UNUserNotificationCenterDelegate, Mes
     FirebaseApp.configure()
 
     // Set up push notifications for iOS
-    UNUserNotificationCenter.current().delegate = self
     Messaging.messaging().delegate = self
 
     // Register for remote notifications with APNs
