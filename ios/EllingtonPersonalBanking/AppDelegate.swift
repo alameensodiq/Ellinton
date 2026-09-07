@@ -2,9 +2,11 @@ import Expo
 import React
 import ReactAppDependencyProvider
 import FirebaseCore
+import FirebaseMessaging
+import UserNotifications
 
 @UIApplicationMain
-public class AppDelegate: ExpoAppDelegate {
+public class AppDelegate: ExpoAppDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
   var window: UIWindow?
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
@@ -17,6 +19,13 @@ public class AppDelegate: ExpoAppDelegate {
     // Initialize Firebase BEFORE React Native starts
     // This is required for @react-native-firebase/crashlytics and messaging
     FirebaseApp.configure()
+
+    // Set up push notifications for iOS
+    UNUserNotificationCenter.current().delegate = self
+    Messaging.messaging().delegate = self
+
+    // Register for remote notifications with APNs
+    application.registerForRemoteNotifications()
 
     let delegate = ReactNativeDelegate()
     let factory = ExpoReactNativeFactory(delegate: delegate)
@@ -35,6 +44,46 @@ public class AppDelegate: ExpoAppDelegate {
 #endif
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  // Forward APNs device token to Firebase Messaging
+  public override func application(
+    _ application: UIApplication,
+    didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    Messaging.messaging().apnsToken = deviceToken
+    super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+  }
+
+  // Handle APNs registration failure
+  public override func application(
+    _ application: UIApplication,
+    didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {
+    print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
+  }
+
+  // Show notifications when app is in foreground
+  public func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    willPresent notification: UNNotification,
+    withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+  ) {
+    completionHandler([.banner, .badge, .sound, .list])
+  }
+
+  // Handle notification tap
+  public func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    didReceive response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    completionHandler()
+  }
+
+  // Firebase Messaging token refresh
+  public func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+    print("📱 FCM Token: \(fcmToken ?? "nil")")
   }
 
   // Linking API

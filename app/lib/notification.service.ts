@@ -300,16 +300,7 @@ import { generateNonce, generateSignature } from "./signature";
 
 const USE_ENCRYPTION = true;
 
-// ✅ FIXED: Include all required properties
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,  // Required
-    shouldShowList: true,     // Required
-  }),
-});
+// Notification handler is configured in _layout.tsx to avoid duplication
 
 const safeFetch = async (url: string, options: RequestInit = {}) => {
   const method = options.method?.toLowerCase() || "get";
@@ -417,7 +408,14 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
     let finalStatus = existingStatus;
 
     if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: {
+          allowAlert: true,
+          allowBadge: true,
+          allowSound: true,
+          allowProvisional: false,
+        },
+      });
       finalStatus = status;
     }
 

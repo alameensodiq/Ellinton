@@ -2,14 +2,14 @@
   "expo": {
     "name": "Ellington Personal Banking",
     "slug": "ellingtonbank",
-    "version": "2.1.15",
+    "version": "2.1.16",
     "orientation": "portrait",
     "icon": "./app/assets/Logo2.png",
     "scheme": "ellingtonbank",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "149",
+      "buildNumber": "151",
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -40,12 +40,16 @@
           "UIInterfaceOrientationPortraitUpsideDown",
           "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight"
+        ],
+        "UIBackgroundModes": [
+          "remote-notification",
+          "fetch"
         ]
       }
     },
     "android": {
       "package": "com.ellingtonmfb.app",
-      "versionCode": 129,
+      "versionCode": 131,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -121,7 +125,16 @@
           "preferAppsFlyerBackupRules": false
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./app/assets/Logo2.png",
+          "color": "#3F401B",
+          "defaultChannel": "default",
+          "sounds": [],
+          "enableBackgroundRemoteNotifications": true
+        }
+      ],
       "expo-secure-store",
       "@react-native-firebase/app",
       "@react-native-firebase/crashlytics",
