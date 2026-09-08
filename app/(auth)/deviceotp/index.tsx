@@ -58,6 +58,7 @@ const DeviceOtpScreen = () => {
   const [remainingTime, setRemainingTime] = useState(30);
   const [intervalId, setIntervalId] = useState<number | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
 
   const startCountdown = () => {
@@ -139,16 +140,11 @@ const DeviceOtpScreen = () => {
   }, [reduxToken, token]);
 
   const handleVerify = async () => {
-    // if (otp.length !== 6) {
-    //   setErrorMessage("Please enter a 6-digit code.");
-    //   return;
-    // }
-    if (otp2.length !== 6) {
+    if (otp2.trim().length !== 6) {
       setErrorMessage2("Please enter a 6-digit code.");
       return;
     }
 
-    // setErrorMessage("");
     setErrorMessage2("");
 
     if (!authToken) {
@@ -156,18 +152,13 @@ const DeviceOtpScreen = () => {
       return;
     }
 
+    setIsSubmitting(true);
+
     try {
       const [deviceId, pushToken] = await Promise.all([
         getDeviceId(),
         getPushToken()
       ]);
-
-      // if (!pushToken) {
-      //   setErrorMessage(
-      //     "Unable to get push notification token. Please allow notification in settings and login again"
-      //   );
-      //   return;
-      // }
 
       const payload: any = {
         device_id: deviceId,
@@ -176,12 +167,10 @@ const DeviceOtpScreen = () => {
         device_make: Device.manufacturer || "Unknown",
         device_model: Device.modelName || Platform.OS,
         device_name: Device.deviceName || "Unknown",
-        otp: otp2,
-        // sms_otp: otp,
+        otp: otp2.trim(),
         token: authToken
       };
 
-      // Only add push_token if it's available
       if (pushToken) {
         payload.push_token = pushToken;
         console.log("✅ Push token available and included");
@@ -196,28 +185,19 @@ const DeviceOtpScreen = () => {
 
       console.log("✅ DeviceOtp succeeded, result:", result);
 
-      // ✅ Extract userId from the API response
       const userIdFromResponse = result?.user?.id;
 
-      // Also try to get from Redux after the dispatch
-      // Wait a moment for Redux to update
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const userIdFromRedux = reduxUser?.id;
       const finalUserId = userIdFromResponse || userIdFromRedux;
 
-      // ✅ The token is now automatically saved to Redux state by the slice
-      // Access the updated Redux state using useAppSelector
-
-      // Get userId from Redux state or AsyncStorage
       let userId = null;
       try {
-        // Try from Redux user object first
         if (reduxUser?.id) {
           userId = reduxUser.id;
           console.log("✅ Got userId from Redux:", userId);
         } else {
-          // Fallback to AsyncStorage
           const userProfileStr = await AsyncStorage.getItem("userProfile");
           if (userProfileStr) {
             const userProfile = JSON.parse(userProfileStr);
@@ -233,14 +213,8 @@ const DeviceOtpScreen = () => {
 
       console.log(token);
 
-      // 3. If we got a token, send it to the backend immediately
       if (token) {
-        const isRegistered = await registerDeviceWithBackend(token);
-        if (isRegistered) {
-          // console.log("✅ Push token synced with backend");
-        } else {
-          // console.warn("⚠️ Login succeeded, but push registration failed");
-        }
+        await registerDeviceWithBackend(token);
       }
 
       console.log(finalUserId.toString());
@@ -249,23 +223,13 @@ const DeviceOtpScreen = () => {
         pathname: "/(auth)/devicesuccess",
         params: { userId: finalUserId.toString() }
       });
-
-      // Navigate to success screen
-      // if (!userId) {
-      //   router.replace("/(auth)/devicesuccess");
-      // } else {
-      //   router.replace({
-      //     pathname: "/(auth)/devicesuccess",
-      //     params: { userId: userId }
-      //   });
-      // }
     } catch (error: any) {
-      // setErrorMessage("");
       setErrorMessage2("");
       const errorMsg = error?.message || "Code incorrect. Try again.";
       console.log("Setting error message:", errorMsg, error);
-      // setErrorMessage(errorMsg);
       setErrorMessage2(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -277,12 +241,10 @@ const DeviceOtpScreen = () => {
       console.log(token);
 
       await dispatch(resendDeviceOtp({ device_id: deviceId, token })).unwrap();
-      // setErrorMessage("");
       setErrorMessage2("");
       setRemainingTime(30);
       startCountdown();
     } catch {
-      // setErrorMessage("Failed to resend code. Please try again.");
       setErrorMessage2("Failed to resend code. Please try again.");
     }
   };
@@ -311,7 +273,7 @@ const DeviceOtpScreen = () => {
               Verify your Device and Identity
             </CustomText>
             <CustomText secondary className="mb-8">
-              We've sent a 6-digit code to your  email.
+              We've sent a 6-digit code to your email.
             </CustomText>
             {errorMessage && (
               <CustomText className="text-red-500 mt-2 text-sm" weight="medium">
@@ -336,26 +298,27 @@ const DeviceOtpScreen = () => {
             )}
 
             <InfoText
-              text={`Code not received? ${canResend ? "Send again" : `Resend in ${remainingTime}s`
-                }`}
+              text={`Code not received? ${
+                canResend ? "Send again" : `Resend in ${remainingTime}s`
+              }`}
               actionText={canResend ? "Send again" : ""}
               onPress={canResend ? handleResend : undefined}
               disabled={!canResend}
             />
           </View>
-
-          <View className="pb-6 mt-4">
-            <Button
-              title="Verify"
-              variant="primary"
-              onPress={handleVerify}
-              disabled={otp2.trim().length < 6 || isLoading}
-              className="w-full"
-            />
-          </View>
-
-          <Loading visible={isLoading} />
         </ScrollView>
+
+        <View className="pb-6 pt-2">
+          <Button
+            title="Verify"
+            variant="primary"
+            onPress={handleVerify}
+            disabled={otp2.trim().length < 6 || isSubmitting}
+            className="w-full"
+          />
+        </View>
+
+        <Loading visible={isSubmitting} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

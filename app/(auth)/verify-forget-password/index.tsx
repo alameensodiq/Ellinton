@@ -4,8 +4,8 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   Keyboard,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -45,7 +45,7 @@ const EmailOtpScreen = () => {
   const handleVerify = async (valueToCheck?: string) => {
     const code = valueToCheck ?? otp;
 
-    if (code.length !== 6) {
+    if (code.trim().length !== 6) {
       setError(true);
       return;
     }
@@ -53,13 +53,13 @@ const EmailOtpScreen = () => {
     setLoading(true);
     try {
       const resultAction = await dispatch(
-        verifyForgotOtp({ email: email || "", otp: code })
+        verifyForgotOtp({ email: email || "", otp: code.trim() })
       ).unwrap();
       router.replace({
         pathname: "/(auth)/reset-passcode",
         params: { resetToken: resultAction.resetToken, email: email || "" },
       });
-      console.log(resultAction)
+      console.log(resultAction);
     } catch (error: any) {
       setError(true);
     } finally {
@@ -80,14 +80,18 @@ const EmailOtpScreen = () => {
     }
   };
 
-  const isComplete = otp.length === 6;
+  const isComplete = otp.trim().length === 6;
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView className="flex-1 bg-primary-100 px-6">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
+    <SafeAreaView className="flex-1 bg-primary-100 px-6">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <View className="flex-row justify-start items-center pt-4 pb-6">
             <TouchableOpacity onPress={handleBack}>
@@ -127,21 +131,21 @@ const EmailOtpScreen = () => {
               />
             </View>
           </View>
+        </ScrollView>
 
-          <View className="pb-2">
-            <Button
-              title={isComplete ? "Verify" : "Continue"}
-              variant="primary"
-              onPress={() => handleVerify()}
-              disabled={!isComplete || loading}
-              className="w-full"
-            />
-          </View>
+        <View className="pb-6 pt-2">
+          <Button
+            title={isComplete ? "Verify" : "Continue"}
+            variant="primary"
+            onPress={() => handleVerify()}
+            disabled={!isComplete || loading}
+            className="w-full"
+          />
+        </View>
 
-          <Loading visible={loading} />
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+        <Loading visible={loading} />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 

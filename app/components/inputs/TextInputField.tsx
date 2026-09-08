@@ -30,17 +30,16 @@ const TextInputField: React.FC<TextInputFieldProps> = ({
     <View className="mb-6">
       <Text className="text-white text-sm mb-3">{label}</Text>
       <View
-        className={`flex-row items-center bg-primary-400 rounded-2xl px-4 ${
-          Platform.OS === "ios" ? "py-3.5" : "py-2"
-        } border-2 ${error ? "border-error" : "border-transparent"} ${
-          disabled ? "opacity-50 bg-primary-300" : ""
-        }`}
+        className={`flex-row items-center bg-primary-400 rounded-2xl px-4 h-14 border-2 ${
+          error ? "border-error" : "border-transparent"
+        } ${disabled ? "opacity-50 bg-primary-300" : ""}`}
       >
         <TextInput
           {...props}
           editable={!disabled}
           placeholderTextColor="#999999"
-          className="flex-1 text-white text-base font-bold py-1"
+          className="flex-1 text-white text-base font-bold h-full"
+          style={[{ paddingVertical: 0, textAlignVertical: "center" }, props.style]}
         />
         {rightIcon && (
           <Pressable onPress={onRightIconPress} className="ml-2">

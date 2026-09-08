@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "153",
+      "buildNumber": "155",
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -49,7 +49,7 @@
     },
     "android": {
       "package": "com.ellingtonmfb.app",
-      "versionCode": 133,
+      "versionCode": 135,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

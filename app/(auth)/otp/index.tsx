@@ -4,8 +4,9 @@ import {
   View,
   Text,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   Keyboard,
+  Platform,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,6 +30,7 @@ const EmailOtpScreen = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [remainingTime, setRemainingTime] = useState(30);
   const [intervalId, setIntervalId] = useState<number | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const startCountdown = () => {
     if (intervalId) {
@@ -56,20 +58,23 @@ const EmailOtpScreen = () => {
   }, []);
 
   const handleVerify = async () => {
-    if (otp.length !== 6) {
+    if (otp.trim().length !== 6) {
       setErrorMessage("Please enter a 6-digit code.");
       return;
     }
 
     setErrorMessage("");
+    setIsSubmitting(true);
     try {
-      await dispatch(verifyUserOtp({ userId: userId as string, otp })).unwrap();
+      await dispatch(verifyUserOtp({ userId: userId as string, otp: otp.trim() })).unwrap();
       router.replace({
         pathname: "/(auth)/success",
         params: { userId: userId as string },
       });
     } catch {
       setErrorMessage("Code incorrect. Try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -87,9 +92,16 @@ const EmailOtpScreen = () => {
   const canResend = remainingTime === 0;
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView className="flex-1 bg-primary-100 px-6">
-        <KeyboardAvoidingView behavior="padding" className="flex-1">
+    <SafeAreaView className="flex-1 bg-primary-100 px-6">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View className="flex-row justify-start items-center pt-4 pb-6">
             <TouchableOpacity onPress={() => router.back()}>
               <Ionicons name="close" size={30} color="#fff" />
@@ -97,8 +109,6 @@ const EmailOtpScreen = () => {
           </View>
 
           <View className="flex-1 space-y-6">
-
-
             <CustomText size="xxl" className="mb-4">
               Verify your email address
             </CustomText>
@@ -122,28 +132,29 @@ const EmailOtpScreen = () => {
             )}
 
             <InfoText
-              text={`Code not received? ${canResend ? "Send again" : `Resend in ${remainingTime}s`
-                }`}
+              text={`Code not received? ${
+                canResend ? "Send again" : `Resend in ${remainingTime}s`
+              }`}
               actionText={canResend ? "Send again" : ""}
               onPress={canResend ? handleResend : undefined}
               disabled={!canResend}
             />
           </View>
+        </ScrollView>
 
-          <View className="pb-2">
-            <Button
-              title="Verify"
-              variant="primary"
-              onPress={handleVerify}
-              disabled={otp.length !== 6 || isLoading}
-              className="w-full"
-            />
-          </View>
+        <View className="pb-6 pt-2">
+          <Button
+            title="Verify"
+            variant="primary"
+            onPress={handleVerify}
+            disabled={otp.trim().length < 6 || isSubmitting}
+            className="w-full"
+          />
+        </View>
 
-          <Loading visible={isLoading} />
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+        <Loading visible={isSubmitting} />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
