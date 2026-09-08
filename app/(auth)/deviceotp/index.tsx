@@ -155,10 +155,8 @@ const DeviceOtpScreen = () => {
     setIsSubmitting(true);
 
     try {
-      const [deviceId, pushToken] = await Promise.all([
-        getDeviceId(),
-        getPushToken()
-      ]);
+      const deviceId = await getDeviceId();
+      const pushToken = await getPushToken().catch(() => null);
 
       const payload: any = {
         device_id: deviceId,
@@ -209,19 +207,19 @@ const DeviceOtpScreen = () => {
         console.error("Failed to get user profile:", err);
       }
 
-      const token = await registerForPushNotificationsAsync();
+      // Background non-blocking push notification setup
+      registerForPushNotificationsAsync()
+        .then((token) => {
+          if (token) registerDeviceWithBackend(token);
+        })
+        .catch((err) => console.warn("Background push token registration error:", err));
 
-      console.log(token);
-
-      if (token) {
-        await registerDeviceWithBackend(token);
-      }
-
-      console.log(finalUserId.toString());
+      const safeUserId = finalUserId ? String(finalUserId) : (userId ? String(userId) : "");
+      console.log("✅ Final User ID:", safeUserId);
 
       router.replace({
         pathname: "/(auth)/devicesuccess",
-        params: { userId: finalUserId.toString() }
+        params: { userId: safeUserId }
       });
     } catch (error: any) {
       setErrorMessage2("");
@@ -235,7 +233,7 @@ const DeviceOtpScreen = () => {
 
   const handleResend = async () => {
     try {
-      const [deviceId] = await Promise.all([getDeviceId()]);
+      const deviceId = await getDeviceId();
       console.log(deviceId);
       const token = authToken || undefined;
       console.log(token);

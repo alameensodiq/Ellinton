@@ -390,6 +390,18 @@ export const setupAndroidChannels = async () => {
   }
 };
 
+const withTimeout = <T>(promise: Promise<T>, ms: number = 3000, fallbackValue: T): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) =>
+      setTimeout(() => {
+        console.warn(`⚠️ Push notification action timed out after ${ms}ms`);
+        resolve(fallbackValue);
+      }, ms)
+    )
+  ]);
+};
+
 export const registerForPushNotificationsAsync = async (): Promise<string | null> => {
   console.log("regpushTokenString");
 
@@ -430,36 +442,54 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
     let pushTokenString: string | null = null;
 
     try {
-      // 1. Try standard Expo push token with projectId
-      const tokenResult = await Notifications.getExpoPushTokenAsync({
-        projectId,
-      });
-      pushTokenString = tokenResult.data;
+      // 1. Try standard Expo push token with projectId (with 3s timeout)
+      const tokenResult = await withTimeout(
+        Notifications.getExpoPushTokenAsync({ projectId }),
+        3000,
+        null
+      );
+      if (tokenResult?.data) {
+        pushTokenString = tokenResult.data;
+      }
     } catch (expoTokenError: any) {
       console.warn("Primary getExpoPushTokenAsync failed:", expoTokenError?.message);
+    }
 
+    if (!pushTokenString) {
       // 2. Retry with explicit development mode flag on iOS / Sandbox APNs environment
       try {
-        const tokenResult = await Notifications.getExpoPushTokenAsync({
-          projectId,
-          development: __DEV__,
-        });
-        pushTokenString = tokenResult.data;
+        const tokenResult = await withTimeout(
+          Notifications.getExpoPushTokenAsync({
+            projectId,
+            development: __DEV__,
+          }),
+          3000,
+          null
+        );
+        if (tokenResult?.data) {
+          pushTokenString = tokenResult.data;
+        }
       } catch (retryError: any) {
         console.warn("Secondary getExpoPushTokenAsync failed:", retryError?.message);
+      }
+    }
 
-        // 3. Fallback to native device push token (APNs token on iOS / FCM token on Android)
-        try {
-          const deviceTokenResult = await Notifications.getDevicePushTokenAsync();
-          if (deviceTokenResult?.data) {
-            pushTokenString = typeof deviceTokenResult.data === "string"
-              ? deviceTokenResult.data
-              : JSON.stringify(deviceTokenResult.data);
-            console.log("✅ Fallback to native device token succeeded:", pushTokenString);
-          }
-        } catch (deviceTokenError: any) {
-          console.error("❌ Fallback device push token failed:", deviceTokenError?.message);
+    if (!pushTokenString) {
+      // 3. Fallback to native device push token (APNs token on iOS / FCM token on Android)
+      try {
+        const deviceTokenResult = await withTimeout(
+          Notifications.getDevicePushTokenAsync(),
+          3000,
+          null
+        );
+        if (deviceTokenResult?.data) {
+          pushTokenString = typeof deviceTokenResult.data === "string"
+            ? deviceTokenResult.data
+            : JSON.stringify(deviceTokenResult.data);
+          console.log("✅ Fallback to native device token succeeded:", pushTokenString);
         }
+      } catch (deviceTokenError: any) {
+        console.error("❌ Fallback device push token failed:", deviceTokenError?.message);
       }
     }
 
@@ -532,7 +562,7 @@ export const getPushToken = async (): Promise<string | null> => {
   try {
     let pushToken = await AsyncStorage.getItem(TOKEN_KEY);
     if (!pushToken) {
-      pushToken = await registerForPushNotificationsAsync();
+      pushToken = await withTimeout(registerForPushNotificationsAsync(), 4000, null);
     }
     return pushToken;
   } catch (error) {

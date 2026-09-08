@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ellington Personal Banking",
     "slug": "ellingtonbank",
-    "version": "2.1.16",
+    "version": "2.1.17",
     "orientation": "portrait",
     "icon": "./app/assets/Logo2.png",
     "scheme": "ellingtonbank",

@@ -208,7 +208,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       // 4. Navigate to login screen
       router.replace("/(auth)/current-user");
     } catch (err: any) {
-      console.error("Logout failed:", err);
+      // console.error("Logout failed:", err);
     }
   };
 
@@ -418,8 +418,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
                     key={item.id}
                     onPress={() => handleItemPress(item)}
                     className={`flex-row items-center px-6 py-4 border-b border-white/10 ${index === displayListItems.length - 1
-                        ? "border-b-0"
-                        : ""
+                      ? "border-b-0"
+                      : ""
                       }`}
                   >
                     <MaterialCommunityIcons
