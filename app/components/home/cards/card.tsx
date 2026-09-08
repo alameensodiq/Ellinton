@@ -45,9 +45,8 @@ export default function Card({
           colors={card.gradientColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          className={`h-72 ${
-            Platform.OS == "ios" ? "px-8" : "py-0"
-          } px-2 justify-between`}
+          className={`h-72 ${Platform.OS == "ios" ? "px-8" : "py-0"
+            } px-2 justify-between`}
         >
           <View className="flex-row justify-between items-start mb-6 p-4">
             <View className="flex-col">
@@ -82,7 +81,7 @@ export default function Card({
               card.cardNumber && (
                 <View className="flex-row items-center bg-white/12 border border-white/10 rounded-xl px-3 py-2 gap-2">
                   <MaterialIcons name="payment" size={16} color="white" />
-                  <Text className="text-white text-xs font-semibold tracking-wide">
+                  {/* <Text className="text-white text-xs font-semibold tracking-wide">
                     {card.displayCardNumber}
                   </Text>
                   <TouchableOpacity
@@ -94,7 +93,7 @@ export default function Card({
                       size={14}
                       color="white"
                     />
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
               )
             )}
@@ -153,9 +152,8 @@ export default function Card({
 
           <Image
             source={card.image}
-            className={`absolute right-0 ${
-              card.imagePosition === "top-right" ? "top-0" : "bottom-0"
-            }`}
+            className={`absolute right-0 ${card.imagePosition === "top-right" ? "top-0" : "bottom-0"
+              }`}
             resizeMode="cover"
           />
         </LinearGradient>

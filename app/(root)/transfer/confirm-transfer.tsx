@@ -158,7 +158,7 @@ export default function ConfirmTransfer() {
   useEffect(() => {
     if (amount && bank) {
       dispatch(fetchTransferFee({
-        amount: numericAmount, transferType: bank === 'Ellington MFB' ? 'intra_bank' : 'inter_bank'
+        amount: numericAmount, transferType: bank === 'Ellington Bank' ? 'intra_bank' : 'inter_bank'
       }));
     }
   }, [dispatch, amount, bank]);

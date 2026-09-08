@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
-  Platform
+  Platform,
+  ScrollView
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -289,9 +290,16 @@ const DeviceOtpScreen = () => {
   const canResend = remainingTime === 0;
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView className="flex-1 bg-primary-100 px-6">
-        <KeyboardAvoidingView behavior="padding" className="flex-1">
+    <SafeAreaView className="flex-1 bg-primary-100 px-6">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View className="flex-row justify-start items-center pt-4 pb-6">
             <TouchableOpacity onPress={() => router.back()}>
               <Ionicons name="close" size={30} color="#fff" />
@@ -305,18 +313,6 @@ const DeviceOtpScreen = () => {
             <CustomText secondary className="mb-8">
               We've sent a 6-digit code to your  email.
             </CustomText>
-            {/* <CustomText secondary className="mb-2">
-              Device Otp
-            </CustomText>
-            <OtpInput
-              digitCount={6}
-              value={otp}
-              onChange={setOtp}
-              error={!!errorMessage}
-              autoFocus
-               textContentType="oneTimeCode"  // ✅ iOS
-              autoComplete="sms-otp" 
-            /> */}
             {errorMessage && (
               <CustomText className="text-red-500 mt-2 text-sm" weight="medium">
                 {errorMessage}
@@ -348,20 +344,20 @@ const DeviceOtpScreen = () => {
             />
           </View>
 
-          <View className="pb-2">
+          <View className="pb-6 mt-4">
             <Button
               title="Verify"
               variant="primary"
               onPress={handleVerify}
-              disabled={otp2.length < 6 || isLoading}
+              disabled={otp2.trim().length < 6 || isLoading}
               className="w-full"
             />
           </View>
 
           <Loading visible={isLoading} />
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
