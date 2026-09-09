@@ -286,6 +286,7 @@ export default function TransactionReceiptView({
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
           <style>
             @page {
+              size: A4 portrait;
               margin: 0;
             }
             *, *:before, *:after {
@@ -295,18 +296,42 @@ export default function TransactionReceiptView({
               margin: 0; 
               padding: 0; 
               width: 100%;
+              height: 100%;
               background-color: #FAF9EE; 
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              overflow: hidden;
+            }
+            .receipt-wrapper {
+              width: 100%;
+              height: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              padding: 0;
+              box-sizing: border-box;
+              overflow: hidden;
             }
             img { 
-              width: 100%;
+              max-width: 100%;
+              max-height: 800px;
+              width: auto;
               height: auto;
+              object-fit: contain;
               display: block; 
-              margin: 0;
+              margin: 0 auto;
+              page-break-before: avoid !important;
+              page-break-after: avoid !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
             }
           </style>
         </head>
         <body>
-          <img src="data:image/png;base64,${imageBase64}" />
+          <div class="receipt-wrapper">
+            <img src="data:image/png;base64,${imageBase64}" />
+          </div>
         </body>
       </html>
     `;
