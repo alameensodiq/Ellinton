@@ -273,12 +273,12 @@
 //   try {
 //     // First, try to get existing token from storage
 //     let pushToken = await AsyncStorage.getItem(TOKEN_KEY);
-    
+
 //     // If no token exists, register for one
 //     if (!pushToken) {
 //       pushToken = await registerForPushNotificationsAsync();
 //     }
-    
+
 //     return pushToken;
 //   } catch (error) {
 //     console.error("Failed to get push token:", error);
@@ -375,7 +375,7 @@ export const setupAndroidChannels = async () => {
       enableVibrate: true,
       enableLights: true,
     });
-    
+
     await Notifications.setNotificationChannelAsync('test_channel', {
       name: 'Test Notifications',
       importance: Notifications.AndroidImportance.MAX,
@@ -385,7 +385,7 @@ export const setupAndroidChannels = async () => {
       enableVibrate: true,
       enableLights: true,
     });
-    
+
     console.log('✅ Android notification channels created');
   }
 };
@@ -442,14 +442,15 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
     let pushTokenString: string | null = null;
 
     try {
-      // 1. Try standard Expo push token with projectId (with 3s timeout)
+      // 1. Try standard Expo push token with projectId (with 10s timeout for iOS APNs handshake)
       const tokenResult = await withTimeout(
         Notifications.getExpoPushTokenAsync({ projectId }),
-        3000,
+        10000,
         null
       );
       if (tokenResult?.data) {
         pushTokenString = tokenResult.data;
+        console.log("✅ Primary Expo Push Token retrieved:", pushTokenString);
       }
     } catch (expoTokenError: any) {
       console.warn("Primary getExpoPushTokenAsync failed:", expoTokenError?.message);
@@ -463,11 +464,12 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
             projectId,
             development: __DEV__,
           }),
-          3000,
+          10000,
           null
         );
         if (tokenResult?.data) {
           pushTokenString = tokenResult.data;
+          console.log("✅ Secondary Expo Push Token retrieved:", pushTokenString);
         }
       } catch (retryError: any) {
         console.warn("Secondary getExpoPushTokenAsync failed:", retryError?.message);
@@ -479,7 +481,7 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
       try {
         const deviceTokenResult = await withTimeout(
           Notifications.getDevicePushTokenAsync(),
-          3000,
+          5000,
           null
         );
         if (deviceTokenResult?.data) {
@@ -519,7 +521,9 @@ export const registerDeviceWithBackend = async (token: string, passedAuthToken?:
     const deviceId = await getDeviceId();
 
     if (!token || !authToken) return false;
-    
+
+    console.log(`📤 Sending push token to backend (${Platform.OS}):`, token);
+
     const response = await safeFetch(`${BASE_URL}/users/push-tokens`, {
       method: "POST",
       headers: {
@@ -536,6 +540,14 @@ export const registerDeviceWithBackend = async (token: string, passedAuthToken?:
         device_name: Device.deviceName || "Unknown"
       })
     });
+
+    if (response.ok) {
+      // console.log(`✅ Push token successfully registered on backend (${Platform.OS})`);
+      Alert.alert("Push Token Debug", `Platform: ${Platform.OS}\nStatus: Registered Successfully\n\nToken:\n${token}`);
+    } else {
+      // console.error(`❌ Backend returned status ${response.status} for push token registration`);
+      Alert.alert("Push Token Debug", `Platform: ${Platform.OS}\nStatus: Backend Error (${response.status})\n\nToken:\n${token}`);
+    }
 
     return response.ok;
   } catch (error) {

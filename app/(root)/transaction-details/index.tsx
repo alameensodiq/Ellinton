@@ -120,28 +120,29 @@ export default function TransactionDetails() {
 
   const receiptData: ReceiptViewData = transactionReceipt
     ? {
-        amount: transactionReceipt.amount,
-        type: recordType || "Debit",
-        status: transactionReceipt.status,
-        sender: transactionReceipt.senderName || user?.first_name || "",
-        beneficiary: transactionReceipt.receiverName || "",
-        beneficiaryAccount: transactionReceipt.receiverAccount || "",
-        beneficiaryBank: transactionReceipt.receiverBank || "",
-        date: transactionReceipt.date
-          ? new Date(transactionReceipt.date).toLocaleString()
-          : new Date().toLocaleString(),
-        referenceNo: transactionReceipt.reference,
-      }
+      amount: transactionReceipt.amount,
+      type: recordType || "Debit",
+      status: transactionReceipt.status,
+      sender: transactionReceipt.senderName || user?.first_name || "",
+      beneficiary: transactionReceipt.receiverName || "",
+      beneficiaryAccount: transactionReceipt.receiverAccount || "",
+      beneficiaryBank: transactionReceipt.receiverBank || "",
+      date: transactionReceipt.date
+        ? new Date(transactionReceipt.date).toLocaleString()
+        : new Date().toLocaleString(),
+      referenceNo: transactionReceipt.reference,
+      senderBank: transactionReceipt.senderBank
+    }
     : {
-        ...fallbackReceiptData!,
-        sender: fallbackReceiptData?.sender || user?.first_name || "",
-        type: fallbackReceiptData?.type || recordType || "Debit",
-        date: fallbackReceiptData?.date
-          ? new Date(fallbackReceiptData.date).toLocaleString()
-          : new Date().toLocaleString(),
-      };
+      ...fallbackReceiptData!,
+      sender: fallbackReceiptData?.sender || user?.first_name || "",
+      type: fallbackReceiptData?.type || recordType || "Debit",
+      date: fallbackReceiptData?.date
+        ? new Date(fallbackReceiptData.date).toLocaleString()
+        : new Date().toLocaleString(),
+    };
 
-      console.log(transactionReceipt)
+  console.log(transactionReceipt)
 
   return (
     <TransactionReceiptView

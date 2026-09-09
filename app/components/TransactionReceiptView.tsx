@@ -28,6 +28,7 @@ export interface ReceiptViewData {
   beneficiaryBank: string;
   date: string;
   referenceNo: string;
+  senderBank: string;
 }
 
 function toAscii(value: string) {
@@ -335,13 +336,12 @@ const ReceiptRow = ({
   <View className="flex-row justify-between items-center py-4 border-b border-primary-300">
     <Text className="text-accent-100 text-sm">{label}</Text>
     <Text
-      className={`text-sm font-semibold max-w-44 ${
-        label === "Status" && value === "SUCCESSFUL"
-          ? "text-green-200 bg-green-100 rounded-xl px-2 py-1"
-          : highlight
-            ? "text-accent-100"
-            : "text-white"
-      }`}
+      className={`text-sm font-semibold max-w-44 ${label === "Status" && value === "SUCCESSFUL"
+        ? "text-green-200 bg-green-100 rounded-xl px-2 py-1"
+        : highlight
+          ? "text-accent-100"
+          : "text-white"
+        }`}
     >
       {value}
     </Text>
@@ -541,7 +541,7 @@ export default function TransactionReceiptView({
         >
           <Ionicons name="chevron-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <View style={{backgroundColor: '#3F401B'}} ref={fullViewRef} collapsable={false}>
+        <View style={{ backgroundColor: '#3F401B' }} ref={fullViewRef} collapsable={false}>
           <Image
             source={require("../assets/logo1.png")}
             style={{ width: 100, height: 100, marginTop: 16 }}
@@ -580,7 +580,11 @@ export default function TransactionReceiptView({
                 />
               )}
 
-              <ReceiptRow label={receiptData.status === 'Credit' ? "Receiver Account" : "Sender Account"} value={"Ellington MFB"} />
+              {
+                !!receiptData.senderBank && (
+                  <ReceiptRow label={"Sender Account"} value={receiptData?.senderBank} />
+                )
+              }
 
               <ReceiptRow label="Date" value={receiptData.date} />
 
