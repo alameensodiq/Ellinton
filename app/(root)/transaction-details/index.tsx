@@ -118,29 +118,110 @@ export default function TransactionDetails() {
     );
   }
 
-  const receiptData: ReceiptViewData = transactionReceipt
-    ? {
-      amount: transactionReceipt.amount,
-      type: recordType || "Debit",
-      status: transactionReceipt.status,
-      sender: transactionReceipt.senderName || user?.first_name || "",
-      beneficiary: transactionReceipt.receiverName || "",
-      beneficiaryAccount: transactionReceipt.receiverAccount || "",
-      beneficiaryBank: transactionReceipt.receiverBank || "",
-      date: transactionReceipt.date
-        ? new Date(transactionReceipt.date).toLocaleString()
-        : new Date().toLocaleString(),
-      referenceNo: transactionReceipt.reference,
-      senderBank: transactionReceipt.senderBank
+  const userAccountNumber = (user as any)?.account_number || (user as any)?.accountNumber || "";
+  const userFirstName = (user?.first_name || "").trim().toLowerCase();
+  const userLastName = (user?.last_name || "").trim().toLowerCase();
+  const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+
+  const isUserParty = (nameStr?: string) => {
+    if (!nameStr) return false;
+    const lower = nameStr.toLowerCase();
+    return (
+      (userFirstName && lower.includes(userFirstName)) ||
+      (userLastName && lower.includes(userLastName))
+    );
+  };
+
+  const determineIsDebit = (tx?: any) => {
+    const sender = tx?.senderName || tx?.sender || "";
+    const receiver = tx?.receiverName || tx?.beneficiaryName || tx?.beneficiary || "";
+
+    if (tx?.senderAccount && userAccountNumber) {
+      return tx.senderAccount === userAccountNumber;
     }
-    : {
-      ...fallbackReceiptData!,
-      sender: fallbackReceiptData?.sender || user?.first_name || "",
-      type: fallbackReceiptData?.type || recordType || "Debit",
-      date: fallbackReceiptData?.date
-        ? new Date(fallbackReceiptData.date).toLocaleString()
-        : new Date().toLocaleString(),
-    };
+    if (tx?.receiverAccount && userAccountNumber) {
+      return tx.receiverAccount !== userAccountNumber;
+    }
+    if (isUserParty(receiver) && !isUserParty(sender)) {
+      return false;
+    }
+    if (isUserParty(sender) && !isUserParty(receiver)) {
+      return true;
+    }
+    if (recordType && recordType !== "undefined") {
+      return recordType.toLowerCase().includes("debit");
+    }
+    if (tx?.type) {
+      if (tx.type.toLowerCase().includes("debit")) return true;
+      if (tx.type.toLowerCase().includes("credit")) return false;
+    }
+    return true;
+  };
+
+  const isDebit = transactionReceipt
+    ? determineIsDebit(transactionReceipt)
+    : determineIsDebit(fallbackReceiptData);
+
+  const activeTx: any = transactionReceipt || fallbackReceiptData || {};
+
+  const txSenderName = activeTx.senderName || activeTx.sender || "";
+  const txReceiverName = activeTx.receiverName || activeTx.beneficiaryName || activeTx.beneficiary || "";
+
+  const isSenderUser =
+    (activeTx.senderAccount && userAccountNumber && activeTx.senderAccount === userAccountNumber) ||
+    isUserParty(txSenderName) ||
+    (isDebit && !isUserParty(txReceiverName));
+
+  const isReceiverUser =
+    (activeTx.receiverAccount && userAccountNumber && activeTx.receiverAccount === userAccountNumber) ||
+    isUserParty(txReceiverName) ||
+    (!isDebit && !isUserParty(txSenderName));
+
+  const finalSenderName =
+    activeTx.senderName ||
+    activeTx.sender ||
+    (isSenderUser ? userName : "");
+
+  const finalSenderAccount =
+    activeTx.senderAccount ||
+    (isSenderUser ? userAccountNumber : "");
+
+  const finalBeneficiaryName =
+    activeTx.receiverName ||
+    activeTx.beneficiaryName ||
+    activeTx.beneficiary ||
+    (isReceiverUser ? userName : "");
+
+  const finalBeneficiaryAccount =
+    activeTx.receiverAccount ||
+    activeTx.beneficiaryAccount ||
+    (isReceiverUser ? userAccountNumber : "");
+
+  const receiptData: ReceiptViewData = {
+    amount: activeTx.amount,
+    type: isDebit ? "Debit" : "Credit",
+    status: activeTx.status,
+    sender: finalSenderName,
+    senderAccount: finalSenderAccount,
+    senderBank: activeTx.senderBank || "Ellington MFB",
+    beneficiary: finalBeneficiaryName,
+    beneficiaryAccount: finalBeneficiaryAccount,
+    beneficiaryBank: activeTx.receiverBank || activeTx.beneficiaryBank || "Ellington MFB",
+    date: activeTx.date
+      ? new Date(activeTx.date).toLocaleString()
+      : new Date().toLocaleString(),
+    referenceNo:
+      activeTx.reference ||
+      activeTx.id ||
+      activeTx.referenceNo ||
+      reference ||
+      "",
+    narration:
+      activeTx.narration ||
+      activeTx.remark ||
+      "",
+    sessionId: activeTx.sessionId,
+  };
 
   console.log(transactionReceipt)
 

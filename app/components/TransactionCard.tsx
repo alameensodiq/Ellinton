@@ -23,25 +23,32 @@ export default function TransactionCard({
   }, []);
 
   // Support both old and new API formats
-  const isDebit = (userAccountNumber && transaction.senderAccount === userAccountNumber);
+  const isDebit = (transaction.senderAccount && userAccountNumber)
+    ? transaction.senderAccount === userAccountNumber
+    : transaction.RecordType
+      ? transaction.RecordType.toLowerCase().includes("debit")
+      : (userAccountNumber && transaction.senderAccount === userAccountNumber) || Boolean(transaction.Debit && Number(transaction.Debit) > 0);
   const rawAmount = transaction.Debit || transaction.Credit || transaction.amount || 0;
   const amountValue = Number(String(rawAmount || "0").replace(/,/g, "")) || 0;
 
-  const referenceId = transaction.ReferenceID || transaction.id || "";
+  const referenceId = transaction.ReferenceID || transaction.id || transaction.reference || "";
   const dateStr = transaction.CurrentDate || transaction.date || new Date().toISOString();
   const narration = transaction.Narration || transaction.narration || "Transaction";
   const status = transaction.IsReversed ? "REVERSED" : (transaction.status || "SUCCESSFUL");
 
   const fallbackReceiptData = JSON.stringify({
     amount: amountValue,
-    type: transaction.RecordType || transaction.type,
+    type: transaction.RecordType || transaction.type || (isDebit ? "Debit" : "Credit"),
     status: status,
     sender: transaction.senderName || "",
+    senderAccount: transaction.senderAccount || "",
+    senderBank: transaction.senderBank || "Ellington MFB",
     beneficiary: transaction.receiverName || "",
     beneficiaryAccount: transaction.receiverAccount || "",
-    beneficiaryBank: transaction.receiverBank || "",
+    beneficiaryBank: transaction.receiverBank || "Ellington MFB",
     date: dateStr,
     referenceNo: referenceId,
+    narration: narration,
   });
 
   const formattedDate = dateStr

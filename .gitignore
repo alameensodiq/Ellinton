@@ -16,6 +16,14 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+ios/Pods/
+ios/build/
+ios/DerivedData/
+android/build/
+android/app/build/
+android/.gradle/
+android/.kotlin/
+com.ellingtonmfb.app/
 
 # Metro
 .metro-health-check*

@@ -1,0 +1,39 @@
+# Ignore dependencies (EAS Build installs dependencies)
+node_modules/
+
+# Ignore Expo artifacts
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Ignore iOS build artifacts and Pods
+ios/Pods/
+ios/build/
+ios/DerivedData/
+*.xcarchive
+
+# Ignore Android build artifacts and Gradle cache
+android/build/
+android/app/build/
+android/.gradle/
+android/.kotlin/
+
+# Ignore macOS & git
+.DS_Store
+.git/
+
+# Ignore keys, certificates, secrets
+*.pem
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Ignore local env files
+.env*.local
+
+# Ignore non-essential folders
+com.ellingtonmfb.app/

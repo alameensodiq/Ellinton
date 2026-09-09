@@ -173,17 +173,25 @@ export interface AccountTransaction {
 }
 
 export interface TransactionReceipt {
-  senderName: string;
-  amount: number;
-  status: string;
-  date: string;
-  narration: string;
-  reference: string;
-  senderBank: string;
-  receiverBank: string;
-  receiverName: string;
-  receiverAccount: string;
-  senderAccount: string;
+  id?: string;
+  senderName?: string;
+  amount?: number;
+  fee?: number;
+  status?: string;
+  date?: string;
+  narration?: string;
+  remark?: string;
+  reference?: string;
+  senderBank?: string;
+  receiverBank?: string;
+  receiverName?: string;
+  receiverAccount?: string;
+  senderAccount?: string;
+  type?: string;
+  channel?: string;
+  source?: string;
+  sessionId?: string;
+  balanceAfter?: number | null;
 }
 
 
