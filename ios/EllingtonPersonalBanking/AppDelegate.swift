@@ -21,6 +21,9 @@ public class AppDelegate: ExpoAppDelegate, UNUserNotificationCenterDelegate, Mes
     FirebaseApp.configure()
 
     // Set up push notifications for iOS
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self
+    }
     Messaging.messaging().delegate = self
 
     // Register for remote notifications with APNs
@@ -62,13 +65,29 @@ public class AppDelegate: ExpoAppDelegate, UNUserNotificationCenterDelegate, Mes
     print("❌ Failed to register for remote notifications: \(error.localizedDescription)")
   }
 
+  // Forward remote notifications to Firebase Messaging and Expo
+  public override func application(
+    _ application: UIApplication,
+    didReceiveRemoteNotification userInfo: [AnyHashable: Any],
+    fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
+  ) {
+    Messaging.messaging().appDidReceiveMessage(userInfo)
+    super.application(application, didReceiveRemoteNotification: userInfo, fetchCompletionHandler: completionHandler)
+  }
+
   // Show notifications when app is in foreground
   public func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     willPresent notification: UNNotification,
     withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
   ) {
-    completionHandler([.banner, .badge, .sound, .list])
+    let userInfo = notification.request.content.userInfo
+    Messaging.messaging().appDidReceiveMessage(userInfo)
+    if #available(iOS 14.0, *) {
+      completionHandler([.banner, .badge, .sound, .list])
+    } else {
+      completionHandler([.alert, .badge, .sound])
+    }
   }
 
   // Handle notification tap
@@ -77,6 +96,8 @@ public class AppDelegate: ExpoAppDelegate, UNUserNotificationCenterDelegate, Mes
     didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
+    let userInfo = response.notification.request.content.userInfo
+    Messaging.messaging().appDidReceiveMessage(userInfo)
     completionHandler()
   }
 

@@ -297,6 +297,7 @@ import { getDeviceId } from "./utils";
 import { encryptedFetch } from "./encryptedFetch";
 import { encryptionClient } from "./encrption.client";
 import { generateNonce, generateSignature } from "./signature";
+import messaging from "@react-native-firebase/messaging";
 
 const USE_ENCRYPTION = true;
 
@@ -403,7 +404,7 @@ const withTimeout = <T>(promise: Promise<T>, ms: number = 3000, fallbackValue: T
 };
 
 export const registerForPushNotificationsAsync = async (): Promise<string | null> => {
-  console.log("regpushTokenString");
+  console.log("📡 Starting Push Notification Registration...");
 
   try {
     // Setup channels FIRST on Android
@@ -412,7 +413,7 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
     }
 
     if (!Device.isDevice) {
-      Alert.alert("Error", "Must use physical device for push notifications");
+      console.warn("⚠️ Push notifications require a physical device.");
       return null;
     }
 
@@ -431,7 +432,16 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
       finalStatus = status;
     }
 
+    if (Platform.OS === "ios") {
+      try {
+        await messaging().requestPermission();
+      } catch (e) {
+        console.warn("FCM requestPermission warning:", e);
+      }
+    }
+
     if (finalStatus !== "granted") {
+      console.warn("⚠️ Push notification permission not granted.");
       return null;
     }
 
@@ -439,69 +449,47 @@ export const registerForPushNotificationsAsync = async (): Promise<string | null
       Constants?.easConfig?.projectId ??
       "2cb6bacc-1e05-4771-81c3-6a9934f26c7d";
 
+    if (!projectId) {
+      console.error("❌ No EAS projectId found in app configuration.");
+      return null;
+    }
+
     let pushTokenString: string | null = null;
 
     try {
-      // 1. Try standard Expo push token with projectId (with 10s timeout for iOS APNs handshake)
-      const tokenResult = await withTimeout(
-        Notifications.getExpoPushTokenAsync({ projectId }),
-        10000,
-        null
-      );
+      // 1. Primary Expo Push Token retrieval
+      const tokenResult = await Notifications.getExpoPushTokenAsync({ projectId });
       if (tokenResult?.data) {
         pushTokenString = tokenResult.data;
-        console.log("✅ Primary Expo Push Token retrieved:", pushTokenString);
       }
-    } catch (expoTokenError: any) {
-      console.warn("Primary getExpoPushTokenAsync failed:", expoTokenError?.message);
+    } catch (expoError: any) {
+      console.warn("⚠️ Primary getExpoPushTokenAsync failed:", expoError?.message);
     }
 
-    if (!pushTokenString) {
-      // 2. Retry with explicit development mode flag on iOS / Sandbox APNs environment
+    if (!pushTokenString && Platform.OS === "ios") {
+      // 2. Secondary attempt for iOS sandbox / dev mode
       try {
-        const tokenResult = await withTimeout(
-          Notifications.getExpoPushTokenAsync({
-            projectId,
-            development: __DEV__,
-          }),
-          10000,
-          null
-        );
+        const tokenResult = await Notifications.getExpoPushTokenAsync({
+          projectId,
+          development: __DEV__,
+        });
         if (tokenResult?.data) {
           pushTokenString = tokenResult.data;
-          console.log("✅ Secondary Expo Push Token retrieved:", pushTokenString);
         }
-      } catch (retryError: any) {
-        console.warn("Secondary getExpoPushTokenAsync failed:", retryError?.message);
+      } catch (devError: any) {
+        console.warn("⚠️ Development getExpoPushTokenAsync failed:", devError?.message);
       }
     }
 
-    if (!pushTokenString) {
-      // 3. Fallback to native device push token (APNs token on iOS / FCM token on Android)
-      try {
-        const deviceTokenResult = await withTimeout(
-          Notifications.getDevicePushTokenAsync(),
-          5000,
-          null
-        );
-        if (deviceTokenResult?.data) {
-          pushTokenString = typeof deviceTokenResult.data === "string"
-            ? deviceTokenResult.data
-            : JSON.stringify(deviceTokenResult.data);
-          console.log("✅ Fallback to native device token succeeded:", pushTokenString);
-        }
-      } catch (deviceTokenError: any) {
-        console.error("❌ Fallback device push token failed:", deviceTokenError?.message);
-      }
+    // Verify token format to avoid sending raw APNs/FCM tokens to Expo push service
+    if (!pushTokenString || !pushTokenString.startsWith("ExponentPushToken")) {
+      console.error("❌ Invalid token format (not ExponentPushToken):", pushTokenString);
+      return null;
     }
 
-    if (pushTokenString) {
-      await AsyncStorage.setItem(TOKEN_KEY, pushTokenString);
-      console.log(pushTokenString, "pushTokenString");
-      return pushTokenString;
-    }
-
-    return null;
+    await AsyncStorage.setItem(TOKEN_KEY, pushTokenString);
+    console.log("✅ Valid Expo Push Token retrieved:", pushTokenString);
+    return pushTokenString;
   } catch (error: any) {
     const message = error?.message || "Failed to get push token";
     if (Platform.OS === "android" && message.includes("FirebaseApp is not initialized")) {
@@ -522,7 +510,12 @@ export const registerDeviceWithBackend = async (token: string, passedAuthToken?:
 
     if (!token || !authToken) return false;
 
-    console.log(`📤 Sending push token to backend (${Platform.OS}):`, token);
+    if (!token.startsWith("ExponentPushToken")) {
+      console.error("❌ Refusing to register non-ExponentPushToken with backend:", token);
+      return false;
+    }
+
+    console.log(`📤 Sending Expo push token to backend (${Platform.OS}):`, token);
 
     const response = await safeFetch(`${BASE_URL}/users/push-tokens`, {
       method: "POST",
@@ -543,10 +536,8 @@ export const registerDeviceWithBackend = async (token: string, passedAuthToken?:
 
     if (response.ok) {
       // console.log(`✅ Push token successfully registered on backend (${Platform.OS})`);
-      Alert.alert("Push Token Debug", `Platform: ${Platform.OS}\nStatus: Registered Successfully\n\nToken:\n${token}`);
     } else {
       // console.error(`❌ Backend returned status ${response.status} for push token registration`);
-      Alert.alert("Push Token Debug", `Platform: ${Platform.OS}\nStatus: Backend Error (${response.status})\n\nToken:\n${token}`);
     }
 
     return response.ok;
@@ -573,8 +564,8 @@ export const clearPushToken = async () => {
 export const getPushToken = async (): Promise<string | null> => {
   try {
     let pushToken = await AsyncStorage.getItem(TOKEN_KEY);
-    if (!pushToken) {
-      pushToken = await withTimeout(registerForPushNotificationsAsync(), 4000, null);
+    if (!pushToken || !pushToken.startsWith("ExponentPushToken")) {
+      pushToken = await registerForPushNotificationsAsync();
     }
     return pushToken;
   } catch (error) {

@@ -10,6 +10,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Pressable,
+  TouchableOpacity,
+  Switch,
   Platform
 } from "react-native";
 import { useState, useEffect } from "react";
@@ -35,6 +37,9 @@ import {
 import { getDeviceId } from "@/app/lib/utils";
 import * as LocalAuthentication from "expo-local-authentication";
 
+const FingerprintIcon = svgIcons.fingerprint;
+const FaceIcon = svgIcons.faceicon;
+
 const Login = () => {
   const [pin, setPin] = useState("");
   const [email, setEmail] = useState("");
@@ -42,14 +47,20 @@ const Login = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [customError, setCustomError] = useState("");
   const [hasLoggedInBefore, setHasLoggedInBefore] = useState(false);
-  const [showPasscodeInput, setShowPasscodeInput] = useState(false);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState(
+    Platform.OS === "ios" ? "Face ID" : "Fingerprint"
+  );
+  const [useBiometric, setUseBiometric] = useState(false);
 
   const router = useRouter();
   const dispatch = useAppDispatch();
 
   const { isLoading, error } = useAppSelector((state) => state.auth);
 
-  // Auto-fill email and check if user has logged in before
+  const BiometricIcon = Platform.OS === "ios" ? FaceIcon : FingerprintIcon;
+
+  // Auto-fill email and check if user has logged in before & biometric availability
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
@@ -62,7 +73,6 @@ const Login = () => {
 
         const returningUser = Boolean(savedPin || loggedInFlag === "true");
         setHasLoggedInBefore(returningUser);
-        setShowPasscodeInput(!returningUser);
 
         if (userProfile) {
           const parsedUser = JSON.parse(userProfile);
@@ -72,8 +82,42 @@ const Login = () => {
         } else if (savedEmail) {
           setEmail(savedEmail);
         }
+
+        if (LocalAuthentication && LocalAuthentication.hasHardwareAsync) {
+          const [hasHardware, isEnrolled] = await Promise.all([
+            LocalAuthentication.hasHardwareAsync(),
+            LocalAuthentication.isEnrolledAsync(),
+          ]);
+
+          if (hasHardware && isEnrolled) {
+            setIsBiometricAvailable(true);
+
+            const supportedTypes =
+              await LocalAuthentication.supportedAuthenticationTypesAsync();
+
+            let label = Platform.OS === "ios" ? "Face ID" : "Fingerprint";
+            if (
+              supportedTypes.includes(
+                LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
+              )
+            ) {
+              label = "Face ID";
+            } else if (
+              supportedTypes.includes(
+                LocalAuthentication.AuthenticationType.FINGERPRINT
+              )
+            ) {
+              label = Platform.OS === "ios" ? "Touch ID" : "Fingerprint";
+            }
+            setBiometricLabel(label);
+
+            if (returningUser && savedPin) {
+              setUseBiometric(true);
+            }
+          }
+        }
       } catch (e) {
-        setShowPasscodeInput(true);
+        console.error("Error checking login status:", e);
       }
     };
     checkLoginStatus();
@@ -84,50 +128,44 @@ const Login = () => {
   }, [error]);
 
   const handleLogin = async () => {
-    // If user is returning and hasn't toggled manual passcode entry, trigger biometric auth
-    if (hasLoggedInBefore && !showPasscodeInput) {
+    // If user is returning and in biometric mode, trigger biometric auth
+    if (useBiometric && isBiometricAvailable && hasLoggedInBefore) {
       await handleBiometricAuth();
       return;
     }
 
-    // If 6-digit passcode is entered, use passcode login directly
-    if (email && pin.length === 6) {
-      try {
-        const deviceId = await getDeviceId();
-        console.log(deviceId);
-        console.log(email, pin);
-
-        await dispatch(
-          loginUser({
-            email: email.trim().toLowerCase(),
-            passcode: pin,
-            device_id: deviceId
-          })
-        ).unwrap();
-
-        await AsyncStorage.setItem("userPin", pin);
-        await AsyncStorage.setItem("userEmail", email.trim().toLowerCase());
-        await AsyncStorage.setItem("hasLoggedInBefore", "true");
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        const token = await registerForPushNotificationsAsync();
-        if (token) {
-          const isRegistered = await registerDeviceWithBackend(token);
-          if (isRegistered) {
-            console.log("✅ Push token synced with backend");
-          }
-        }
-      } catch (error) {
-        console.error("❌ Login failed:", error);
-      }
-      return;
-    }
-
     // Validation for passcode input
-    if (!email || !pin) {
+    if (!email || !pin || pin.length !== 6) {
       setCustomError("Please enter your email and 6-digit passcode.");
       setShowErrorModal(true);
       return;
+    }
+
+    try {
+      const deviceId = await getDeviceId();
+
+      await dispatch(
+        loginUser({
+          email: email.trim().toLowerCase(),
+          passcode: pin,
+          device_id: deviceId
+        })
+      ).unwrap();
+
+      await AsyncStorage.setItem("userPin", pin);
+      await AsyncStorage.setItem("userEmail", email.trim().toLowerCase());
+      await AsyncStorage.setItem("hasLoggedInBefore", "true");
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      const token = await registerForPushNotificationsAsync();
+      if (token) {
+        const isRegistered = await registerDeviceWithBackend(token);
+        if (isRegistered) {
+          console.log("✅ Push token synced with backend");
+        }
+      }
+    } catch (error) {
+      console.error("❌ Login failed:", error);
     }
   };
 
@@ -170,9 +208,9 @@ const Login = () => {
 
       if (!targetEmail || !targetPin) {
         setCustomError(
-          "No saved passcode found. Please enter your passcode to log in for the first time."
+          "No saved passcode found. Please enter your email and passcode."
         );
-        setShowPasscodeInput(true);
+        setUseBiometric(false);
         setShowErrorModal(true);
         return;
       }
@@ -192,7 +230,7 @@ const Login = () => {
         setCustomError(
           "Biometric authentication is not supported or not set up on this device. Please enter your passcode."
         );
-        setShowPasscodeInput(true);
+        setUseBiometric(false);
         setShowErrorModal(true);
         return;
       }
@@ -259,6 +297,8 @@ const Login = () => {
     }
   };
 
+  const isBiometricActive = useBiometric && isBiometricAvailable && hasLoggedInBefore;
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView className="flex-1 bg-primary-100">
@@ -303,18 +343,35 @@ const Login = () => {
                 Login to your account
               </CustomText>
 
-              <TextInputField
-                label="Email"
-                placeholder="Enter your email address"
-                value={email}
-                keyboardType="email-address"
-                onChangeText={handleEmailChange}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-              />
+              {isBiometricActive ? (
+                <View className="items-center justify-center my-6">
+                  <TouchableOpacity
+                    onPress={handleBiometricAuth}
+                    activeOpacity={0.8}
+                    className="w-28 h-28 rounded-full bg-primary-400 justify-center items-center border-2 border-accent-100/40 mb-3 shadow-lg"
+                  >
+                    <BiometricIcon width={56} height={56} fill="#D4FF00" />
+                  </TouchableOpacity>
 
-              {showPasscodeInput && (
+                  <Text className="text-white text-base font-semibold text-center mb-1">
+                    Log in with {biometricLabel}
+                  </Text>
+                  <Text className="text-white/60 text-xs text-center">
+                    Tap the icon above to trigger {biometricLabel}
+                  </Text>
+                </View>
+              ) : (
                 <>
+                  <TextInputField
+                    label="Email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    keyboardType="email-address"
+                    onChangeText={handleEmailChange}
+                    onFocus={() => setInputFocused(true)}
+                    onBlur={() => setInputFocused(false)}
+                  />
+
                   <CustomText weight="bold" className="mb-2" size="sm" secondary>
                     Enter your passcode
                   </CustomText>
@@ -333,20 +390,29 @@ const Login = () => {
             </View>
 
             <View className="mb-10 mt-2">
-              <Button
-                title={isLoading ? "Logging in..." : "Login"}
-                variant="primary"
-                className="w-full"
-                disabled={isLoading}
-                onPress={handleLogin}
-              />
+              {!isBiometricActive && (
+                <Button
+                  title={isLoading ? "Logging in..." : "Login"}
+                  variant="primary"
+                  className="w-full"
+                  disabled={isLoading}
+                  onPress={handleLogin}
+                />
+              )}
 
-              {hasLoggedInBefore && !showPasscodeInput && (
-                <Pressable onPress={() => setShowPasscodeInput(true)}>
-                  <Text className="text-primary-200 text-center font-semibold text-md mt-3">
-                    Use passcode instead
-                  </Text>
-                </Pressable>
+              {hasLoggedInBefore && isBiometricAvailable && (
+                <View className="flex-row items-center justify-between mt-4 px-3 py-3 bg-primary-400/60 rounded-2xl border border-primary-300">
+                  <CustomText size="sm" weight="medium">
+                    Log in with {biometricLabel}
+                  </CustomText>
+                  <Switch
+                    value={useBiometric}
+                    onValueChange={(val) => setUseBiometric(val)}
+                    trackColor={{ false: "#374151", true: "#63642A" }}
+                    thumbColor={useBiometric ? "#D4FF00" : "#9CA3AF"}
+                    ios_backgroundColor="#374151"
+                  />
+                </View>
               )}
 
               <Pressable onPress={() => router.push("/(auth)/forget-password")}>
@@ -380,3 +446,5 @@ const Login = () => {
 };
 
 export default Login;
+
+

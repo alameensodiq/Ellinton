@@ -221,6 +221,7 @@ import UserInactivityProvider from "./components/UserInactivityProvider";
 import { usePreventScreenCapture } from "expo-screen-capture";
 import { initializeEncryption } from "./lib/initializeEncryption";
 import * as Notifications from "expo-notifications";
+import messaging from "@react-native-firebase/messaging";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -230,8 +231,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
-    shouldShowBanner: true, // Required for Android
-    shouldShowList: true, // Required for Android
+    shouldShowBanner: true, // Required for iOS/Android
+    shouldShowList: true, // Required for iOS/Android
     priority: Notifications.AndroidNotificationPriority.HIGH
   })
 });
@@ -429,8 +430,8 @@ export default function RootLayout() {
       });
 
       if (Platform.OS === "android") {
-        NavigationBar.setBackgroundColorAsync("#3F401B").catch(() => {});
-        NavigationBar.setButtonStyleAsync("light").catch(() => {});
+        NavigationBar.setBackgroundColorAsync("#3F401B").catch(() => { });
+        NavigationBar.setButtonStyleAsync("light").catch(() => { });
         StatusBar.setBackgroundColor("#3F401B", true);
         StatusBar.setBarStyle("light-content", true);
       }
