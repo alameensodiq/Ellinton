@@ -5,6 +5,7 @@ import {
   FETCH_ACCOUNT_TRANSACTIONS,
   FETCH_SINGLE_ACCOUNT_TRANSACTION,
   FETCH_TRANSFER_FEE,
+  TRANSACTION_PIN_VALIDATE,
 } from "../api";
 import { encryptedFetch } from "../encryptedFetch";
 import { encryptionClient } from "../encrption.client";
@@ -88,6 +89,11 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     });
   }
 };
+
+export interface TransactionPinPayload {
+  pin: string;
+
+}
 
 export interface TransferPayload {
   beneficiaryAccountNumber: string;
@@ -239,6 +245,37 @@ function extractError(errorData: any, status: number) {
 
   return `Transfer failed (${status})`;
 }
+
+export const TransactionPinValidation = createAsyncThunk<
+  TransferResult,
+  TransactionPinPayload
+>(
+  "transaction-pin/validate",
+  async (payload, { rejectWithValue, getState }) => {
+    try {
+      const token = (getState() as any).auth.token;
+
+      const response = await safeFetch(TRANSACTION_PIN_VALIDATE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.success) {
+        return rejectWithValue(extractError(result, response.status));
+      }
+
+      return result.data ?? { status: "SUCCESS" };
+    } catch (err: any) {
+      return rejectWithValue(err.message || "Network Error");
+    }
+  }
+);
 
 export const performIntraBankTransfer = createAsyncThunk<
   TransferResult,

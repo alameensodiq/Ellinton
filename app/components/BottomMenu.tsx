@@ -29,6 +29,7 @@ import ErrorModal from "./ErrorModal";
 import SuccessModal from "./SuccessModal";
 
 import { requestStatement } from "../lib/thunks/statementsThunks";
+import { TransactionPinValidation } from "../lib/thunks/transferThunks";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { signOut } from "firebase/auth";
@@ -360,6 +361,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
     }
     try {
       setSavingPin(true);
+      await dispatch(TransactionPinValidation({ pin: pinValue })).unwrap();
       await AsyncStorage.setItem(TRANS_PIN_KEY, pinValue);
       await AsyncStorage.setItem(TRANS_BIOMETRIC_KEY, JSON.stringify(true));
       setTransBiometric(true);
@@ -367,8 +369,8 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       setPinValue("");
       setPinError("");
     } catch (err: any) {
-      console.error("Failed to save transaction PIN:", err);
-      setPinError("Failed to save PIN. Please try again.");
+      // console.error("Failed to validate transaction PIN:", err);
+      setPinError(typeof err === "string" ? err : err?.message || "Invalid PIN. Please try again.");
     } finally {
       setSavingPin(false);
     }

@@ -1,5 +1,5 @@
-const BASE_URL = "https://api.ellingtonbank.com/api/v2";
-// const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
+// const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
@@ -57,6 +57,7 @@ const ACCOUNT_VALIDATE_ELLINGLON_ENDPOINT = `${BASE_URL}/accounts/validate/ellin
 const BENEFICIARIES_ENDPOINT = `${BASE_URL}/beneficiaries/transfer`;
 const BANKS_ENDPOINT = `${BASE_URL}/utilities/banks`;
 const TRANSFER_SAME_BANK = `${BASE_URL}/transfers/intra-bank`;
+const TRANSACTION_PIN_VALIDATE = `${BASE_URL}/users/transaction-pin/validate`;
 const TRANSFER_OTHER_BANK = `${BASE_URL}/transfers/inter-bank`;
 export const FETCH_ACCOUNT_TRANSACTIONS = `${BASE_URL}/transactions/account`;
 export const FETCH_TRANSFER_FEE = `${BASE_URL}/transfer-fees/quote`;
@@ -234,5 +235,6 @@ export {
   MULTI_FACTOR_OTP_ENDPOINT,
   DEVICE_ENDPOINT,
   RESEND_DEVICE_OTP,
-  LOAN_REPAYMENT_ENDPOINT
+  LOAN_REPAYMENT_ENDPOINT,
+  TRANSACTION_PIN_VALIDATE
 };

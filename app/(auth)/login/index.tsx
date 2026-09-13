@@ -12,6 +12,7 @@ import {
   Pressable,
   TouchableOpacity,
   Switch,
+  ActivityIndicator,
   Platform
 } from "react-native";
 import { useState, useEffect } from "react";
@@ -52,6 +53,7 @@ const Login = () => {
     Platform.OS === "ios" ? "Face ID" : "Fingerprint"
   );
   const [useBiometric, setUseBiometric] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -118,6 +120,8 @@ const Login = () => {
         }
       } catch (e) {
         console.error("Error checking login status:", e);
+      } finally {
+        setIsCheckingStatus(false);
       }
     };
     checkLoginStatus();
@@ -343,7 +347,11 @@ const Login = () => {
                 Login to your account
               </CustomText>
 
-              {isBiometricActive ? (
+              {isCheckingStatus ? (
+                <View className="items-center justify-center py-12">
+                  <ActivityIndicator size="large" color="#D4FF00" />
+                </View>
+              ) : isBiometricActive ? (
                 <View className="items-center justify-center my-6">
                   <TouchableOpacity
                     onPress={handleBiometricAuth}
@@ -390,7 +398,7 @@ const Login = () => {
             </View>
 
             <View className="mb-10 mt-2">
-              {!isBiometricActive && (
+              {!isCheckingStatus && !isBiometricActive && (
                 <Button
                   title={isLoading ? "Logging in..." : "Login"}
                   variant="primary"
@@ -400,7 +408,7 @@ const Login = () => {
                 />
               )}
 
-              {hasLoggedInBefore && isBiometricAvailable && (
+              {!isCheckingStatus && hasLoggedInBefore && isBiometricAvailable && (
                 <View className="flex-row items-center justify-between mt-4 px-3 py-3 bg-primary-400/60 rounded-2xl border border-primary-300">
                   <CustomText size="sm" weight="medium">
                     Log in with {biometricLabel}
