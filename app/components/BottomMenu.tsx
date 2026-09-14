@@ -118,8 +118,9 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
   const [pendingSuccessModal, setPendingSuccessModal] = useState(false);
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_required ?? false);
 
-  // Transaction Pin Biometric
+  // Transaction Pin & Login Biometrics
   const [transBiometric, setTransBiometric] = useState(false);
+  const [loginBiometric, setLoginBiometric] = useState(true);
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinValue, setPinValue] = useState("");
   const [pinError, setPinError] = useState("");
@@ -127,6 +128,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
 
   const TRANS_BIOMETRIC_KEY = "transBiometricEnabled";
   const TRANS_PIN_KEY = "transBiometricPin";
+  const LOGIN_BIOMETRIC_KEY = "loginBiometricEnabled";
 
   const defaultListItems: MenuItem[] = [
     {
@@ -169,28 +171,44 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
     setMfaEnabled(user?.mfa_required ?? false);
   }, [user?.mfa_required]);
 
-  // Load transBiometric state from AsyncStorage when menu becomes visible
+  // Load biometric states from AsyncStorage when menu becomes visible
   useEffect(() => {
     if (visible) {
-      const loadTransBiometric = async () => {
+      const loadBiometricSettings = async () => {
         try {
-          const stored = await AsyncStorage.getItem(TRANS_BIOMETRIC_KEY);
-          if (stored !== null) {
+          const [storedTrans, storedLogin] = await Promise.all([
+            AsyncStorage.getItem(TRANS_BIOMETRIC_KEY),
+            AsyncStorage.getItem(LOGIN_BIOMETRIC_KEY)
+          ]);
+
+          if (storedTrans !== null) {
             let isEnabled = false;
             try {
-              isEnabled = JSON.parse(stored) === true;
+              isEnabled = JSON.parse(storedTrans) === true;
             } catch {
-              isEnabled = stored === "true";
+              isEnabled = storedTrans === "true";
             }
             setTransBiometric(isEnabled);
           } else {
             setTransBiometric(false);
           }
+
+          if (storedLogin !== null) {
+            let isEnabled = true;
+            try {
+              isEnabled = JSON.parse(storedLogin) === true;
+            } catch {
+              isEnabled = storedLogin === "true";
+            }
+            setLoginBiometric(isEnabled);
+          } else {
+            setLoginBiometric(true);
+          }
         } catch (err: any) {
-          console.error("Failed to load transBiometric state:", err);
+          console.error("Failed to load biometric state:", err);
         }
       };
-      loadTransBiometric();
+      loadBiometricSettings();
     }
   }, [visible]);
 
@@ -317,6 +335,38 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
         "MFA Error",
         typeof err === "string" ? err : (err as any)?.message || "MFA update failed"
       );
+    }
+  };
+
+  const handleLoginBiometricToggle = async (value: boolean) => {
+    if (value) {
+      try {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+        if (!hasHardware || !isEnrolled) {
+          Alert.alert(
+            "Biometrics Not Available",
+            "Please ensure Face ID or Fingerprint authentication is enabled in your device settings."
+          );
+          setLoginBiometric(false);
+          return;
+        }
+
+        await AsyncStorage.setItem(LOGIN_BIOMETRIC_KEY, JSON.stringify(true));
+        setLoginBiometric(true);
+      } catch (err: any) {
+        console.error("Biometrics check error:", err);
+        Alert.alert("Error", "Could not verify biometric support on this device.");
+        setLoginBiometric(false);
+      }
+    } else {
+      try {
+        await AsyncStorage.setItem(LOGIN_BIOMETRIC_KEY, JSON.stringify(false));
+        setLoginBiometric(false);
+      } catch (err: any) {
+        console.error("Failed to disable loginBiometric:", err);
+      }
     }
   };
 
@@ -450,6 +500,20 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
                     onValueChange={handleMfaToggle}
                     trackColor={{ false: "#555", true: "#63642A" }}
                     thumbColor={mfaEnabled ? "#fff" : "#ccc"}
+                    ios_backgroundColor="#555"
+                  />
+                </View>
+              </View>
+
+              <View className="bg-primary-400 rounded-2xl overflow-hidden mt-6">
+                <View className="flex-row items-center px-6 py-4">
+                  <Text className="text-white text-base flex-1">Login Biometric</Text>
+
+                  <Switch
+                    value={loginBiometric}
+                    onValueChange={handleLoginBiometricToggle}
+                    trackColor={{ false: "#555", true: "#63642A" }}
+                    thumbColor={loginBiometric ? "#fff" : "#ccc"}
                     ios_backgroundColor="#555"
                   />
                 </View>

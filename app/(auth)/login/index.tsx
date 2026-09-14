@@ -21,6 +21,7 @@ import OtpInput from "@/app/components/inputs/OtpInput";
 import Button from "@/app/components/Button";
 import { svgIcons } from "@/app/assets/icons/icons";
 import ErrorModal from "@/app/components/ErrorModal";
+import Loading from "@/app/components/Loading";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InfoText from "@/app/components/InfoText";
 import { useRouter } from "expo-router";
@@ -66,11 +67,12 @@ const Login = () => {
   useEffect(() => {
     const checkLoginStatus = async () => {
       try {
-        const [savedPin, savedEmail, userProfile, loggedInFlag] = await Promise.all([
+        const [savedPin, savedEmail, userProfile, loggedInFlag, storedLoginBio] = await Promise.all([
           AsyncStorage.getItem("userPin"),
           AsyncStorage.getItem("userEmail"),
           AsyncStorage.getItem("userProfile"),
           AsyncStorage.getItem("hasLoggedInBefore"),
+          AsyncStorage.getItem("loginBiometricEnabled"),
         ]);
 
         const returningUser = Boolean(savedPin || loggedInFlag === "true");
@@ -83,6 +85,15 @@ const Login = () => {
           }
         } else if (savedEmail) {
           setEmail(savedEmail);
+        }
+
+        let isLoginBioEnabled = true;
+        if (storedLoginBio !== null) {
+          try {
+            isLoginBioEnabled = JSON.parse(storedLoginBio) === true;
+          } catch {
+            isLoginBioEnabled = storedLoginBio === "true";
+          }
         }
 
         if (LocalAuthentication && LocalAuthentication.hasHardwareAsync) {
@@ -98,23 +109,23 @@ const Login = () => {
               await LocalAuthentication.supportedAuthenticationTypesAsync();
 
             let label = Platform.OS === "ios" ? "Face ID" : "Fingerprint";
-            if (
-              supportedTypes.includes(
-                LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
-              )
-            ) {
-              label = "Face ID";
-            } else if (
-              supportedTypes.includes(
-                LocalAuthentication.AuthenticationType.FINGERPRINT
-              )
-            ) {
-              label = Platform.OS === "ios" ? "Touch ID" : "Fingerprint";
+            if (Platform.OS === "ios") {
+              if (
+                supportedTypes.includes(
+                  LocalAuthentication.AuthenticationType.FINGERPRINT
+                )
+              ) {
+                label = "Touch ID";
+              }
+            } else {
+              label = "Fingerprint";
             }
             setBiometricLabel(label);
 
-            if (returningUser && savedPin) {
+            if (returningUser && savedPin && isLoginBioEnabled) {
               setUseBiometric(true);
+            } else {
+              setUseBiometric(false);
             }
           }
         }
@@ -242,22 +253,21 @@ const Login = () => {
       const supportedTypes =
         await LocalAuthentication.supportedAuthenticationTypesAsync();
 
-      let promptMessage = "Authenticate to log in";
-      if (
-        supportedTypes.includes(
-          LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
-        )
-      ) {
-        promptMessage = "Use Face ID to log in";
-      } else if (
-        supportedTypes.includes(
-          LocalAuthentication.AuthenticationType.FINGERPRINT
-        )
-      ) {
-        promptMessage =
-          Platform.OS === "ios"
-            ? "Use Touch ID to log in"
-            : "Scan Fingerprint to log in";
+      let promptMessage = Platform.OS === "ios" ? `Log in with ${biometricLabel}` : "Log in with Fingerprint";
+      if (Platform.OS === "ios") {
+        if (
+          supportedTypes.includes(
+            LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
+          )
+        ) {
+          promptMessage = "Log in with Face ID";
+        } else if (
+          supportedTypes.includes(
+            LocalAuthentication.AuthenticationType.FINGERPRINT
+          )
+        ) {
+          promptMessage = "Log in with Touch ID";
+        }
       }
 
       const authResult = await LocalAuthentication.authenticateAsync({
@@ -355,17 +365,24 @@ const Login = () => {
                 <View className="items-center justify-center my-6">
                   <TouchableOpacity
                     onPress={handleBiometricAuth}
+                    disabled={isLoading}
                     activeOpacity={0.8}
                     className="w-28 h-28 rounded-full bg-primary-400 justify-center items-center border-2 border-accent-100/40 mb-3 shadow-lg"
                   >
-                    <BiometricIcon width={56} height={56} fill="#D4FF00" />
+                    {isLoading ? (
+                      <ActivityIndicator size="large" color="#D4FF00" />
+                    ) : (
+                      <BiometricIcon width={56} height={56} fill="#D4FF00" />
+                    )}
                   </TouchableOpacity>
 
                   <Text className="text-white text-base font-semibold text-center mb-1">
-                    Log in with {biometricLabel}
+                    {isLoading ? "Logging in..." : `Log in with ${biometricLabel}`}
                   </Text>
                   <Text className="text-white/60 text-xs text-center">
-                    Tap the icon above to trigger {biometricLabel}
+                    {isLoading
+                      ? "Please wait while we verify your credentials..."
+                      : `Tap the icon above to trigger ${biometricLabel}`}
                   </Text>
                 </View>
               ) : (
@@ -408,21 +425,6 @@ const Login = () => {
                 />
               )}
 
-              {!isCheckingStatus && hasLoggedInBefore && isBiometricAvailable && (
-                <View className="flex-row items-center justify-between mt-4 px-3 py-3 bg-primary-400/60 rounded-2xl border border-primary-300">
-                  <CustomText size="sm" weight="medium">
-                    Log in with {biometricLabel}
-                  </CustomText>
-                  <Switch
-                    value={useBiometric}
-                    onValueChange={(val) => setUseBiometric(val)}
-                    trackColor={{ false: "#374151", true: "#63642A" }}
-                    thumbColor={useBiometric ? "#D4FF00" : "#9CA3AF"}
-                    ios_backgroundColor="#374151"
-                  />
-                </View>
-              )}
-
               <Pressable onPress={() => router.push("/(auth)/forget-password")}>
                 <Text className="text-primary-200 text-center font-semibold text-md mt-4">
                   Forgot passcode?
@@ -448,6 +450,8 @@ const Login = () => {
           }
           onDismiss={handleDismissError}
         />
+
+        <Loading visible={isLoading} />
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );

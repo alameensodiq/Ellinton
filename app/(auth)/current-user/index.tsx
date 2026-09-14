@@ -117,30 +117,38 @@ export default function CurrentUser() {
         if (!LocalAuthentication || !LocalAuthentication.hasHardwareAsync)
           return;
 
-        const [hasHardware, isEnrolled, savedPin] = await Promise.all([
+        const [hasHardware, isEnrolled, savedPin, storedLoginBio] = await Promise.all([
           LocalAuthentication.hasHardwareAsync(),
           LocalAuthentication.isEnrolledAsync(),
           AsyncStorage.getItem("userPin"),
+          AsyncStorage.getItem("loginBiometricEnabled"),
         ]);
 
-        if (hasHardware && isEnrolled && savedPin) {
+        let isLoginBioEnabled = true;
+        if (storedLoginBio !== null) {
+          try {
+            isLoginBioEnabled = JSON.parse(storedLoginBio) === true;
+          } catch {
+            isLoginBioEnabled = storedLoginBio === "true";
+          }
+        }
+
+        if (hasHardware && isEnrolled && savedPin && isLoginBioEnabled) {
           setIsBiometricAvailable(true);
           const supportedTypes =
             await LocalAuthentication.supportedAuthenticationTypesAsync();
 
           let label = Platform.OS === "ios" ? "Face ID" : "Fingerprint";
-          if (
-            supportedTypes.includes(
-              LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION
-            )
-          ) {
-            label = "Face ID";
-          } else if (
-            supportedTypes.includes(
-              LocalAuthentication.AuthenticationType.FINGERPRINT
-            )
-          ) {
-            label = Platform.OS === "ios" ? "Touch ID" : "Fingerprint";
+          if (Platform.OS === "ios") {
+            if (
+              supportedTypes.includes(
+                LocalAuthentication.AuthenticationType.FINGERPRINT
+              )
+            ) {
+              label = "Touch ID";
+            }
+          } else {
+            label = "Fingerprint";
           }
           setBiometricLabel(label);
         }
