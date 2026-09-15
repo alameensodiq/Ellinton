@@ -27,9 +27,17 @@ export default function BuyAirtime() {
   const user = useAppSelector((state) => state.auth.user);
 
 
-  const [selectedProvider, setSelectedProvider] = useState("MTN");
-  const [phoneNumber, setPhoneNumber] = useState(user?.phone?? "+234");
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone ? formatNigerianPhone(user.phone) : "+234");
   const [amount, setAmount] = useState("");
+
+  const parsedAmount = Number(amount.replace(/,/g, ""));
+  const isFormValid =
+    !!selectedProvider &&
+    !!phoneNumber &&
+    phoneNumber.trim() !== "+234" &&
+    !isNaN(parsedAmount) &&
+    parsedAmount >= 100;
 
   const [contactsSheetVisible, setContactsSheetVisible] = useState(false);
   const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
@@ -60,6 +68,7 @@ export default function BuyAirtime() {
   };
 
   const handleContinue = () => {
+    if (!isFormValid) return;
     router.push({
       pathname: "/(root)/airtime/confirm",
       params: {
@@ -114,7 +123,7 @@ return (
               title="Continue"
               variant="primary"
               onPress={handleContinue}
-              disabled={!phoneNumber || !amount}
+              disabled={!isFormValid}
             />
           </View>
         </View>

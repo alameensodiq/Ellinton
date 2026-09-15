@@ -46,16 +46,6 @@ export const brands = [
 
 const countries: DropdownOption[] = [{ value: "ng", label: "Nigeria" }];
 
-const states: DropdownOption[] = [
-  { value: "lagos", label: "Lagos" },
-  { value: "adamawa", label: "Adamawa" },
-];
-
-const cities: DropdownOption[] = [
-  { value: "ikeja", label: "Ikeja" },
-  { value: "abuja", label: "Abuja" },
-];
-
 export default function PhysicalCardCreateStep1() {
   const [selectedBrand, setSelectedBrand] = useState("mastercard");
   const [firstName, setFirstName] = useState("");
@@ -66,17 +56,87 @@ export default function PhysicalCardCreateStep1() {
   const [address1, setAddress1] = useState("");
   const [isEditable, setIsEditable] = useState(false);
 
+  const [stateOptions, setStateOptions] = useState<DropdownOption[]>([]);
+  const [cityOptions, setCityOptions] = useState<DropdownOption[]>([]);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
+
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
+  console.log(user)
+
+  useEffect(() => {
+    const fetchStates = async () => {
+      try {
+        setLoadingStates(true);
+        const res = await fetch("https://nga-states-lga.onrender.com/fetch");
+        if (res.ok) {
+          const data: string[] = await res.json();
+          setStateOptions(data.map((item) => ({ value: item.toLowerCase(), label: item })));
+        }
+      } catch (e) {
+        // Fallback default Nigerian states list
+        const fallbackStates = [
+          "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+          "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe",
+          "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos",
+          "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto",
+          "Taraba", "Yobe", "Zamfara"
+        ];
+        setStateOptions(fallbackStates.map((s) => ({ value: s.toLowerCase(), label: s })));
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+    fetchStates();
+  }, []);
+
+  useEffect(() => {
+    if (!state) {
+      setCityOptions([]);
+      return;
+    }
+    const fetchCities = async () => {
+      try {
+        setLoadingCities(true);
+        const selectedStateLabel = stateOptions.find((s) => s.value === state.toLowerCase())?.label || state;
+        const res = await fetch(`https://nga-states-lga.onrender.com/?state=${encodeURIComponent(selectedStateLabel)}`);
+        if (res.ok) {
+          const data: string[] = await res.json();
+          const mapped = data.map((c) => ({ value: c.toLowerCase(), label: c }));
+          if (city && !mapped.some((c) => c.value === city.toLowerCase())) {
+            const currentCityLabel = user?.city || user?.local_government || city;
+            mapped.unshift({ value: city.toLowerCase(), label: currentCityLabel });
+          }
+          setCityOptions(mapped);
+        }
+      } catch (e) {
+        const currentCityLabel = user?.city || user?.local_government || city || "Ikeja";
+        setCityOptions([{ value: city.toLowerCase() || "ikeja", label: currentCityLabel }]);
+      } finally {
+        setLoadingCities(false);
+      }
+    };
+    fetchCities();
+  }, [state, stateOptions]);
 
   useEffect(() => {
     if (user) {
       setFirstName(user.first_name || "");
       setLastName(user.last_name || "");
       setCountry(user.country_code?.toLowerCase() || "ng");
-      setState(user.state?.toLowerCase() || "");
-      setCity(user.city?.toLowerCase() || "");
+      const userState = (user.state || "Lagos").toLowerCase();
+      const userCity = (user.city || user.local_government || "Ikeja").toLowerCase();
+      setState(userState);
+      setCity(userCity);
       setAddress1(user.address_1 || "");
+
+      const currentCityLabel = user.city || user.local_government || "Ikeja";
+      setCityOptions((prev) =>
+        prev.some((c) => c.value === userCity)
+          ? prev
+          : [{ value: userCity, label: currentCityLabel }, ...prev]
+      );
     }
   }, [user]);
 
@@ -182,21 +242,26 @@ export default function PhysicalCardCreateStep1() {
                 <View className="flex-1">
                   <Dropdown
                     label="State *"
-                    placeholder="Select state"
-                    options={states}
+                    placeholder={loadingStates ? "Loading..." : "Select state"}
+                    options={stateOptions}
                     selectedValue={state}
-                    onSelect={setState}
-                    disabled={!isEditable}
+                    onSelect={(val) => {
+                      setState(val);
+                      setCity("");
+                    }}
+                    searchable
+                    disabled={!isEditable || loadingStates}
                   />
                 </View>
                 <View className="flex-1">
                   <Dropdown
                     label="City *"
-                    placeholder="Select city"
-                    options={cities}
+                    placeholder={loadingCities ? "Loading..." : "Select city"}
+                    options={cityOptions}
                     selectedValue={city}
                     onSelect={setCity}
-                    disabled={!isEditable}
+                    searchable
+                    disabled={!isEditable || loadingCities}
                   />
                 </View>
               </View>

@@ -92,10 +92,13 @@ export default function AuthorizeUtilityPayment() {
         },
       });
     } catch (err: any) {
-      setError(
-        err?.message ||
-          "Service not available at this time, please try again later"
-      );
+      const msg =
+        typeof err === "string" && err.trim()
+          ? err
+          : err?.message ||
+            err?.data?.message ||
+            "Service not available at this time, please try again later";
+      setError(msg);
       Vibration.vibrate(400);
       setPasscode("");
     } finally {

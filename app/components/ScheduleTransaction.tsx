@@ -48,6 +48,24 @@ export default function ScheduleTransaction({
   frequencyOptions,
   dayOptions,
 }: ScheduleTransactionProps) {
+  const generateDateOptions = (daysCount: number, offsetDays: number = 0): Option[] => {
+    const options: Option[] = [];
+    const today = new Date();
+    for (let i = offsetDays; i < daysCount + offsetDays; i++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const dateStr = `${yyyy}-${mm}-${dd}`;
+      options.push({ value: dateStr, label: dateStr });
+    }
+    return options;
+  };
+
+  const startDateOptions = React.useMemo(() => generateDateOptions(30, 0), []);
+  const endDateOptions = React.useMemo(() => generateDateOptions(90, 1), []);
+
   return (
     <View className="mt-4">
       {/* Toggle */}
@@ -112,23 +130,19 @@ export default function ScheduleTransaction({
           <Dropdown
             label="Start date"
             placeholder="Select date"
-            options={[
-              { value: "2025-11-25", label: "2025-11-25" },
-              { value: "2025-11-26", label: "2025-11-26" },
-            ]}
+            options={startDateOptions}
             selectedValue={startDate}
             onSelect={setStartDate}
+            searchable
           />
 
           <Dropdown
             label="End date"
             placeholder="Select date"
-            options={[
-              { value: "2025-12-25", label: "2025-12-25" },
-              { value: "2025-12-26", label: "2025-12-26" },
-            ]}
+            options={endDateOptions}
             selectedValue={endDate}
             onSelect={setEndDate}
+            searchable
           />
         </View>
       )}

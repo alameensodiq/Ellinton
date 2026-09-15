@@ -35,8 +35,7 @@ export default function BuyData() {
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
 
-  const defaultProvider = providers[0]?.id || "MTN";
-  const [selectedProvider, setSelectedProvider] = useState(defaultProvider);
+  const [selectedProvider, setSelectedProvider] = useState("");
   const [phoneNumber, setPhoneNumber] = useState(
     user?.phone ? formatNigerianPhone(user.phone) : "+234"
   );
@@ -53,14 +52,11 @@ export default function BuyData() {
   const [validating, setValidating] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchBillerOptions({ type: "data", provider: selectedProvider }));
-  }, [dispatch, selectedProvider]);
-
-  useEffect(() => {
-    if (dataBundles && dataBundles.length > 0) {
-      setSelectedBundle(dataBundles[0].slug);
+    if (selectedProvider) {
+      setSelectedBundle("");
+      dispatch(fetchBillerOptions({ type: "data", provider: selectedProvider }));
     }
-  }, [dataBundles]);
+  }, [dispatch, selectedProvider]);
 
   const openContacts = async () => {
     const { status } = await Contacts.requestPermissionsAsync();
@@ -184,7 +180,13 @@ export default function BuyData() {
               title="Continue"
               variant="primary"
               onPress={handleContinue}
-              disabled={!currentBundle }
+              disabled={
+                !selectedProvider ||
+                !phoneNumber ||
+                phoneNumber.trim() === "+234" ||
+                !selectedBundle ||
+                !currentBundle
+              }
             />
           </View>
         </ScrollView>

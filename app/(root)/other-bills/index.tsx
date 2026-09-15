@@ -15,15 +15,25 @@ import { View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function GeneralBillPayment() {
-  const [selectedServiceType, setSelectedServiceType] =
-    useState("event_tickets");
-  const [selectedService, setSelectedService] = useState("africkets");
-  const [selectedProduct, setSelectedProduct] = useState("africkets_orders");
+  const [selectedServiceType, setSelectedServiceType] = useState("");
+  const [selectedService, setSelectedService] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState("");
   const [email, setEmail] = useState("");
-  const [amount, setAmount] = useState("5500");
+  const [amount, setAmount] = useState("");
   const router = useRouter();
 
+  const cleanAmount = amount.replace(/,/g, "");
+  const isFormValid =
+    !!selectedServiceType &&
+    !!selectedService &&
+    !!selectedProduct &&
+    !!email.trim() &&
+    !!cleanAmount &&
+    Number(cleanAmount) >= 100;
+
   const handleContinue = () => {
+    if (!isFormValid) return;
+
     router.push({
       pathname: "/(root)/other-bills/confirm",
       params: {
@@ -31,7 +41,7 @@ export default function GeneralBillPayment() {
         service: selectedService,
         product: selectedProduct,
         email,
-        amount,
+        amount: cleanAmount,
       },
     });
   };
@@ -82,7 +92,12 @@ export default function GeneralBillPayment() {
         </Text>
 
         <View className="mt-auto pb-4">
-          <Button title="Continue" variant="primary" onPress={handleContinue} />
+          <Button
+            title="Continue"
+            variant="primary"
+            onPress={handleContinue}
+            disabled={!isFormValid}
+          />
         </View>
       </View>
     </SafeAreaView>

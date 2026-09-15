@@ -4,8 +4,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   Pressable,
+  Modal,
+  FlatList,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -50,50 +54,45 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   const handlePress = () => {
     if (!disabled) {
-      setShowDropdown(!showDropdown);
+      setShowDropdown(true);
     }
   };
 
-  const renderOption = (option: DropdownOption, index: number) => {
-    const isLast = index === filteredOptions.length - 1;
-    const isSelected = option.value === selectedValue;
+  const handleClose = () => {
+    setShowDropdown(false);
+    setSearchQuery("");
+  };
 
-    if (isSelected) {
-      return (
-        <View
-          key={`${option.value}-${index}`}
-          className={`flex-row items-center justify-between py-4 px-4 rounded-lg bg-accent-100/20 ${
-            !isLast ? "border-b border-primary-300" : ""
-          }`}
-        >
-          <Text className="text-base text-accent-100 font-semibold">
-            {option.label}
-          </Text>
-          <Ionicons name="checkmark" size={20} color="#D4FF00" />
-        </View>
-      );
-    }
+  const renderOption = ({ item, index }: { item: DropdownOption; index: number }) => {
+    const isLast = index === filteredOptions.length - 1;
+    const isSelected = item.value === selectedValue;
 
     return (
       <Pressable
-        key={`${option.value}-${index}`}
+        key={`${item.value}-${index}`}
         onPress={() => {
-          onSelect(option.value);
-          setShowDropdown(false);
-          setSearchQuery("");
+          onSelect(item.value);
+          handleClose();
         }}
-        className={`flex-row items-center justify-between py-3 px-4 rounded-lg active:bg-primary-400 ${
-          !isLast ? "border-b border-primary-300" : ""
-        }`}
+        className={`flex-row items-center justify-between py-4 px-4 rounded-xl active:bg-primary-300 ${
+          isSelected ? "bg-accent-100/20" : ""
+        } ${!isLast ? "border-b border-primary-300/40" : ""}`}
       >
-        <Text className="text-base text-white">{option.label}</Text>
+        <Text
+          className={`text-base flex-1 ${
+            isSelected ? "text-accent-100 font-semibold" : "text-white"
+          }`}
+        >
+          {item.label}
+        </Text>
+        {isSelected && <Ionicons name="checkmark" size={20} color="#D4FF00" />}
       </Pressable>
     );
   };
 
   return (
     <View className="mb-6">
-      <Text className="text-white text-md mb-3">{label}</Text>
+      {label ? <Text className="text-white text-md mb-3">{label}</Text> : null}
 
       <Pressable
         onPress={handlePress}
@@ -103,9 +102,10 @@ export const Dropdown: React.FC<DropdownProps> = ({
         } ${error ? "border-red-500" : "border-primary-100"}`}
       >
         <Text
-          className={`text-base ${
+          className={`text-base flex-1 mr-2 ${
             selectedOption ? "text-white" : "text-accent-100"
           }`}
+          numberOfLines={1}
         >
           {selectedOption ? selectedOption.label : placeholder}
         </Text>
@@ -120,7 +120,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
             />
           )}
           <Ionicons
-            name={showDropdown ? "chevron-up" : "chevron-down"}
+            name="chevron-down"
             size={20}
             color="#fff"
           />
@@ -134,43 +134,68 @@ export const Dropdown: React.FC<DropdownProps> = ({
         </View>
       )}
 
-      {showDropdown && !disabled && (
-        <View
-          style={{
-            position: "absolute",
-            top: 100,
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-          }}
-          className="bg-primary-400 rounded-xl py-4"
+      <Modal
+        visible={showDropdown && !disabled}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleClose}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
         >
-          {searchable && (
-            <View className="rounded-lg py-3  border-b border-primary-300">
-              <View className="flex-row items-center px-4">
-                <Ionicons name="search" size={20} color="#9ca3af" />
-                <TextInput
-                  placeholder={searchPlaceholder}
-                  placeholderTextColor="#9ca3af"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  className="flex-1 text-white ml-2"
-                />
+          <View className="flex-1 bg-black/70 justify-end">
+            <Pressable className="flex-1" onPress={handleClose} />
+            <View className="bg-primary-100 rounded-t-3xl border-t border-primary-300 h-[70%] p-4 pb-8">
+              <View className="flex-row items-center justify-between py-3 px-2 border-b border-primary-300 mb-3">
+                <Text className="text-white text-lg font-bold">
+                  {label || placeholder}
+                </Text>
+                <TouchableOpacity
+                  onPress={handleClose}
+                  className="p-1 rounded-full bg-primary-400"
+                >
+                  <Ionicons name="close" size={22} color="#fff" />
+                </TouchableOpacity>
               </View>
-            </View>
-          )}
 
-          <ScrollView
-            nestedScrollEnabled={true}
-            className="max-h-64"
-            showsVerticalScrollIndicator={false}
-          >
-            {filteredOptions.map((option, index) =>
-              renderOption(option, index)
-            )}
-          </ScrollView>
-        </View>
-      )}
+              {searchable && (
+                <View className="bg-primary-400 rounded-xl py-3 px-4 border border-primary-300 mb-4 flex-row items-center">
+                  <Ionicons name="search" size={20} color="#9ca3af" />
+                  <TextInput
+                    placeholder={searchPlaceholder}
+                    placeholderTextColor="#9ca3af"
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    className="flex-1 text-white ml-2 text-base"
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery("")}>
+                      <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+
+              <FlatList
+                data={filteredOptions}
+                keyExtractor={(item, index) => `${item.value}-${index}`}
+                renderItem={renderOption}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+                ListEmptyComponent={
+                  <View className="py-8 px-4 items-center">
+                    <Text className="text-white/60 text-center text-base">
+                      No options found
+                    </Text>
+                  </View>
+                }
+              />
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
+

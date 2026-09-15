@@ -2,17 +2,20 @@ import { View, ScrollView } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack"; 
+import { useRouter } from "expo-router";
+import { signOut } from "firebase/auth";
+import { auth } from "@/app/firebase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Header from "@/app/components/header-back";
 import Button from "@/app/components/Button";
 import TextInputField from "@/app/components/inputs/TextInputField";
-import { updateUserAddress } from "@/app/lib/thunks/authThunks";
-import { RootState, AppDispatch } from "@/app/lib/store"; 
+import { updateUserAddress, logoutUser } from "@/app/lib/thunks/authThunks";
+import { clearError } from "@/app/lib/slices/authSlice";
+import { RootState, AppDispatch } from "@/app/lib/store";
 
 const Address = () => {
-  const navigation = useNavigation<NativeStackNavigationProp<any>>(); 
-  const dispatch = useDispatch<AppDispatch>(); 
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
   const { user, isLoading: loading } = useSelector(
     (state: RootState) => state.auth
   );
@@ -20,9 +23,16 @@ const Address = () => {
   const [city, setCity] = useState(user?.city || "Ikeja");
   const [isSaving, setIsSaving] = useState(false);
 
+  React.useEffect(() => {
+    if (user) {
+      setAddress(user.address_1 || "");
+      setCity(user.city || user.local_government || "Ikeja");
+    }
+  }, [user]);
+
   const handleSave = async () => {
     if (!address.trim() || !city.trim()) {
-      return; 
+      return;
     }
 
     setIsSaving(true);
@@ -34,7 +44,16 @@ const Address = () => {
         })
       ).unwrap();
 
-      navigation.goBack();
+      try {
+        await AsyncStorage.clear();
+        await dispatch(logoutUser()).unwrap();
+        await signOut(auth);
+        dispatch(clearError());
+      } catch (logoutErr) {
+        console.error("Logout error following address update:", logoutErr);
+      } finally {
+        router.replace("/(auth)/current-user");
+      }
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";

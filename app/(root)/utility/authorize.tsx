@@ -96,12 +96,11 @@ export default function AuthorizeUtilityPayment() {
       console.log("Error type:", typeof err);
       console.log("Error keys:", err ? Object.keys(err) : "null");
 
-      // Try multiple possible error message locations
       const errorMessage =
+        (typeof err === "string" && err.trim() ? err : null) ||
         err?.message ||
         err?.data?.message ||
         err?.error ||
-        (typeof err === "string" ? err : null) ||
         "Service not available at this time, please try again later";
 
       setError(errorMessage);

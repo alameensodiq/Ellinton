@@ -403,10 +403,15 @@ const authSlice = createSlice({
       })
       .addCase(
         updateUserAddress.fulfilled,
-        (state, action: PayloadAction<{ user: User | undefined }>) => {
+        (state, action: any) => {
           state.isLoading = false;
-          if (action.payload.user && state.user) {
-            state.user = { ...state.user, ...action.payload.user };
+          if (state.user) {
+            state.user = {
+              ...state.user,
+              address_1: action.meta?.arg?.address_1 ?? state.user.address_1,
+              city: action.meta?.arg?.city ?? state.user.city,
+              ...(action.payload?.user || {}),
+            };
           }
           state.error = null;
         }

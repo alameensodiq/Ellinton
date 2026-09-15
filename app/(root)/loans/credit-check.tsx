@@ -38,14 +38,18 @@ const CreditScore = () => {
     dispatch(runCreditCheck({ productCode: String(params.productCode ?? "") }))
       .unwrap()
       .then((res) => {
-        if (!res?.assessment) {
-          throw new Error("Credit check returned no assessment");
-        }
+        const assessment = res?.data?.assessment || res?.assessment || res?.data || res;
+        const isApproved =
+          assessment?.isApproved === true ||
+          res?.isApproved === true ||
+          res?.success === true ||
+          res?.status === "00" ||
+          res?.status === "success";
 
-        if (res.assessment.isApproved !== true) {
+        if (!isApproved) {
           throw new Error(res?.message || "Credit check failed");
         }
-        console.log(res)
+        console.log("Credit check approved:", res);
 
         loop.stop();
         router.replace({

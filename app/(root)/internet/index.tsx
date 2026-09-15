@@ -89,11 +89,7 @@ const safePackages = useMemo(() =>
     }
   }, [selectedService, dispatch]);
 
-  useEffect(() => {
-    if (safeProviders.length && !selectedService) {
-      setSelectedService(safeProviders[0].slug);
-    }
-  }, [safeProviders]);
+
 
   const selectedProviderData = useMemo(
     () => safeProviders.find((p) => p.slug === selectedService),

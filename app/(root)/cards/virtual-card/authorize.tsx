@@ -32,11 +32,11 @@ export default function AuthorizePayment() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const billingStreet = user?.address_1 || "";
-  const billingCity = user?.state || "";
-  const billingState = user?.state || "";
-  const billingCountry = user?.country_code || "";
-  const billingPostalCode = user?.country_code || "";
+  const billingStreet = user?.address_1 || "Plot 1 Main Street";
+  const billingCity = user?.city || user?.local_government || user?.state || "Lagos";
+  const billingState = user?.state || "Lagos";
+  const billingCountry = (user?.country_code || "NG").toUpperCase();
+  const billingPostalCode = user?.postal_code || "100001";
 
   const apiTypeMap: Record<string, "VISA" | "MASTERCARD"> = {
     visa: "VISA",

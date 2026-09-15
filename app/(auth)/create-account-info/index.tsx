@@ -501,12 +501,12 @@ const CreateAccountScreen = () => {
           </Text>
           <TouchableOpacity onPress={handlePrivacyPolicy}>
             <Text className="text-accent-100 text-md text-left mb-3">
-              Read our Privacy Policy →
+              {"Read our Privacy Policy →"}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={handleTermsOfService}>
             <Text className="text-accent-100 text-md text-left mb-3">
-              Read our Terms of Service →
+              {"Read our Terms of Service →"}
             </Text>
           </TouchableOpacity>
         </View>

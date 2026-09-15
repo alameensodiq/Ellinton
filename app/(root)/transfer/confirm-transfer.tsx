@@ -374,7 +374,12 @@ export default function ConfirmTransfer() {
       <StatusBar barStyle="light-content" />
       <Header title="Confirm payment" />
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1 px-6"
+        contentContainerStyle={{ paddingBottom: 80 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <AmountCard amount={amount} description={amountInWords} />
         <Text className="text-sm text-white/60 mt-3">Sending to</Text>
         <View className="flex-row items-start justify-between mb-4 bg-primary-400 rounded-xl p-4 mt-4">

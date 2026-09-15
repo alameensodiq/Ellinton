@@ -85,12 +85,7 @@ export default function UtilityBillPayment() {
     }
   }, [selectedService, dispatch]);
 
-  // Auto-select the first provider only
-  useEffect(() => {
-    if (safeProviders.length && !selectedService) {
-      setSelectedService(safeProviders[0].slug);
-    }
-  }, [safeProviders]);
+
 
   const selectedProviderData = useMemo(
     () => safeProviders.find((p) => p.slug === selectedService),

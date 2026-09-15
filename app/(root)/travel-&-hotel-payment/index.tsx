@@ -72,21 +72,12 @@ const safePackages = useMemo(() =>
 
   useEffect(() => {
     if (selectedService) {
+      dispatch(clearPackages());
+      setSelectedProduct("");
+      setCustomAmount("");
       dispatch(getPackages({ slug: selectedService })).catch(() => {});
     }
   }, [selectedService, dispatch]);
-
-  useEffect(() => {
-    if (safeProviders.length && !selectedService) {
-      setSelectedService(safeProviders[0].slug);
-    }
-  }, [safeProviders, selectedService]);
-
-  useEffect(() => {
-    if (safePackages.length && !selectedProduct) {
-      setSelectedProduct(safePackages[0].slug);
-    }
-  }, [safePackages, selectedProduct]);
 
   const serviceOptions = useMemo(
     () =>
