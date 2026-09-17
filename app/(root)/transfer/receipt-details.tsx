@@ -4,6 +4,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import TransactionReceiptView from "@/app/components/TransactionReceiptView";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 
+import { resolveTransactionDate } from "@/app/lib/utils";
+
 export default function ReceiptDetails() {
   const params = useLocalSearchParams();
   const router = useRouter();
@@ -55,9 +57,7 @@ export default function ReceiptDetails() {
         beneficiary: receiptPayload.beneficiaryName || "",
         beneficiaryAccount: receiptPayload.beneficiaryAccount || "",
         beneficiaryBank: receiptPayload.beneficiaryBankName || "",
-        date: receiptPayload.date
-          ? new Date(receiptPayload.date).toLocaleString()
-          : new Date().toLocaleString(),
+        date: resolveTransactionDate(receiptPayload),
         referenceNo: receiptPayload.transactionReference || "",
       }}
       onBack={() => router.replace("/(root)/(tabs)")}

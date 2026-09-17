@@ -71,10 +71,12 @@ function formatAmount(val?: number | string) {
   });
 }
 
+import { parseFlexibleDate } from "@/app/lib/utils";
+
 function formatDate(dateStr?: string) {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return dateStr;
+  const d = parseFlexibleDate(dateStr) || new Date(dateStr);
+  if (!d || isNaN(d.getTime())) return dateStr;
 
   const day = d.getDate().toString().padStart(2, "0");
   const monthNames = [
@@ -217,7 +219,10 @@ export default function TransactionReceiptView({
   const closeBottomSheet = () => setShareBottomSheetVisible(false);
 
   const statusInfo = getStatusDetails(receiptData.status);
-  const formattedDate = formatDate(receiptData.date) || receiptData.date;
+  const formattedDate =
+    formatDate(receiptData.date) ||
+    receiptData.date ||
+    formatDate(new Date().toISOString());
 
   const senderAccountAndBank = [
     receiptData.senderAccount,

@@ -142,11 +142,16 @@ export default function AuthorizePayment() {
 
     const uniqueReference = `TXN_${Date.now()}`;
 
+    const userRemark = (
+      transferData.remark ||
+      transferData.narration ||
+      ""
+    ).trim();
+
     const payloadBase: TransferPayload = {
       beneficiaryAccountNumber: transferData.accountNumber,
       amount: transferData.amount,
-      narration:
-        transferData.remark || transferData.narration || "transfer",
+      ...(userRemark ? { narration: userRemark } : {}),
       transactionPin: pinToUse,
       uniqueReference,
       isScheduled: transferData.isScheduled || false,
@@ -207,10 +212,10 @@ export default function AuthorizePayment() {
           result.beneficiaryAccount ?? transferData.accountNumber,
         beneficiaryBankName: result.beneficiaryBankName ?? transferData.bank,
         remark:
-          result.remark ??
-          transferData.remark ??
-          transferData.narration ??
-          "transfer",
+          result.remark ||
+          transferData.remark ||
+          transferData.narration ||
+          "",
         transactionReference:
           result.transactionReference ??
           result.reference ??

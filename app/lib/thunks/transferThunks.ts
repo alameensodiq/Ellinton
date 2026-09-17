@@ -98,7 +98,7 @@ export interface TransactionPinPayload {
 export interface TransferPayload {
   beneficiaryAccountNumber: string;
   amount: number;
-  narration: string;
+  narration?: string;
   transactionPin: string;
   uniqueReference: string;
   isScheduled: boolean;
@@ -342,10 +342,20 @@ export const performInterBankTransfer = createAsyncThunk<
 export interface FetchTransactionsParams {
   startDate?: string; // YYYY-MM-DD
   endDate?: string; // YYYY-MM-DD
+  page?: number;
+  limit?: number;
+  isLoadMore?: boolean;
+}
+
+export interface FetchTransactionsResult {
+  transactions: AccountTransaction[];
+  isLoadMore: boolean;
+  page: number;
+  hasMore: boolean;
 }
 
 export const fetchAccountTransactions = createAsyncThunk<
-  AccountTransaction[],
+  FetchTransactionsResult,
   FetchTransactionsParams | void
 >(
   "transfers/fetchAccountTransactions",
@@ -354,18 +364,26 @@ export const fetchAccountTransactions = createAsyncThunk<
       const token = (getState() as any).auth.token;
 
       const query = new URLSearchParams();
-      if (params?.startDate) query.append("startDate", params.startDate);
-      if (params?.endDate) query.append("endDate", params.endDate);
+      if (params?.page) query.append("page", String(params.page));
+      if (params?.limit) query.append("limit", String(params.limit || 20));
+      if (params?.startDate && params.startDate.trim()) {
+        query.append("startDate", params.startDate.trim());
+      }
+      if (params?.endDate && params.endDate.trim()) {
+        query.append("endDate", params.endDate.trim());
+      }
 
-      const response = await safeFetch(
-        `${FETCH_ACCOUNT_TRANSACTIONS}?${query.toString()}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const queryString = query.toString();
+      const url = queryString
+        ? `${FETCH_ACCOUNT_TRANSACTIONS}?${queryString}`
+        : FETCH_ACCOUNT_TRANSACTIONS;
+
+      const response = await safeFetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       const result = await response.json().catch(() => null);
 
@@ -373,8 +391,20 @@ export const fetchAccountTransactions = createAsyncThunk<
         return rejectWithValue(extractError(result, response.status));
       }
 
-      // return result.data || [];
-      return result.data?.transactions || [];
+      const rawTxs =
+        result.data?.transactions ||
+        (Array.isArray(result.data) ? result.data : []);
+      const transactionsArray = Array.isArray(rawTxs) ? rawTxs : [];
+      const limit = params?.limit || 20;
+
+      return {
+        transactions: transactionsArray,
+        isLoadMore: Boolean(
+          params?.isLoadMore || (params?.page && params.page > 1)
+        ),
+        page: params?.page || 1,
+        hasMore: transactionsArray.length >= limit,
+      };
     } catch (err: any) {
       return rejectWithValue(err.message || "Failed to fetch transactions");
     }

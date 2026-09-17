@@ -29,20 +29,26 @@ export interface TransferResult {
 
 export interface TransferState {
   transferResult: TransferResult | null;
-  transactions: AccountTransaction[]; // ✅ ADDED
+  transactions: AccountTransaction[];
   transactionReceipt: TransactionReceipt | null;
   isLoading: boolean;
+  isFetchingMore: boolean;
+  hasMoreTransactions: boolean;
+  currentPage: number;
   error: string | null;
-  transferfee: TransferFee | null
+  transferfee: TransferFee | null;
 }
 
 const initialState: TransferState = {
   transferResult: null,
-  transactions: [], // ✅ ADDED
+  transactions: [],
   transactionReceipt: null,
   isLoading: false,
+  isFetchingMore: false,
+  hasMoreTransactions: false,
+  currentPage: 1,
   error: null,
-  transferfee: null
+  transferfee: null,
 };
 
 const transferSlice = createSlice({
@@ -57,6 +63,8 @@ const transferSlice = createSlice({
     },
     clearTransactions: (state) => {
       state.transactions = [];
+      state.currentPage = 1;
+      state.hasMoreTransactions = false;
     },
     clearTransactionReceipt: (state) => {
       state.transactionReceipt = null;
@@ -97,20 +105,59 @@ const transferSlice = createSlice({
      * FETCH ACCOUNT TRANSACTIONS
      * ----------------------------------------- */
     builder
-      .addCase(fetchAccountTransactions.pending, (state) => {
-        state.isLoading = true;
+      .addCase(fetchAccountTransactions.pending, (state, action) => {
+        const arg = action.meta.arg;
+        const isLoadMore =
+          arg &&
+          typeof arg === "object" &&
+          (arg.isLoadMore || (arg.page && arg.page > 1));
+
+        if (isLoadMore) {
+          state.isFetchingMore = true;
+        } else {
+          state.isLoading = true;
+        }
         state.error = null;
       })
       .addCase(
         fetchAccountTransactions.fulfilled,
-        (state, action: PayloadAction<AccountTransaction[]>) => {
+        (state, action: PayloadAction<any>) => {
           state.isLoading = false;
-          state.transactions = action.payload;
+          state.isFetchingMore = false;
           state.error = null;
+
+          if (Array.isArray(action.payload)) {
+            state.transactions = action.payload;
+            state.currentPage = 1;
+            state.hasMoreTransactions = false;
+          } else if (action.payload && typeof action.payload === "object") {
+            const { transactions, isLoadMore, page, hasMore } = action.payload;
+            state.currentPage = page || 1;
+            state.hasMoreTransactions = Boolean(hasMore);
+
+            if (isLoadMore) {
+              const existingKeys = new Set(
+                state.transactions.map(
+                  (t, idx) =>
+                    t.ReferenceID || t.UniqueIdentifier || String(t.Id) || `tx-${idx}`
+                )
+              );
+              const newItems = (transactions as AccountTransaction[]).filter(
+                (t, idx) =>
+                  !existingKeys.has(
+                    t.ReferenceID || t.UniqueIdentifier || String(t.Id) || `tx-${idx}`
+                  )
+              );
+              state.transactions = [...state.transactions, ...newItems];
+            } else {
+              state.transactions = transactions;
+            }
+          }
         }
       )
       .addCase(fetchAccountTransactions.rejected, (state, action) => {
         state.isLoading = false;
+        state.isFetchingMore = false;
         state.error =
           typeof action.payload === "string"
             ? action.payload

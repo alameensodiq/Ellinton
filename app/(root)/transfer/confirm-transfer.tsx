@@ -184,6 +184,7 @@ export default function ConfirmTransfer() {
   }, [numericAmount]);
 
   const buildTransferData = () => {
+    const userRemark = (remark || "").trim();
     return {
       accountNumber,
       bankCode: bankCodeParam || undefined,
@@ -191,7 +192,7 @@ export default function ConfirmTransfer() {
       amount: numericAmount,
       receiverName,
       addAsBeneficiary,
-      remark,
+      ...(userRemark ? { remark: userRemark } : {}),
       ...(amountGramsParam && { amount_grams: Number(amountGramsParam) }),
       ...(params?.gift && { gift: params.gift === "true" }),
       isScheduled: scheduleEnabled,
@@ -280,10 +281,12 @@ export default function ConfirmTransfer() {
       const transferData = buildTransferData();
       const uniqueReference = `TXN_${Date.now()}`;
 
+      const userRemark = (transferData.remark || "").trim();
+
       const payloadBase: TransferPayload = {
         beneficiaryAccountNumber: transferData.accountNumber,
         amount: transferData.amount,
-        narration: transferData.remark || "transfer",
+        ...(userRemark ? { narration: userRemark } : {}),
         transactionPin: storedPin,
         uniqueReference,
         isScheduled: transferData.isScheduled || false,
@@ -329,7 +332,7 @@ export default function ConfirmTransfer() {
         beneficiaryAccount:
           result.beneficiaryAccount ?? transferData.accountNumber,
         beneficiaryBankName: result.beneficiaryBankName ?? transferData.bank,
-        remark: result.remark ?? transferData.remark ?? "transfer",
+        remark: result.remark || transferData.remark || "",
         transactionReference:
           result.transactionReference ??
           result.reference ??

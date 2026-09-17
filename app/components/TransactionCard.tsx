@@ -4,6 +4,8 @@ import { useRouter } from "expo-router";
 import { AccountTransaction } from "@/app/lib/thunks/transferThunks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { resolveTransactionDate, parseFlexibleDate } from "@/app/lib/utils";
+
 interface Props {
   transaction: any; // Changed from AccountTransaction to any to handle both formats
   onPress?: () => void;
@@ -32,7 +34,7 @@ export default function TransactionCard({
   const amountValue = Number(String(rawAmount || "0").replace(/,/g, "")) || 0;
 
   const referenceId = transaction.ReferenceID || transaction.id || transaction.reference || "";
-  const dateStr = transaction.CurrentDate || transaction.date || new Date().toISOString();
+  const dateStr = resolveTransactionDate(transaction);
   const narration = transaction.Narration || transaction.narration || "Transaction";
   const status = transaction.IsReversed ? "REVERSED" : (transaction.status || "SUCCESSFUL");
 
@@ -51,8 +53,9 @@ export default function TransactionCard({
     narration: narration,
   });
 
-  const formattedDate = dateStr
-    ? new Date(dateStr).toLocaleString("en-NG", {
+  const parsedDate = parseFlexibleDate(dateStr);
+  const formattedDate = parsedDate
+    ? parsedDate.toLocaleString("en-NG", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -60,7 +63,7 @@ export default function TransactionCard({
       hour: "2-digit",
       minute: "2-digit",
     })
-    : "";
+    : dateStr;
 
   const canOpenReceipt = Boolean(referenceId);
   const isDisabled = disabled || !canOpenReceipt;

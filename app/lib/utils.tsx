@@ -1318,6 +1318,106 @@ const clearDeviceId = async (): Promise<void> => {
 
 
 
+export function getRawTransactionDate(tx: any): string {
+  if (!tx || typeof tx !== "object") return "";
+
+  const val =
+    tx.TransactionDate ||
+    tx.TransactionDateString ||
+    tx.CurrentDate ||
+    tx.date ||
+    tx.dateStr ||
+    tx.transactionDate ||
+    tx.created_at ||
+    tx.createdAt ||
+    tx.created ||
+    tx.date_created ||
+    tx.createdDate ||
+    tx.dateCreated ||
+    tx.timestamp ||
+    tx.time ||
+    tx.updated_at ||
+    tx.updatedAt;
+
+  if (val !== undefined && val !== null && val !== "") {
+    return String(val);
+  }
+
+  return "";
+}
+
+export function parseFlexibleDate(dateVal: any): Date | null {
+  if (dateVal === undefined || dateVal === null || dateVal === "") return null;
+
+  if (dateVal instanceof Date) {
+    return isNaN(dateVal.getTime()) ? null : dateVal;
+  }
+
+  if (typeof dateVal === "number" || (!isNaN(Number(dateVal)) && String(dateVal).trim() !== "")) {
+    let num = Number(dateVal);
+    if (num > 1000000000 && num < 10000000000) {
+      num = num * 1000;
+    }
+    const d = new Date(num);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const str = String(dateVal).trim();
+  if (!str) return null;
+
+  let d = new Date(str);
+  if (!isNaN(d.getTime())) return d;
+
+  if (str.includes(" ")) {
+    d = new Date(str.replace(" ", "T"));
+    if (!isNaN(d.getTime())) return d;
+  }
+
+  const parts = str.split(/[\sT]+/);
+  const datePart = parts[0];
+  const timePart = parts[1] || "00:00:00";
+
+  const delimiters = ["/", "-"];
+  for (const delim of delimiters) {
+    if (datePart.includes(delim)) {
+      const tokens = datePart.split(delim);
+      if (tokens.length === 3) {
+        let day = tokens[0];
+        let month = tokens[1];
+        let year = tokens[2];
+        if (year.length === 2) year = "20" + year;
+
+        if (tokens[0].length === 4) {
+          year = tokens[0];
+          month = tokens[1];
+          day = tokens[2];
+        }
+
+        const isoStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T${timePart}`;
+        d = new Date(isoStr);
+        if (!isNaN(d.getTime())) return d;
+      }
+    }
+  }
+
+  return null;
+}
+
+export function resolveTransactionDate(
+  tx: any,
+  fallbackIso: string = new Date().toISOString()
+): string {
+  const raw = getRawTransactionDate(tx);
+  if (raw) {
+    const parsed = parseFlexibleDate(raw);
+    if (parsed) {
+      return parsed.toISOString();
+    }
+    return raw;
+  }
+  return fallbackIso;
+}
+
 export {
   dayOptions,
   frequencyOptions,

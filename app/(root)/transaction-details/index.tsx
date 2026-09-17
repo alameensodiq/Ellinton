@@ -10,6 +10,7 @@ import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { clearTransactionReceipt } from "@/app/lib/slices/transferSlice";
 import { fetchSingleTransactionReceipt } from "@/app/lib/thunks/transferThunks";
+import { resolveTransactionDate } from "@/app/lib/utils";
 
 const ReceiptDetailsSkeleton = ({ onBack }: { onBack: () => void }) => (
   <SafeAreaView className="flex-1 bg-primary-100">
@@ -207,9 +208,7 @@ export default function TransactionDetails() {
     beneficiary: finalBeneficiaryName,
     beneficiaryAccount: finalBeneficiaryAccount,
     beneficiaryBank: activeTx.receiverBank || activeTx.beneficiaryBank || "Ellington MFB",
-    date: activeTx.date
-      ? new Date(activeTx.date).toLocaleString()
-      : new Date().toLocaleString(),
+    date: resolveTransactionDate(activeTx),
     referenceNo:
       activeTx.reference ||
       activeTx.id ||
