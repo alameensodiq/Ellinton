@@ -36,6 +36,7 @@ import { clearGoldError } from "@/app/lib/slices/goldSlice";
 import { clearError, clearTransfer } from "@/app/lib/slices/transferSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
+import ErrorModal from "@/app/components/ErrorModal";
 
 const TRANS_BIOMETRIC_KEY = "transBiometricEnabled";
 const TRANS_PIN_KEY = "transBiometricPin";
@@ -217,16 +218,19 @@ export default function ConfirmTransfer() {
     });
   };
 
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+  const isScheduleIncomplete =
+    scheduleEnabled &&
+    (!scheduleName.trim() ||
+      !frequency ||
+      !startDate ||
+      !endDate ||
+      (frequency.toLowerCase() === "weekly" && !dayOfWeek));
+
   const handlePay = async () => {
-    if (
-      scheduleEnabled &&
-      (!scheduleName || !frequency || !startDate || !endDate)
-    ) {
-      Alert.alert("Incomplete Schedule", "Please fill all schedule details");
-      return;
-    }
-    if (scheduleEnabled && frequency === "weekly" && !dayOfWeek) {
-      Alert.alert("Incomplete Schedule", "Please select day of week");
+    if (isScheduleIncomplete) {
+      setShowScheduleModal(true);
       return;
     }
 
@@ -439,11 +443,19 @@ export default function ConfirmTransfer() {
             title="Authorize Payment"
             variant="primary"
             onPress={handlePay}
-            className="bg-accent-100 w-full"
+            disabled={isScheduleIncomplete}
+            className={`w-full ${isScheduleIncomplete ? "opacity-50" : "bg-accent-100"}`}
           />
         )}
       </ScrollView>
 
+      <ErrorModal
+        visible={showScheduleModal}
+        title="Incomplete Schedule"
+        message="Please fill all required schedule details before proceeding."
+        buttonText="OK"
+        onDismiss={() => setShowScheduleModal(false)}
+      />
     </SafeAreaView>
   );
 }

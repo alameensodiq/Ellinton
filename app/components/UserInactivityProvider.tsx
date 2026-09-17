@@ -9,7 +9,7 @@ import { auth } from "../firebase";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
 import { useAppDispatch } from "../lib/hooks/useAppDispatch";
 
-const INACTIVITY_TIMEOUT = 1 * 60 * 1000; // 2 min timeout
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 2 min timeout
 const LAST_ACTIVE_KEY = "lastActiveTime";
 
 const KEYS_TO_PRESERVE = new Set([

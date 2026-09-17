@@ -154,6 +154,12 @@ export interface PayBillPayload {
   bundleSlug: string;
   customerId: string;
   transactionPin: string;
+  isScheduled?: boolean;
+  scheduleName?: string;
+  scheduleType?: string;
+  dayOfWeek?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface GetProvidersPayload {

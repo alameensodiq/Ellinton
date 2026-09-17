@@ -9,13 +9,15 @@ interface ErrorModalProps {
   visible: boolean;
   title?: string;
   message?: string;
+  buttonText?: string;
   onDismiss: () => void;
 }
 
 const ErrorModal: React.FC<ErrorModalProps> = ({
   visible,
-  title = "Account creation Error",
-  message = "We could not complete your registration, give it another shot",
+  title = "Error",
+  message = "An error occurred",
+  buttonText = "OK",
   onDismiss,
 }) => {
   return (
@@ -39,10 +41,10 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
           </CustomText>
 
           <Button
-            title="Try again"
+            title={buttonText}
             onPress={onDismiss}
             variant="primary"
-            className="w-full mt-10"
+            className="w-full mt-6 bg-accent-100"
           />
         </View>
       </View>

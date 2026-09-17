@@ -136,17 +136,43 @@ const transferSlice = createSlice({
             state.hasMoreTransactions = Boolean(hasMore);
 
             if (isLoadMore) {
+              const isValidUniqueId = (val: any): boolean => {
+                if (val === null || val === undefined) return false;
+                const str = String(val).trim().toLowerCase();
+                return (
+                  str !== "" &&
+                  str !== "null" &&
+                  str !== "undefined" &&
+                  str !== "n/a" &&
+                  str !== "none" &&
+                  str !== "0" &&
+                  str !== "pending"
+                );
+              };
+
+              const getTransactionKey = (
+                t: AccountTransaction,
+                idx: number,
+                offset: number = 0
+              ): string => {
+                if (isValidUniqueId(t.ReferenceID)) return String(t.ReferenceID);
+                if (isValidUniqueId(t.UniqueIdentifier)) return String(t.UniqueIdentifier);
+                if (isValidUniqueId((t as any).id)) return String((t as any).id);
+                if (isValidUniqueId((t as any).reference)) return String((t as any).reference);
+                if (isValidUniqueId(t.Id)) return String(t.Id);
+
+                const rawDate = t.CurrentDate || t.TransactionDate || (t as any).date || "";
+                const rawAmount = t.Debit || t.Credit || (t as any).amount || "";
+                return `tx-${rawDate}-${rawAmount}-${t.Narration || ""}-${offset + idx}`;
+              };
+
               const existingKeys = new Set(
-                state.transactions.map(
-                  (t, idx) =>
-                    t.ReferenceID || t.UniqueIdentifier || String(t.Id) || `tx-${idx}`
-                )
+                state.transactions.map((t, idx) => getTransactionKey(t, idx, 0))
               );
+              const currentLength = state.transactions.length;
               const newItems = (transactions as AccountTransaction[]).filter(
                 (t, idx) =>
-                  !existingKeys.has(
-                    t.ReferenceID || t.UniqueIdentifier || String(t.Id) || `tx-${idx}`
-                  )
+                  !existingKeys.has(getTransactionKey(t, idx, currentLength))
               );
               state.transactions = [...state.transactions, ...newItems];
             } else {

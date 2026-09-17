@@ -11,6 +11,7 @@ import SenderCard from "@/app/components/home/cards/sender-card.tsx";
 import ScheduleTransaction from "@/app/components/ScheduleTransaction";
 import { dayOptions, frequencyOptions } from "@/app/lib/utils";
 import Button from "@/app/components/Button";
+import ErrorModal from "@/app/components/ErrorModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
@@ -69,6 +70,15 @@ export default function ConfirmInternetPayment() {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+  const isScheduleIncomplete =
+    scheduleEnabled &&
+    (!scheduleName.trim() ||
+      !frequency ||
+      !startDate ||
+      !endDate ||
+      (frequency.toLowerCase() === "weekly" && !dayOfWeek));
 
   const navigateToAuthorize = () => {
     router.push({
@@ -94,6 +104,11 @@ export default function ConfirmInternetPayment() {
   };
 
   const handleContinue = async () => {
+    if (isScheduleIncomplete) {
+      setShowScheduleModal(true);
+      return;
+    }
+
     setError(null);
     setLoading(true);
 
@@ -149,6 +164,14 @@ export default function ConfirmInternetPayment() {
         bundleSlug: providerSlugStr,
         customerId: accountIdStr,
         transactionPin: storedPin,
+        ...(scheduleEnabled && {
+          isScheduled: true,
+          scheduleName,
+          scheduleType: frequency,
+          ...(dayOfWeek && { dayOfWeek }),
+          ...(startDate && { startDate }),
+          ...(endDate && { endDate }),
+        }),
       };
 
       const result = await dispatch(payBill(payload)).unwrap();
@@ -230,10 +253,24 @@ export default function ConfirmInternetPayment() {
           {loading ? (
             <ActivityIndicator size="large" color="#fff" className="my-4" />
           ) : (
-            <Button title="Pay" variant="primary" onPress={handleContinue} />
+            <Button
+              title="Pay"
+              variant="primary"
+              onPress={handleContinue}
+              disabled={isScheduleIncomplete}
+              className={isScheduleIncomplete ? "opacity-50" : ""}
+            />
           )}
         </View>
       </ScrollView>
+
+      <ErrorModal
+        visible={showScheduleModal}
+        title="Incomplete Schedule"
+        message="Please fill all required schedule details before proceeding."
+        buttonText="OK"
+        onDismiss={() => setShowScheduleModal(false)}
+      />
     </SafeAreaView>
   );
 }

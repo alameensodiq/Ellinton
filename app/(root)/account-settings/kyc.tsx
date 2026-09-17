@@ -46,7 +46,7 @@ const kyc = () => {
               To access all features it’s essential to verify your identity.
             </CustomText>
           </Pressable>
-          <Ionicons name="chevron-forward" size={20} color="#fff" />
+          {/* <Ionicons name="chevron-forward" size={20} color="#fff" /> */}
         </View>
         <CustomText className="my-4">Level Benefit</CustomText>
         <View className="bg-primary-400 rounded-2xl p-4">

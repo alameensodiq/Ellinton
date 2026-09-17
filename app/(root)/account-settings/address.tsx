@@ -19,6 +19,7 @@ const Address = () => {
   const { user, isLoading: loading } = useSelector(
     (state: RootState) => state.auth
   );
+  console.log(user)
   const [address, setAddress] = useState(user?.address_1 || "");
   const [city, setCity] = useState(user?.city || "Ikeja");
   const [isSaving, setIsSaving] = useState(false);

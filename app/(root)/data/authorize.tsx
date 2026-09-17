@@ -75,6 +75,13 @@ export default function AuthorizeDataPayment() {
     dispatch(clearError());
 
     try {
+      const scheduleEnabledParam = getParam(params.scheduleEnabled) === "true";
+      const scheduleNameParam = getParam(params.scheduleName);
+      const frequencyParam = getParam(params.frequency);
+      const dayOfWeekParam = getParam(params.dayOfWeek);
+      const startDateParam = getParam(params.startDate);
+      const endDateParam = getParam(params.endDate);
+
       const payload = {
         type: "data",
         provider: normalizeAirtimeProvider(provider),
@@ -82,6 +89,14 @@ export default function AuthorizeDataPayment() {
         bundleSlug: billerSlug,
         customerId: phone,
         transactionPin: passcode,
+        ...(scheduleEnabledParam && {
+          isScheduled: true,
+          scheduleName: scheduleNameParam,
+          scheduleType: frequencyParam,
+          ...(dayOfWeekParam && { dayOfWeek: dayOfWeekParam }),
+          ...(startDateParam && { startDate: startDateParam }),
+          ...(endDateParam && { endDate: endDateParam }),
+        }),
       };
 
       const result = await dispatch(payBill(payload)).unwrap();

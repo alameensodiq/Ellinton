@@ -345,6 +345,8 @@ export interface FetchTransactionsParams {
   page?: number;
   limit?: number;
   isLoadMore?: boolean;
+  status?: string;
+  type?: string;
 }
 
 export interface FetchTransactionsResult {
@@ -372,6 +374,12 @@ export const fetchAccountTransactions = createAsyncThunk<
       if (params?.endDate && params.endDate.trim()) {
         query.append("endDate", params.endDate.trim());
       }
+      if (params?.status && params.status.trim()) {
+        query.append("status", params.status.trim());
+      }
+      if (params?.type && params.type.trim()) {
+        query.append("type", params.type.trim());
+      }
 
       const queryString = query.toString();
       const url = queryString
@@ -393,9 +401,35 @@ export const fetchAccountTransactions = createAsyncThunk<
 
       const rawTxs =
         result.data?.transactions ||
-        (Array.isArray(result.data) ? result.data : []);
+        result.data?.data ||
+        result.data?.items ||
+        result.data?.records ||
+        result.data?.history ||
+        result.transactions ||
+        (Array.isArray(result.data) ? result.data : []) ||
+        (Array.isArray(result) ? result : []);
       const transactionsArray = Array.isArray(rawTxs) ? rawTxs : [];
+
       const limit = params?.limit || 20;
+      const total =
+        result?.data?.total ||
+        result?.data?.totalCount ||
+        result?.data?.count ||
+        result?.total;
+
+      let hasMore = false;
+      if (typeof total === "number" && total > 0) {
+        const currentPage = params?.page || 1;
+        hasMore = currentPage * limit < total;
+      } else if (typeof result?.data?.hasMore === "boolean") {
+        hasMore = result.data.hasMore;
+      } else if (typeof result?.data?.hasNextPage === "boolean") {
+        hasMore = result.data.hasNextPage;
+      } else {
+        // Fallback: If items were returned on this fetch, assume there may be more
+        // until a fetch returns 0 items.
+        hasMore = transactionsArray.length > 0;
+      }
 
       return {
         transactions: transactionsArray,
@@ -403,7 +437,7 @@ export const fetchAccountTransactions = createAsyncThunk<
           params?.isLoadMore || (params?.page && params.page > 1)
         ),
         page: params?.page || 1,
-        hasMore: transactionsArray.length >= limit,
+        hasMore,
       };
     } catch (err: any) {
       return rejectWithValue(err.message || "Failed to fetch transactions");

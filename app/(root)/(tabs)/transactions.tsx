@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Pressable,
   Platform,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -26,6 +27,25 @@ interface SectionData {
   title: string;
   data: AccountTransaction[];
 }
+
+const TRANSACTION_TYPES = [
+  { id: "airtime", label: "Airtime" },
+  { id: "data", label: "Data" },
+  { id: "bill", label: "Bill" },
+  { id: "intra-bank", label: "Intra-Bank" },
+  { id: "inter-bank", label: "Inter-Bank" },
+  { id: "internet", label: "Internet" },
+  { id: "betting", label: "Betting" },
+  { id: "electricity", label: "Electricity" },
+  { id: "cable", label: "Cable" },
+  { id: "education", label: "Education" },
+  { id: "travel", label: "Travel" },
+  { id: "savings", label: "Savings" },
+  { id: "utility", label: "Utility" },
+  { id: "nip-inflow", label: "NIP Inflow" },
+  { id: "stamp-duty", label: "Stamp Duty" },
+  { id: "savings-withdrawal", label: "Savings Withdrawal" },
+];
 
 const formatDateToYYYYMMDD = (d: Date): string => {
   const yyyy = d.getFullYear();
@@ -86,10 +106,10 @@ const groupTransactionsToSections = (
 };
 
 const TransactionsLoadingPlaceholder = () => (
-  <View className="mt-4">
+  <View className="mt-4 flex-1">
     <View className="h-4 w-28 rounded-full bg-white/15 mb-4" />
 
-    {[0, 1, 2, 3].map((item) => (
+    {[0, 1, 2, 3, 4, 5].map((item) => (
       <View
         key={item}
         className="bg-primary-400 rounded-xl p-4 mb-3 flex-row justify-between items-center"
@@ -110,8 +130,11 @@ export default function TransactionsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [openingReference, setOpeningReference] = useState<string | null>(null);
 
+  // Status & Type filter state - empty by default (optional on initial load)
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
+  const [selectedType, setSelectedType] = useState<string>("");
+
   // Date filter state - formatted as YYYY-MM-DD
-  // On initial load, startDate and endDate are empty strings, so they are NOT added to query
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
@@ -130,18 +153,20 @@ export default function TransactionsScreen() {
     currentPage,
   } = useSelector((state: RootState) => state.transfers);
 
-  // Initial load & when date filters change:
-  // Note: On initial load, startDate and endDate are empty strings, so only page: 1 is sent in query
+  // Initial load & when status, type or date filters change
+  // Note: On initial load, selectedStatus, selectedType, startDate and endDate are empty strings, so they are NOT added to query
   useEffect(() => {
     dispatch(
       fetchAccountTransactions({
-        // page: 1,
-        // limit: 20,
+        page: 1,
+        limit: 20,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        status: selectedStatus || undefined,
+        type: selectedType || undefined,
       })
     );
-  }, [dispatch, startDate, endDate]);
+  }, [dispatch, startDate, endDate, selectedStatus, selectedType]);
 
   useFocusEffect(
     useCallback(() => {
@@ -156,9 +181,11 @@ export default function TransactionsScreen() {
         limit: 20,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        status: selectedStatus || undefined,
+        type: selectedType || undefined,
       })
     );
-  }, [dispatch, startDate, endDate]);
+  }, [dispatch, startDate, endDate, selectedStatus, selectedType]);
 
   const handleLoadMore = useCallback(() => {
     if (isLoading || isFetchingMore || !hasMoreTransactions) return;
@@ -169,6 +196,8 @@ export default function TransactionsScreen() {
         limit: 20,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
+        status: selectedStatus || undefined,
+        type: selectedType || undefined,
         isLoadMore: true,
       })
     );
@@ -180,6 +209,8 @@ export default function TransactionsScreen() {
     currentPage,
     startDate,
     endDate,
+    selectedStatus,
+    selectedType,
   ]);
 
   const handleClearDates = () => {
@@ -189,13 +220,55 @@ export default function TransactionsScreen() {
     setEndDateObj(null);
   };
 
-  const filteredTransactions = useMemo(() => {
-    if (!searchQuery) return transactions;
+  const handleSelectStatus = (statusVal: string) => {
+    setSelectedStatus((prev) => (prev === statusVal ? "" : statusVal));
+  };
 
-    return transactions.filter((tx) =>
-      (tx.Narration || "").toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [transactions, searchQuery]);
+  const handleSelectType = (typeVal: string) => {
+    setSelectedType((prev) => (prev === typeVal ? "" : typeVal));
+  };
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      // 1. Search filter
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const narration = String(tx.Narration || (tx as any).narration || "").toLowerCase();
+        if (!narration.includes(q)) return false;
+      }
+
+      // 2. Status filter
+      if (selectedStatus) {
+        const rawStatus = String(
+          (tx as any).status || (tx as any).Status || (tx as any).transactionStatus || (tx.IsReversed ? "REVERSED" : "SUCCESSFUL")
+        ).toUpperCase();
+
+        if (selectedStatus === "SUCCESSFUL") {
+          const isSucc = rawStatus === "SUCCESSFUL" || rawStatus === "SUCCESS" || rawStatus === "COMPLETED" || rawStatus === "OK";
+          if (!isSucc && (rawStatus === "FAILED" || rawStatus === "FAILURE" || rawStatus === "REJECTED" || rawStatus === "DECLINED" || tx.IsReversed)) {
+            return false;
+          }
+        } else if (selectedStatus === "FAILED") {
+          const isFail = rawStatus === "FAILED" || rawStatus === "FAILURE" || rawStatus === "REJECTED" || rawStatus === "DECLINED";
+          if (!isFail) return false;
+        }
+      }
+
+      // 3. Type filter
+      if (selectedType) {
+        const normFilter = selectedType.toLowerCase();
+        const txType = String((tx as any).type || (tx as any).Type || (tx as any).transactionType || tx.RecordType || "").toLowerCase();
+        const narration = String(tx.Narration || (tx as any).narration || "").toLowerCase();
+        const match =
+          txType.includes(normFilter) ||
+          narration.includes(normFilter) ||
+          normFilter.replace(/-/g, "").includes(txType.replace(/-/g, ""));
+        if (!match) return false;
+      }
+
+      return true;
+    });
+  }, [transactions, searchQuery, selectedStatus, selectedType]);
 
   const sections = useMemo(
     () => groupTransactionsToSections(filteredTransactions),
@@ -203,8 +276,8 @@ export default function TransactionsScreen() {
   );
 
   const hasTransactions = filteredTransactions.length > 0;
-  const isInitialLoading = isLoading && transactions.length === 0;
-  const isOpeningTransaction = Boolean(openingReference);
+  // Loader appears while data is fetching/loading until data load finishes
+  const isDataLoading = (isLoading && !isFetchingMore) || Boolean(openingReference);
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 -mb-16">
@@ -237,7 +310,7 @@ export default function TransactionsScreen() {
 
         {/* Date Filter Bar */}
         {(showDateFilters || startDate || endDate) && (
-          <View className="bg-primary-400 p-3 rounded-2xl mb-4 border border-primary-300">
+          <View className="bg-primary-400 p-3 rounded-2xl mb-3 border border-primary-300">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="text-white text-xs font-semibold">
                 FILTER BY DATE (YYYY-MM-DD)
@@ -285,18 +358,139 @@ export default function TransactionsScreen() {
 
         <SearchBar onSearch={setSearchQuery} />
 
-        {(isInitialLoading || isOpeningTransaction) && (
-          <TransactionsLoadingPlaceholder />
-        )}
+        {/* Status & Type Filter Section */}
+        <View className="mt-3 mb-3 gap-2">
+          {/* Status Filter Buttons */}
+          <View className="flex-row items-center gap-2">
+            <Text className="text-white/60 text-xs font-semibold mr-1">Status:</Text>
+            <Pressable
+              onPress={() => setSelectedStatus("")}
+              className={`px-3 py-1.5 rounded-xl border ${
+                !selectedStatus
+                  ? "bg-accent-100 border-accent-100"
+                  : "bg-primary-400 border-primary-300"
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
+                  !selectedStatus ? "text-primary-100" : "text-white/80"
+                }`}
+              >
+                All
+              </Text>
+            </Pressable>
 
-        {!isInitialLoading && !isOpeningTransaction && hasTransactions && (
+            <Pressable
+              onPress={() => handleSelectStatus("SUCCESSFUL")}
+              className={`px-3 py-1.5 rounded-xl border ${
+                selectedStatus === "SUCCESSFUL"
+                  ? "bg-emerald-500 border-emerald-500"
+                  : "bg-primary-400 border-primary-300"
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
+                  selectedStatus === "SUCCESSFUL" ? "text-white" : "text-emerald-400"
+                }`}
+              >
+                SUCCESSFUL
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => handleSelectStatus("FAILED")}
+              className={`px-3 py-1.5 rounded-xl border ${
+                selectedStatus === "FAILED"
+                  ? "bg-red-500 border-red-500"
+                  : "bg-primary-400 border-primary-300"
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
+                  selectedStatus === "FAILED" ? "text-white" : "text-red-400"
+                }`}
+              >
+                FAILED
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Type Filter Chips (Wrapped) */}
+          <View className="flex-row flex-wrap gap-2 mt-1">
+            <Pressable
+              onPress={() => setSelectedType("")}
+              className={`px-3 py-1.5 rounded-xl border ${
+                !selectedType
+                  ? "bg-accent-100 border-accent-100"
+                  : "bg-primary-400 border-primary-300"
+              }`}
+            >
+              <Text
+                className={`text-xs font-semibold ${
+                  !selectedType ? "text-primary-100" : "text-white/80"
+                }`}
+              >
+                All Types
+              </Text>
+            </Pressable>
+
+            {TRANSACTION_TYPES.map((t) => {
+              const isSelected = selectedType === t.id;
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => handleSelectType(t.id)}
+                  className={`px-3 py-1.5 rounded-xl border ${
+                    isSelected
+                      ? "bg-accent-100 border-accent-100"
+                      : "bg-primary-400 border-primary-300"
+                  }`}
+                >
+                  <Text
+                    className={`text-xs font-semibold ${
+                      isSelected ? "text-primary-100" : "text-white/80"
+                    }`}
+                  >
+                    {t.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        {isDataLoading && <TransactionsLoadingPlaceholder />}
+
+        {!isDataLoading && hasTransactions && (
           <SectionList
             sections={sections}
-            keyExtractor={(item, index) =>
-              item.ReferenceID ||
-              item.UniqueIdentifier ||
-              (item.Id ? String(item.Id) : `tx-${index}`)
-            }
+            style={{ flex: 1 }}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            keyExtractor={(item, index) => {
+              const isValid = (val: any) => {
+                if (val === null || val === undefined) return false;
+                const str = String(val).trim().toLowerCase();
+                return (
+                  str !== "" &&
+                  str !== "null" &&
+                  str !== "undefined" &&
+                  str !== "n/a" &&
+                  str !== "none" &&
+                  str !== "0" &&
+                  str !== "pending"
+                );
+              };
+
+              if (isValid(item.ReferenceID)) return String(item.ReferenceID);
+              if (isValid(item.UniqueIdentifier)) return String(item.UniqueIdentifier);
+              if (isValid((item as any).id)) return String((item as any).id);
+              if (isValid((item as any).reference)) return String((item as any).reference);
+              if (isValid(item.Id)) return String(item.Id);
+
+              const rawDate = item.CurrentDate || item.TransactionDate || (item as any).date || "";
+              const rawAmount = item.Debit || item.Credit || (item as any).amount || "";
+              return `tx-${rawDate}-${rawAmount}-${item.Narration || ""}-${index}`;
+            }}
             renderSectionHeader={({ section: { title } }) => (
               <View className="bg-primary-100 pt-3 pb-1">
                 <Text className="text-white/70 text-sm font-medium">
@@ -307,7 +501,7 @@ export default function TransactionsScreen() {
             renderItem={({ item }) => (
               <TransactionCard
                 transaction={item}
-                disabled={isOpeningTransaction}
+                disabled={Boolean(openingReference)}
                 onPress={() =>
                   setOpeningReference(item.ReferenceID || "pending")
                 }
@@ -333,7 +527,7 @@ export default function TransactionsScreen() {
           />
         )}
 
-        {!isInitialLoading && !isOpeningTransaction && !hasTransactions && (
+        {!isDataLoading && !hasTransactions && (
           <View className="flex-1 items-center justify-center">
             <Ionicons
               name="receipt-outline"
@@ -344,8 +538,8 @@ export default function TransactionsScreen() {
               No transactions found
             </Text>
             <Text className="text-white/50 text-sm text-center mt-1">
-              {startDate || endDate
-                ? "Try adjusting your date filters"
+              {startDate || endDate || selectedStatus || selectedType
+                ? "Try adjusting your filters"
                 : "Your transaction history will appear here"}
             </Text>
           </View>

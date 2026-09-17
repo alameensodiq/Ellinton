@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { AccountTransaction } from "@/app/lib/thunks/transferThunks";
+import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { resolveTransactionDate, parseFlexibleDate } from "@/app/lib/utils";
@@ -18,30 +18,58 @@ export default function TransactionCard({
   disabled = false,
 }: Props) {
   const router = useRouter();
-  const [userAccountNumber, setUserAccountNumber] = useState<string | null>(null);
+  
+  const reduxAccountNumber = useSelector(
+    (state: any) =>
+      state.auth?.user?.accountNumber ||
+      state.auth?.user?.account_number ||
+      state.accounts?.accountInfo?.accountNumber
+  );
+  const [asyncAccountNumber, setAsyncAccountNumber] = useState<string | null>(null);
 
   useEffect(() => {
-    AsyncStorage.getItem("userAccountNumber").then(setUserAccountNumber);
-  }, []);
+    if (!reduxAccountNumber) {
+      AsyncStorage.getItem("userAccountNumber").then(setAsyncAccountNumber);
+    }
+  }, [reduxAccountNumber]);
 
-  // Support both old and new API formats
-  const isDebit = (transaction.senderAccount && userAccountNumber)
-    ? transaction.senderAccount === userAccountNumber
-    : transaction.RecordType
-      ? transaction.RecordType.toLowerCase().includes("debit")
-      : (userAccountNumber && transaction.senderAccount === userAccountNumber) || Boolean(transaction.Debit && Number(transaction.Debit) > 0);
+  const userAccountNumber = reduxAccountNumber || asyncAccountNumber;
+
+  const recordType = String(
+    transaction.RecordType || transaction.recordType || transaction.type || transaction.Type || ""
+  ).toLowerCase();
+
+  const isDebit =
+    recordType.includes("debit") || recordType === "dr"
+      ? true
+      : recordType.includes("credit") || recordType === "cr"
+      ? false
+      : Boolean(transaction.Debit && Number(String(transaction.Debit).replace(/,/g, "")) > 0)
+      ? true
+      : Boolean(transaction.Credit && Number(String(transaction.Credit).replace(/,/g, "")) > 0)
+      ? false
+      : Boolean(userAccountNumber && transaction.senderAccount && String(transaction.senderAccount) === String(userAccountNumber));
+
   const rawAmount = transaction.Debit || transaction.Credit || transaction.amount || 0;
   const amountValue = Number(String(rawAmount || "0").replace(/,/g, "")) || 0;
 
   const referenceId = transaction.ReferenceID || transaction.id || transaction.reference || "";
   const dateStr = resolveTransactionDate(transaction);
   const narration = transaction.Narration || transaction.narration || "Transaction";
-  const status = transaction.IsReversed ? "REVERSED" : (transaction.status || "SUCCESSFUL");
+  
+  const rawStatus = String(
+    transaction.status || transaction.Status || transaction.transactionStatus || (transaction.IsReversed ? "REVERSED" : "SUCCESSFUL")
+  ).toUpperCase();
+
+  const isFailed = rawStatus === "FAILED" || rawStatus === "FAILURE" || rawStatus === "REJECTED" || rawStatus === "DECLINED";
+  const isReversed = rawStatus === "REVERSED" || Boolean(transaction.IsReversed);
+  const isPending = rawStatus === "PENDING";
+  const displayStatus = isFailed ? "FAILED" : isReversed ? "REVERSED" : isPending ? "PENDING" : "SUCCESSFUL";
 
   const fallbackReceiptData = JSON.stringify({
     amount: amountValue,
     type: transaction.RecordType || transaction.type || (isDebit ? "Debit" : "Credit"),
-    status: status,
+    status: displayStatus,
     sender: transaction.senderName || "",
     senderAccount: transaction.senderAccount || "",
     senderBank: transaction.senderBank || "Ellington MFB",
@@ -94,12 +122,30 @@ export default function TransactionCard({
           {narration.toUpperCase()}
         </Text>
 
-        <Text className="text-white/60 text-xs mt-1">{formattedDate}</Text>
+        <View className="flex-row items-center gap-2 mt-1 flex-wrap">
+          <Text className="text-white/60 text-xs">{formattedDate}</Text>
+          {isFailed && (
+            <View className="bg-red-500/20 px-2 py-0.5 rounded border border-red-500/30">
+              <Text className="text-red-400 text-[10px] font-bold">FAILED</Text>
+            </View>
+          )}
+          {isReversed && (
+            <View className="bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/30">
+              <Text className="text-amber-400 text-[10px] font-bold">REVERSED</Text>
+            </View>
+          )}
+          {isPending && (
+            <View className="bg-yellow-500/20 px-2 py-0.5 rounded border border-yellow-500/30">
+              <Text className="text-yellow-400 text-[10px] font-bold">PENDING</Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <Text
-        className={`text-sm font-bold ${isDebit ? "text-red-400" : "text-green-400"
-          }`}
+        className={`text-sm font-bold ${
+          isFailed ? "text-red-400/80" : isDebit ? "text-red-400" : "text-green-400"
+        }`}
       >
         {isDebit ? "-" : "+"}₦
         {amountValue.toLocaleString("en-NG", {
