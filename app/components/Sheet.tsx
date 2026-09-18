@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Pressable } from "react-native";
+import { View, Pressable, KeyboardAvoidingView, Platform } from "react-native";
 import Modal from "react-native-modal";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -23,13 +23,17 @@ const Sheet = ({ visible, onClose, onModalHide, disableSwipe, children }: Bottom
       backdropOpacity={0.4}
       propagateSwipe
     >
-      <View className="bg-primary-100 rounded-t-3xl px-5 pt-4 pb-8">
-        <Pressable onPress={onClose} className="absolute right-4 top-4 z-10">
-          <Ionicons name="close" size={22} color="#fff" />
-        </Pressable>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      >
+        <View className="bg-primary-100 rounded-t-3xl px-5 pt-4 pb-8">
+          <Pressable onPress={onClose} className="absolute right-4 top-4 z-10">
+            <Ionicons name="close" size={22} color="#fff" />
+          </Pressable>
 
-        <View className="mt-6">{children}</View>
-      </View>
+          <View className="mt-6">{children}</View>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

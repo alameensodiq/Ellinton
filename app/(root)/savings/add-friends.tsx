@@ -204,7 +204,7 @@ export default function AddFriendsScreen() {
           />
         </View>
 
-        <View className="mt-4">
+        <ScrollView className="mt-4 max-h-[300px]" showsVerticalScrollIndicator={false}>
           {isSearching ? (
             <>
               <LoadingRow />
@@ -262,7 +262,7 @@ export default function AddFriendsScreen() {
               Search to add friends
             </CustomText>
           )}
-        </View>
+        </ScrollView>
 
         <View className="mt-4">
           <Button title="Continue" variant="primary" onPress={closeSheet} />
