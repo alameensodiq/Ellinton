@@ -22,6 +22,7 @@ import {
   fetchAccountTransactions,
   AccountTransaction,
 } from "@/app/lib/thunks/transferThunks";
+import { cleanNarration } from "@/app/lib/utils";
 
 interface SectionData {
   title: string;
@@ -233,7 +234,7 @@ export default function TransactionsScreen() {
       // 1. Search filter
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
-        const narration = String(tx.Narration || (tx as any).narration || "").toLowerCase();
+        const narration = cleanNarration(tx.Narration || (tx as any).narration || "").toLowerCase();
         if (!narration.includes(q)) return false;
       }
 
@@ -258,7 +259,7 @@ export default function TransactionsScreen() {
       if (selectedType) {
         const normFilter = selectedType.toLowerCase();
         const txType = String((tx as any).type || (tx as any).Type || (tx as any).transactionType || tx.RecordType || "").toLowerCase();
-        const narration = String(tx.Narration || (tx as any).narration || "").toLowerCase();
+        const narration = cleanNarration(tx.Narration || (tx as any).narration || "").toLowerCase();
         const match =
           txType.includes(normFilter) ||
           narration.includes(normFilter) ||

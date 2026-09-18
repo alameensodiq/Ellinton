@@ -186,7 +186,7 @@ export default function AddFriendsScreen() {
       </View>
 
       {/* sheet */}
-      <Sheet visible={sheetOpen} onClose={closeSheet}>
+      <Sheet visible={sheetOpen} onClose={closeSheet} disableSwipe>
         <CustomText size="lg" weight="bold" className="text-center mb-4">
           Add friends
         </CustomText>

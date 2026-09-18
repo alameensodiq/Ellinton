@@ -65,6 +65,7 @@ export default function MyPlansScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { userSavings, isLoading } = useAppSelector((s: any) => s.savings);
+  const { user } = useAppSelector((s: any) => s.auth);
 
   const [activeTab, setActiveTab] = useState<TabValue>("basic");
   const [refreshing, setRefreshing] = useState(false);
@@ -145,6 +146,9 @@ export default function MyPlansScreen() {
 
         <CustomText size="lg" weight="bold" className="mt-4">
           {item.name}
+        </CustomText>
+        <CustomText size="sm" secondary className="mt-1">
+          {`${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "Account"} • {item.savings_account || "No account number"}
         </CustomText>
 
         <View className="flex-row justify-between mt-6">

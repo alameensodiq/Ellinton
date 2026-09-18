@@ -9,6 +9,7 @@ import Header from "@/app/components/header-back";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { fetchGoldTransactionById } from "@/app/lib/thunks/goldThunks";
+import { cleanNarration } from "@/app/lib/utils";
 
 export default function TransactionDetail() {
   const router = useRouter();
@@ -194,7 +195,7 @@ export default function TransactionDetail() {
                 {transaction.remark && (
                   <DetailRow
                     label="Remark"
-                    value={transaction.remark}
+                    value={cleanNarration(transaction.remark)}
                   />
                 )}
               </View>

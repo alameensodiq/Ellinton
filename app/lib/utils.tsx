@@ -1418,6 +1418,19 @@ export function resolveTransactionDate(
   return fallbackIso;
 }
 
+export function cleanNarration(narration?: string | null): string {
+  if (!narration) return "";
+  let str = String(narration).trim();
+  const uuidPrefixRegex = /^(?:(?:id|ref|tx|reference)[:\s-]*)*(?:[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[0-9a-fA-F]{32})[-:\s]*/i;
+
+  while (uuidPrefixRegex.test(str)) {
+    const next = str.replace(uuidPrefixRegex, "").trim();
+    if (next === str) break;
+    str = next;
+  }
+  return str;
+}
+
 export {
   dayOptions,
   frequencyOptions,

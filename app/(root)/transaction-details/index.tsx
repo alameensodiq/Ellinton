@@ -10,7 +10,7 @@ import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { clearTransactionReceipt } from "@/app/lib/slices/transferSlice";
 import { fetchSingleTransactionReceipt } from "@/app/lib/thunks/transferThunks";
-import { resolveTransactionDate } from "@/app/lib/utils";
+import { resolveTransactionDate, cleanNarration } from "@/app/lib/utils";
 
 const ReceiptDetailsSkeleton = ({ onBack }: { onBack: () => void }) => (
   <SafeAreaView className="flex-1 bg-primary-100">
@@ -215,10 +215,12 @@ export default function TransactionDetails() {
       activeTx.referenceNo ||
       reference ||
       "",
-    narration:
+    narration: cleanNarration(
       activeTx.narration ||
+      activeTx.Narration ||
       activeTx.remark ||
-      "",
+      ""
+    ),
     sessionId: activeTx.sessionId,
   };
 

@@ -100,13 +100,16 @@ const EmailIdentityScreen = () => {
       return;
     }
 
+    const abortController = new AbortController();
+
     const fetchLGAs = async () => {
       try {
         setLoadingLGAs(true);
         const response = await fetch(
           `https://nga-states-lga.onrender.com/?state=${encodeURIComponent(
             state
-          )}`
+          )}`,
+          { signal: abortController.signal }
         );
         if (!response.ok) throw new Error("Failed to fetch LGAs");
         const lgas: string[] = await response.json();
@@ -116,18 +119,29 @@ const EmailIdentityScreen = () => {
           label: lga,
         }));
 
-        setLocalGovernmentOptions(formattedLGAs);
-        setLocalGovernment("");
-      } catch (err) {
-        setFetchError("Failed to load local governments.");
-        console.error(err);
-        setLocalGovernmentOptions([]);
+        if (!abortController.signal.aborted) {
+          setLocalGovernmentOptions(formattedLGAs);
+          setLocalGovernment("");
+        }
+      } catch (err: any) {
+        if (err.name === "AbortError") return;
+        if (!abortController.signal.aborted) {
+          setFetchError("Failed to load local governments.");
+          console.error(err);
+          setLocalGovernmentOptions([]);
+        }
       } finally {
-        setLoadingLGAs(false);
+        if (!abortController.signal.aborted) {
+          setLoadingLGAs(false);
+        }
       }
     };
 
     fetchLGAs();
+
+    return () => {
+      abortController.abort();
+    };
   }, [state]);
 
   const handleBack = () => router.back();
@@ -356,7 +370,7 @@ const EmailIdentityScreen = () => {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      <Loading visible={authLoading || loadingStates || loadingLGAs} />
+      <Loading visible={authLoading || loadingStates} />
       <ErrorModal
         visible={showErrorModal}
         title="Verification Error"

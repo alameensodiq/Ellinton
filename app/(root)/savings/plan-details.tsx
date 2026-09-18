@@ -7,6 +7,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import CustomText from "@/app/components/CustomText";
 import Button from "@/app/components/Button";
+import ErrorModal from "@/app/components/ErrorModal";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { createSaving } from "@/app/lib/thunks/savingsThunks";
 
@@ -119,6 +120,15 @@ export default function PlanDetails() {
   const dispatch = useAppDispatch();
 
   const [submitting, setSubmitting] = useState(false);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorTitle, setErrorTitle] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const showError = (title: string, msg: string) => {
+    setErrorTitle(title);
+    setErrorMessage(msg);
+    setErrorVisible(true);
+  };
 
   const amount = Number(params.amount || params.targetAmount || 0);
   const tenure = Number(params.tenure || params.productTenure || 0);
@@ -181,22 +191,22 @@ export default function PlanDetails() {
     if (submitting) return;
 
     if (!planName.trim())
-      return Alert.alert("Missing", "Plan name is required.");
+      return showError("Missing", "Plan name is required.");
     if (!productCode)
-      return Alert.alert("Missing", "Product code is required.");
+      return showError("Missing", "Product code is required.");
     if (!amount || amount <= 0)
-      return Alert.alert("Missing", "Amount is required.");
+      return showError("Missing", "Amount is required.");
     if (!tenure || tenure <= 0)
-      return Alert.alert("Missing", "Tenure is required.");
+      return showError("Missing", "Tenure is required.");
 
     if (frequency === "weekly" && !dayOfWeek) {
-      return Alert.alert(
+      return showError(
         "Invalid day",
         "Day of week must be: sunday, monday, tuesday, wednesday, thursday, friday, saturday."
       );
     }
     if (frequency === "monthly" && !dateInMonth) {
-      return Alert.alert("Missing", "Please pick a day of the month.");
+      return showError("Missing", "Please pick a day of the month.");
     }
 
     setSubmitting(true);
@@ -228,7 +238,7 @@ export default function PlanDetails() {
         },
       } as any);
     } catch (e: any) {
-      Alert.alert("Create failed", String(e || "Something went wrong"));
+      showError("Create failed", String(e || "Something went wrong"));
     } finally {
       setSubmitting(false);
     }
@@ -335,6 +345,13 @@ export default function PlanDetails() {
           disabled={submitting}
         />
       </View>
+
+      <ErrorModal
+        visible={errorVisible}
+        title={errorTitle}
+        message={errorMessage}
+        onDismiss={() => setErrorVisible(false)}
+      />
     </SafeAreaView>
   );
 }

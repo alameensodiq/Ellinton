@@ -7,17 +7,18 @@ interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
   onModalHide?: () => void;
+  disableSwipe?: boolean;
   children: React.ReactNode;
 }
 
-const Sheet = ({ visible, onClose, onModalHide, children }: BottomSheetProps) => {
+const Sheet = ({ visible, onClose, onModalHide, disableSwipe, children }: BottomSheetProps) => {
   return (
     <Modal
       isVisible={visible}
       onBackdropPress={onClose}
-      onSwipeComplete={onClose}
+      onSwipeComplete={disableSwipe ? undefined : onClose}
       onModalHide={onModalHide}
-      swipeDirection="down"
+      swipeDirection={disableSwipe ? undefined : "down"}
       style={{ margin: 0, justifyContent: "flex-end" }}
       backdropOpacity={0.4}
       propagateSwipe

@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { resolveTransactionDate, parseFlexibleDate } from "@/app/lib/utils";
+import { resolveTransactionDate, parseFlexibleDate, cleanNarration } from "@/app/lib/utils";
 
 interface Props {
   transaction: any; // Changed from AccountTransaction to any to handle both formats
@@ -18,7 +18,7 @@ export default function TransactionCard({
   disabled = false,
 }: Props) {
   const router = useRouter();
-  
+
   const reduxAccountNumber = useSelector(
     (state: any) =>
       state.auth?.user?.accountNumber ||
@@ -43,20 +43,21 @@ export default function TransactionCard({
     recordType.includes("debit") || recordType === "dr"
       ? true
       : recordType.includes("credit") || recordType === "cr"
-      ? false
-      : Boolean(transaction.Debit && Number(String(transaction.Debit).replace(/,/g, "")) > 0)
-      ? true
-      : Boolean(transaction.Credit && Number(String(transaction.Credit).replace(/,/g, "")) > 0)
-      ? false
-      : Boolean(userAccountNumber && transaction.senderAccount && String(transaction.senderAccount) === String(userAccountNumber));
+        ? false
+        : Boolean(transaction.Debit && Number(String(transaction.Debit).replace(/,/g, "")) > 0)
+          ? true
+          : Boolean(transaction.Credit && Number(String(transaction.Credit).replace(/,/g, "")) > 0)
+            ? false
+            : Boolean(userAccountNumber && transaction.senderAccount && String(transaction.senderAccount) === String(userAccountNumber));
 
   const rawAmount = transaction.Debit || transaction.Credit || transaction.amount || 0;
   const amountValue = Number(String(rawAmount || "0").replace(/,/g, "")) || 0;
 
   const referenceId = transaction.ReferenceID || transaction.id || transaction.reference || "";
   const dateStr = resolveTransactionDate(transaction);
-  const narration = transaction.Narration || transaction.narration || "Transaction";
-  
+  const rawNarration = transaction.Narration || transaction.narration || "Transaction";
+  const narration = cleanNarration(rawNarration) || rawNarration;
+
   const rawStatus = String(
     transaction.status || transaction.Status || transaction.transactionStatus || (transaction.IsReversed ? "REVERSED" : "SUCCESSFUL")
   ).toUpperCase();
@@ -119,7 +120,7 @@ export default function TransactionCard({
     >
       <View className="flex-1 mr-3">
         <Text className="text-white text-sm font-medium">
-          {narration.toUpperCase()}
+          {narration?.toUpperCase()}
         </Text>
 
         <View className="flex-row items-center gap-2 mt-1 flex-wrap">
@@ -143,9 +144,8 @@ export default function TransactionCard({
       </View>
 
       <Text
-        className={`text-sm font-bold ${
-          isFailed ? "text-red-400/80" : isDebit ? "text-red-400" : "text-green-400"
-        }`}
+        className={`text-sm font-bold ${isFailed ? "text-red-400/80" : isDebit ? "text-red-400" : "text-green-400"
+          }`}
       >
         {isDebit ? "-" : "+"}₦
         {amountValue.toLocaleString("en-NG", {

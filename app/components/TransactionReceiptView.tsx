@@ -16,6 +16,7 @@ import BottomSheet from "@/app/components/BottomSheet";
 import * as Sharing from "expo-sharing";
 import * as Print from "expo-print";
 import * as Clipboard from "expo-clipboard";
+import { cleanNarration } from "@/app/lib/utils";
 
 export interface ReceiptViewData {
   amount?: number | string;
@@ -521,7 +522,7 @@ export default function TransactionReceiptView({
             {!!(receiptData.narration || receiptData.remark) && (
               <DetailRow
                 label="Narration"
-                value={receiptData.narration || receiptData.remark || ""}
+                value={cleanNarration(receiptData.narration || receiptData.remark || "")}
               />
             )}
 

@@ -16,6 +16,7 @@ import CustomText from "@/app/components/CustomText";
 import Header from "@/app/components/header-back";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { fetchSavingsTransactions } from "@/app/lib/thunks/savingsThunks";
+import { cleanNarration } from "@/app/lib/utils";
 
 const money = (n: number) =>
   `₦${Math.round(Number(n || 0)).toLocaleString("en-NG")}`;
@@ -407,7 +408,7 @@ export default function MyPlanDetailsScreen() {
                           : "Top up"}
                       </CustomText>
                       <CustomText size="sm" secondary className="mt-1">
-                        {t.narration || "Transaction"}
+                        {cleanNarration(t.narration || "Transaction")}
                       </CustomText>
                       <CustomText size="xs" secondary className="mt-2">
                         {formatTime(t.transaction_date)}
