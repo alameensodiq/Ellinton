@@ -137,12 +137,12 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
       icon: "cog",
       onPress: () => router.push("/(root)/account-settings")
     },
-    {
-      id: "overdraft",
-      label: "Overdraft",
-      icon: "bank-transfer",
-      onPress: () => router.push("/(root)/overdraft")
-    },
+    // {
+    //   id: "overdraft",
+    //   label: "Overdraft",
+    //   icon: "bank-transfer",
+    //   onPress: () => router.push("/(root)/overdraft")
+    // },
     {
       id: "3",
       label: "Request bank statement",
