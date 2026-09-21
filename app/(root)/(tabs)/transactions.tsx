@@ -17,6 +17,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 
 import SearchBar from "@/app/components/SearchBar";
 import TransactionCard from "@/app/components/TransactionCard";
+import Sheet from "@/app/components/Sheet";
 import { AppDispatch, RootState } from "@/app/lib/store";
 import {
   fetchAccountTransactions,
@@ -546,16 +547,56 @@ export default function TransactionsScreen() {
           </View>
         )}
 
-        {/* Date Pickers */}
-        {showStartPicker && (
+        {/* Date Pickers - iOS */}
+        {Platform.OS === "ios" && (
+          <>
+            <Sheet visible={showStartPicker} onClose={() => setShowStartPicker(false)}>
+              <Text className="text-white text-lg font-bold mb-4 text-center">Select Start Date</Text>
+              <DateTimePicker
+                value={startDateObj || new Date()}
+                mode="date"
+                display="spinner"
+                themeVariant="dark"
+                onChange={(_, date) => {
+                  if (date) {
+                    setStartDateObj(date);
+                    setStartDate(formatDateToYYYYMMDD(date));
+                    if (endDateObj && endDateObj.getTime() < date.getTime()) {
+                      setEndDateObj(null);
+                      setEndDate("");
+                    }
+                  }
+                }}
+              />
+            </Sheet>
+
+            <Sheet visible={showEndPicker} onClose={() => setShowEndPicker(false)}>
+              <Text className="text-white text-lg font-bold mb-4 text-center">Select End Date</Text>
+              <DateTimePicker
+                value={endDateObj || startDateObj || new Date()}
+                mode="date"
+                display="spinner"
+                themeVariant="dark"
+                minimumDate={startDateObj || undefined}
+                onChange={(_, date) => {
+                  if (date) {
+                    setEndDateObj(date);
+                    setEndDate(formatDateToYYYYMMDD(date));
+                  }
+                }}
+              />
+            </Sheet>
+          </>
+        )}
+
+        {/* Date Pickers - Android */}
+        {Platform.OS !== "ios" && showStartPicker && (
           <DateTimePicker
             value={startDateObj || new Date()}
             mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
+            display="default"
             onChange={(_, date) => {
-              if (Platform.OS !== "ios") {
-                setShowStartPicker(false);
-              }
+              setShowStartPicker(false);
               if (date) {
                 setStartDateObj(date);
                 setStartDate(formatDateToYYYYMMDD(date));
@@ -568,16 +609,14 @@ export default function TransactionsScreen() {
           />
         )}
 
-        {showEndPicker && (
+        {Platform.OS !== "ios" && showEndPicker && (
           <DateTimePicker
             value={endDateObj || startDateObj || new Date()}
             mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
+            display="default"
             minimumDate={startDateObj || undefined}
             onChange={(_, date) => {
-              if (Platform.OS !== "ios") {
-                setShowEndPicker(false);
-              }
+              setShowEndPicker(false);
               if (date) {
                 setEndDateObj(date);
                 setEndDate(formatDateToYYYYMMDD(date));
