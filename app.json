@@ -49,7 +49,7 @@
     },
     "android": {
       "package": "com.ellingtonmfb.app",
-      "versionCode": 146,
+      "versionCode": 147,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

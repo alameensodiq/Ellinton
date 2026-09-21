@@ -701,6 +701,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
             value={startDateObj || new Date()}
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
+            maximumDate={new Date()}
             onChange={(_, date) => {
               if (Platform.OS !== "ios") {
                 setOpenStartPicker(false);
@@ -722,6 +723,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
             minimumDate={startDateObj || undefined}
+            maximumDate={new Date()}
             onChange={(_, date) => {
               if (Platform.OS !== "ios") {
                 setOpenEndPicker(false);
