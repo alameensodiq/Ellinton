@@ -3,14 +3,11 @@ import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
-import { signOut } from "firebase/auth";
-import { auth } from "@/app/firebase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import Header from "@/app/components/header-back";
 import Button from "@/app/components/Button";
 import TextInputField from "@/app/components/inputs/TextInputField";
-import { updateUserAddress, logoutUser } from "@/app/lib/thunks/authThunks";
-import { clearError } from "@/app/lib/slices/authSlice";
+import { updateUserAddress, getUserProfile } from "@/app/lib/thunks/authThunks";
 import { RootState, AppDispatch } from "@/app/lib/store";
 
 const Address = () => {
@@ -45,20 +42,12 @@ const Address = () => {
         })
       ).unwrap();
 
-      try {
-        await AsyncStorage.clear();
-        await dispatch(logoutUser()).unwrap();
-        await signOut(auth);
-        dispatch(clearError());
-      } catch (logoutErr) {
-        console.error("Logout error following address update:", logoutErr);
-      } finally {
-        router.replace("/(auth)/current-user");
-      }
+      await dispatch(getUserProfile());
+      router.push("/(root)/account-settings");
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
-      console.error("Failed to update address:", errorMessage);
+      // console.error("Failed to update address:", errorMessage);
     } finally {
       setIsSaving(false);
     }

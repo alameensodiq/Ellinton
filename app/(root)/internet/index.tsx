@@ -26,7 +26,7 @@ import CustomText from "@/app/components/CustomText";
 
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
-import { getBillerProviders, getPackages } from "@/app/lib/thunks/billsThunks";
+import { getBillerProviders, getPackages, validateBillCustomer } from "@/app/lib/thunks/billsThunks";
 import {
   clearError,
   clearPackages,
@@ -56,15 +56,18 @@ export default function InternetServicesPayment() {
   // const safeProviders = useMemo(() => providers ?? [], [providers]);
   // const safePackages = useMemo(() => packages ?? [], [packages]);
 
-  const safeProviders = useMemo(() => 
-  Array.isArray(providers) ? providers : [], 
-[providers]);
+  const safeProviders = useMemo(() =>
+    Array.isArray(providers) ? providers : [],
+    [providers]);
 
-const safePackages = useMemo(() => 
-  Array.isArray(packages) ? packages : [], 
-[packages]);
+  const safePackages = useMemo(() =>
+    Array.isArray(packages) ? packages : [],
+    [packages]);
 
-  const isLoading =
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const isLoadingGlobal =
     providersStatus === "loading" || packagesStatus === "loading";
 
   useEffect(() => {
@@ -73,19 +76,19 @@ const safePackages = useMemo(() =>
     dispatch(clearPackages());
 
     setSelectedService("");
-    setSelectedProduct(""); 
+    setSelectedProduct("");
     setAccountId("");
     setCustomAmount("");
 
-    dispatch(getBillerProviders({ type: "internet" })).catch(() => {});
+    dispatch(getBillerProviders({ type: "internet" })).catch(() => { });
   }, [dispatch]);
 
   useEffect(() => {
     if (selectedService) {
       dispatch(clearPackages());
-      setSelectedProduct(""); 
-      setCustomAmount(""); 
-      dispatch(getPackages({ slug: selectedService })).catch(() => {});
+      setSelectedProduct("");
+      setCustomAmount("");
+      dispatch(getPackages({ slug: selectedService })).catch(() => { });
     }
   }, [selectedService, dispatch]);
 
@@ -138,30 +141,48 @@ const safePackages = useMemo(() =>
     amount &&
     Number(amount) >= 100;
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!selectedProviderData || !selectedPackageData || !accountId) return;
 
-    router.push({
-      pathname: "/(root)/internet/confirm",
-      params: {
-        service: selectedService,
-        product: selectedProduct,
-        accountId,
-        amount,
-        providerId: String(selectedProviderData.id),
-        providerName: selectedProviderData.name,
-        providerSlug: selectedProviderData.slug,
-        packageId: String(selectedPackageData.id),
-        packageName: selectedPackageData.name,
-        packageSlug: selectedPackageData.slug,
-      },
-    });
+    try {
+      setIsSubmitting(true);
+      setValidationError(null);
+
+      const validationResult = await dispatch(
+        validateBillCustomer({
+          customerId: accountId,
+          productName: selectedPackageData.slug,
+          billerSlug: selectedProviderData.slug,
+        })
+      ).unwrap();
+
+      router.push({
+        pathname: "/(root)/internet/confirm",
+        params: {
+          service: selectedService,
+          product: selectedProduct,
+          accountId,
+          amount,
+          providerId: String(selectedProviderData.id),
+          providerName: selectedProviderData.name,
+          providerSlug: selectedProviderData.slug,
+          packageId: String(selectedPackageData.id),
+          packageName: selectedPackageData.name,
+          packageSlug: selectedPackageData.slug,
+          validationResult: JSON.stringify(validationResult),
+        },
+      });
+    } catch (err: any) {
+      setValidationError(err?.message || "Validation failed");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100">
       <Header title="Internet services" showClose showBack={false} />
-      <Loading visible={isLoading} />
+      <Loading visible={isLoadingGlobal || isSubmitting} />
 
       <KeyboardAvoidingView
         className="flex-1"
@@ -177,9 +198,9 @@ const safePackages = useMemo(() =>
               showsVerticalScrollIndicator={false}
             >
               <View className="flex-1 p-4">
-                {error && (
+                {(error || validationError) && (
                   <View className="bg-red-500/10 border border-red-500 rounded-lg p-3 mb-4">
-                    <Text className="text-red-500 text-sm">{error}</Text>
+                    <Text className="text-red-500 text-sm">{error || validationError}</Text>
                   </View>
                 )}
 
@@ -242,7 +263,7 @@ const safePackages = useMemo(() =>
                     title="Continue"
                     variant="primary"
                     onPress={handleContinue}
-                    disabled={!isFormValid}
+                    disabled={!isFormValid || isSubmitting}
                   />
                 </View>
               </View>
