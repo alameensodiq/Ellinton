@@ -347,6 +347,7 @@ export interface FetchTransactionsParams {
   isLoadMore?: boolean;
   status?: string;
   type?: string;
+  searchQuery?: string;
 }
 
 export interface FetchTransactionsResult {
@@ -379,6 +380,9 @@ export const fetchAccountTransactions = createAsyncThunk<
       }
       if (params?.type && params.type.trim()) {
         query.append("type", params.type.trim());
+      }
+      if (params?.searchQuery && params.searchQuery.trim()) {
+        query.append("search", params.searchQuery.trim());
       }
 
       const queryString = query.toString();

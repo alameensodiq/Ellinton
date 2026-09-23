@@ -140,6 +140,15 @@ export default function TransactionsScreen() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   // Date picker state
   const [startDateObj, setStartDateObj] = useState<Date | null>(null);
   const [endDateObj, setEndDateObj] = useState<Date | null>(null);
@@ -166,9 +175,10 @@ export default function TransactionsScreen() {
         endDate: endDate || undefined,
         status: selectedStatus || undefined,
         type: selectedType || undefined,
+        searchQuery: debouncedSearchQuery || undefined,
       })
     );
-  }, [dispatch, startDate, endDate, selectedStatus, selectedType]);
+  }, [dispatch, startDate, endDate, selectedStatus, selectedType, debouncedSearchQuery]);
 
   useFocusEffect(
     useCallback(() => {
@@ -185,9 +195,10 @@ export default function TransactionsScreen() {
         endDate: endDate || undefined,
         status: selectedStatus || undefined,
         type: selectedType || undefined,
+        searchQuery: debouncedSearchQuery || undefined,
       })
     );
-  }, [dispatch, startDate, endDate, selectedStatus, selectedType]);
+  }, [dispatch, startDate, endDate, selectedStatus, selectedType, debouncedSearchQuery]);
 
   const handleLoadMore = useCallback(() => {
     if (isLoading || isFetchingMore || !hasMoreTransactions) return;
@@ -200,6 +211,7 @@ export default function TransactionsScreen() {
         endDate: endDate || undefined,
         status: selectedStatus || undefined,
         type: selectedType || undefined,
+        searchQuery: debouncedSearchQuery || undefined,
         isLoadMore: true,
       })
     );
@@ -213,6 +225,7 @@ export default function TransactionsScreen() {
     endDate,
     selectedStatus,
     selectedType,
+    debouncedSearchQuery,
   ]);
 
   const handleClearDates = () => {
@@ -232,14 +245,7 @@ export default function TransactionsScreen() {
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
-      // 1. Search filter
-      if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        const narration = cleanNarration(tx.Narration || (tx as any).narration || "").toLowerCase();
-        if (!narration.includes(q)) return false;
-      }
-
-      // 2. Status filter
+      // 1. Status filter
       if (selectedStatus) {
         const rawStatus = String(
           (tx as any).status || (tx as any).Status || (tx as any).transactionStatus || (tx.IsReversed ? "REVERSED" : "SUCCESSFUL")
@@ -270,7 +276,7 @@ export default function TransactionsScreen() {
 
       return true;
     });
-  }, [transactions, searchQuery, selectedStatus, selectedType]);
+  }, [transactions, selectedStatus, selectedType]);
 
   const sections = useMemo(
     () => groupTransactionsToSections(filteredTransactions),
@@ -367,16 +373,14 @@ export default function TransactionsScreen() {
             <Text className="text-white/60 text-xs font-semibold mr-1">Status:</Text>
             <Pressable
               onPress={() => setSelectedStatus("")}
-              className={`px-3 py-1.5 rounded-xl border ${
-                !selectedStatus
+              className={`px-3 py-1.5 rounded-xl border ${!selectedStatus
                   ? "bg-accent-100 border-accent-100"
                   : "bg-primary-400 border-primary-300"
-              }`}
+                }`}
             >
               <Text
-                className={`text-xs font-semibold ${
-                  !selectedStatus ? "text-primary-100" : "text-white/80"
-                }`}
+                className={`text-xs font-semibold ${!selectedStatus ? "text-primary-100" : "text-white/80"
+                  }`}
               >
                 All
               </Text>
@@ -384,16 +388,14 @@ export default function TransactionsScreen() {
 
             <Pressable
               onPress={() => handleSelectStatus("SUCCESSFUL")}
-              className={`px-3 py-1.5 rounded-xl border ${
-                selectedStatus === "SUCCESSFUL"
+              className={`px-3 py-1.5 rounded-xl border ${selectedStatus === "SUCCESSFUL"
                   ? "bg-emerald-500 border-emerald-500"
                   : "bg-primary-400 border-primary-300"
-              }`}
+                }`}
             >
               <Text
-                className={`text-xs font-semibold ${
-                  selectedStatus === "SUCCESSFUL" ? "text-white" : "text-emerald-400"
-                }`}
+                className={`text-xs font-semibold ${selectedStatus === "SUCCESSFUL" ? "text-white" : "text-emerald-400"
+                  }`}
               >
                 SUCCESSFUL
               </Text>
@@ -401,16 +403,14 @@ export default function TransactionsScreen() {
 
             <Pressable
               onPress={() => handleSelectStatus("FAILED")}
-              className={`px-3 py-1.5 rounded-xl border ${
-                selectedStatus === "FAILED"
+              className={`px-3 py-1.5 rounded-xl border ${selectedStatus === "FAILED"
                   ? "bg-red-500 border-red-500"
                   : "bg-primary-400 border-primary-300"
-              }`}
+                }`}
             >
               <Text
-                className={`text-xs font-semibold ${
-                  selectedStatus === "FAILED" ? "text-white" : "text-red-400"
-                }`}
+                className={`text-xs font-semibold ${selectedStatus === "FAILED" ? "text-white" : "text-red-400"
+                  }`}
               >
                 FAILED
               </Text>
@@ -421,16 +421,14 @@ export default function TransactionsScreen() {
           <View className="flex-row flex-wrap gap-2 mt-1">
             <Pressable
               onPress={() => setSelectedType("")}
-              className={`px-3 py-1.5 rounded-xl border ${
-                !selectedType
+              className={`px-3 py-1.5 rounded-xl border ${!selectedType
                   ? "bg-accent-100 border-accent-100"
                   : "bg-primary-400 border-primary-300"
-              }`}
+                }`}
             >
               <Text
-                className={`text-xs font-semibold ${
-                  !selectedType ? "text-primary-100" : "text-white/80"
-                }`}
+                className={`text-xs font-semibold ${!selectedType ? "text-primary-100" : "text-white/80"
+                  }`}
               >
                 All Types
               </Text>
@@ -442,16 +440,14 @@ export default function TransactionsScreen() {
                 <Pressable
                   key={t.id}
                   onPress={() => handleSelectType(t.id)}
-                  className={`px-3 py-1.5 rounded-xl border ${
-                    isSelected
+                  className={`px-3 py-1.5 rounded-xl border ${isSelected
                       ? "bg-accent-100 border-accent-100"
                       : "bg-primary-400 border-primary-300"
-                  }`}
+                    }`}
                 >
                   <Text
-                    className={`text-xs font-semibold ${
-                      isSelected ? "text-primary-100" : "text-white/80"
-                    }`}
+                    className={`text-xs font-semibold ${isSelected ? "text-primary-100" : "text-white/80"
+                      }`}
                   >
                     {t.label}
                   </Text>

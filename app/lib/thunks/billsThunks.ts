@@ -5,6 +5,7 @@ import {
   BILLS_PAY_ENDPOINT,
   BILLS_PROVIDERS_ENDPOINT,
   BILLS_PACKAGES_ENDPOINT,
+  PHONE_VALIDATE_ENDPOINT,
 } from "../api";
 import { encryptedFetch } from "../encryptedFetch";
 import { encryptionClient } from "../encrption.client";
@@ -17,20 +18,20 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   const method = options.method?.toLowerCase() || "get";
   const headers = (options.headers as Record<string, string>) || {};
   const body = options.body ? JSON.parse(options.body as string) : undefined;
-  
+
   const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
-  
+
   let enhancedHeaders = { ...headers };
-  
+
   if (hasAuthToken) {
     const timestamp = Date.now().toString();
     const nonce = generateNonce();
     const deviceId = await getDeviceId();
-    
+
     // IMPORTANT: Extract ONLY the pathname, not the full URL
     const urlObj = new URL(url);
     const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
-    
+
     // console.log("📡 Request details:", {
     //   fullUrl: url,
     //   path,
@@ -38,7 +39,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     //   hasBody: !!body,
     //   deviceId
     // });
-    
+
     // Generate signature
     const { signature } = await generateSignature(
       method,
@@ -48,7 +49,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       timestamp,
       deviceId
     );
-    
+
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {
       ...headers,
@@ -57,7 +58,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       'x-signature': signature,
       'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
     };
-    
+
     // console.log("🔐 Added signature headers:", {
     //   timestamp,
     //   noncePreview: nonce.substring(0, 10) + "...",
@@ -67,7 +68,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     // console.log("🔓 No auth token, skipping signature");
   }
-  
+
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
@@ -147,6 +148,11 @@ export interface ValidateCustomerPayload {
   billerSlug: string;
 }
 
+export interface ValidatePhoneNumberPayload {
+  phoneNumber: string;
+  network: string;
+}
+
 export interface PayBillPayload {
   type: string;
   provider: string;
@@ -206,6 +212,34 @@ export const validateBillCustomer = createAsyncThunk<
 
   try {
     const response = await safeFetch(BILLS_VALIDATE_CUSTOMER_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    const data: ApiResponse<any> = await response.json();
+    console.log(data);
+    if (!response.ok || !data.success || !data.data) {
+      const errorData = data as unknown as ErrorResponse;
+      return rejectWithValue(errorData?.data?.message || data.message || "Failed");
+    }
+    return data.data;
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Network error");
+  }
+});
+
+export const validatePhoneNumber = createAsyncThunk<
+  any,
+  ValidatePhoneNumberPayload
+>("bills/validatePhoneNumber", async (payload, { rejectWithValue, getState }) => {
+  const state = getState() as any;
+  const token = state.auth.token;
+
+  try {
+    const response = await safeFetch(PHONE_VALIDATE_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

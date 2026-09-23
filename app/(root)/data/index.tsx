@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +21,7 @@ import BundleCard from "@/app/components/home/biils/BundleCard";
 import Loading from "@/app/components/Loading";
 import BottomSheet from "@/app/components/BottomSheet";
 import CustomText from "@/app/components/CustomText";
+import ErrorModal from "@/app/components/ErrorModal";
 
 import { formatNigerianPhone, providers } from "@/app/lib/utils";
 import { useRouter } from "expo-router";
@@ -27,6 +29,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/lib/store";
 import {
   fetchBillerOptions,
+  validatePhoneNumber,
 } from "@/app/lib/thunks/billsThunks";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 
@@ -50,6 +53,8 @@ export default function BuyData() {
   const [contactsSheetVisible, setContactsSheetVisible] = useState(false);
   const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
   const [validating, setValidating] = useState(false);
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (selectedProvider) {
@@ -94,19 +99,34 @@ export default function BuyData() {
   const handleContinue = async () => {
     if (!currentBundle) return;
 
+    setValidating(true);
     const formattedPhone = formatNigerianPhone(phoneNumber);
 
-    router.push({
-      pathname: "/(root)/data/confirm",
-      params: {
-        provider: selectedProvider,
-        phone: formattedPhone,
-        bundle: selectedBundle,
-        amount: currentBundle.amount.toString(),
-        productName: currentBundle.name,
-        billerSlug: currentBundle.slug,
-      },
-    });
+    try {
+      await dispatch(
+        validatePhoneNumber({
+          phoneNumber: formattedPhone.replace("+234", "0"),
+          network: selectedProvider,
+        })
+      ).unwrap();
+
+      router.push({
+        pathname: "/(root)/data/confirm",
+        params: {
+          provider: selectedProvider,
+          phone: formattedPhone,
+          bundle: selectedBundle,
+          amount: currentBundle.amount.toString(),
+          productName: currentBundle.name,
+          billerSlug: currentBundle.slug,
+        },
+      });
+    } catch (error: any) {
+      setErrorMessage(error || "Could not validate phone number.");
+      setErrorModalVisible(true);
+    } finally {
+      setValidating(false);
+    }
   };
 
   return (
@@ -177,7 +197,7 @@ export default function BuyData() {
 
           <View className="mt-20 mb-8">
             <Button
-              title="Continue"
+              title={validating ? "Validating..." : "Continue"}
               variant="primary"
               onPress={handleContinue}
               disabled={
@@ -185,7 +205,8 @@ export default function BuyData() {
                 !phoneNumber ||
                 phoneNumber.trim() === "+234" ||
                 !selectedBundle ||
-                !currentBundle
+                !currentBundle ||
+                validating
               }
             />
           </View>
@@ -216,6 +237,13 @@ export default function BuyData() {
             );
           })}
       </BottomSheet>
+
+      <ErrorModal
+        visible={errorModalVisible}
+        title="Validation Failed"
+        message={errorMessage}
+        onDismiss={() => setErrorModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }

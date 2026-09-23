@@ -1,5 +1,5 @@
-const BASE_URL = "https://api.ellingtonbank.com/api/v2";
-// const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
+// const BASE_URL = "https://api.ellingtonbank.com/api/v2";
+const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
@@ -75,6 +75,7 @@ const BILLS_VALIDATE_CUSTOMER_ENDPOINT = `${BASE_URL}/bills/data/validate-custom
 const BILLS_PAY_ENDPOINT = `${BASE_URL}/bills/pay-bill`;
 const BILLS_PROVIDERS_ENDPOINT = `${BASE_URL}/bills/get-providers`;
 const BILLS_PACKAGES_ENDPOINT = `${BASE_URL}/bills/get-packages`;
+const PHONE_VALIDATE_ENDPOINT = `${BASE_URL}/bills/validate-phone-number`;
 
 // virtual cards
 const VIRTUAL_CARD_REQUEST_ENDPOINT = `${BASE_URL}/virtual-cards/request`;
@@ -236,5 +237,6 @@ export {
   DEVICE_ENDPOINT,
   RESEND_DEVICE_OTP,
   LOAN_REPAYMENT_ENDPOINT,
-  TRANSACTION_PIN_VALIDATE
+  TRANSACTION_PIN_VALIDATE,
+  PHONE_VALIDATE_ENDPOINT
 };
