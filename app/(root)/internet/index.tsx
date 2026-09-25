@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as Contacts from "expo-contacts";
 
@@ -82,6 +82,13 @@ export default function InternetServicesPayment() {
 
     dispatch(getBillerProviders({ type: "internet" })).catch(() => { });
   }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(clearError());
+      setValidationError(null);
+    }, [dispatch])
+  );
 
   useEffect(() => {
     if (selectedService) {
@@ -198,9 +205,9 @@ export default function InternetServicesPayment() {
               showsVerticalScrollIndicator={false}
             >
               <View className="flex-1 p-4">
-                {(error || validationError) && (
+                {(((providersStatus === "failed" || packagesStatus === "failed") && error) || validationError) && (
                   <View className="bg-red-500/10 border border-red-500 rounded-lg p-3 mb-4">
-                    <Text className="text-red-500 text-sm">{error || validationError}</Text>
+                    <Text className="text-red-500 text-sm">{((providersStatus === "failed" || packagesStatus === "failed") && error) || validationError}</Text>
                   </View>
                 )}
 

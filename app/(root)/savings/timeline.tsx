@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { View, Pressable, ScrollView } from "react-native";
 import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Button from "@/app/components/Button";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -52,6 +52,7 @@ const ordinal = (n: number) => {
 export default function Timeline() {
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, any>>();
+  const insets = useSafeAreaInsets();
 
   const [frequency, setFrequency] = useState<FrequencyKey>("weekly");
 
@@ -215,7 +216,7 @@ export default function Timeline() {
         <View className="h-10" />
       </ScrollView>
 
-      <View className="absolute left-0 right-0 bottom-5 px-4 pb-6 pt-3 bg-primary-100 border-t border-white/10">
+      <View className="absolute left-0 right-0 bottom-0 px-4 pt-3 bg-primary-100 border-t border-white/10" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
         <Button
           title="Continue"
           variant="primary"

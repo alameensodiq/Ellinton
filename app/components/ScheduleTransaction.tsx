@@ -63,8 +63,8 @@ export default function ScheduleTransaction({
     return options;
   };
 
-  const startDateOptions = React.useMemo(() => generateDateOptions(30, 0), []);
-  const endDateOptions = React.useMemo(() => generateDateOptions(90, 1), []);
+  const startDateOptions = React.useMemo(() => generateDateOptions(365, 0), []);
+  const endDateOptions = React.useMemo(() => generateDateOptions(730, 1), []);
 
   return (
     <View className="mt-4">

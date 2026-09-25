@@ -6,6 +6,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Vibration,
+  ScrollView,
+  Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAvoidingView } from "react-native";
@@ -84,57 +86,67 @@ const CreatePasscodeScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView className="flex-1 bg-primary-100 px-4">
-        <KeyboardAvoidingView behavior="padding" className="flex-1">
-          <Header title="" showCancel />
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 20}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
+          >
+            <Header title="" showCancel />
 
-          <CustomText size="xxl" className="mb-6">
-            Create Passcode
-          </CustomText>
-
-          <View className="mb-10">
-            <Text className="text-white text-sm mb-3">Passcode</Text>
-            <OtpInput
-              digitCount={6}
-              value={passcode}
-              onChange={handlePasscodeChange}
-              error={!!error}
-              inputStyle="h-16 w-14"
-            />
-          </View>
-
-          <View className="mb-6">
-            <CustomText className="mb-3">Confirm passcode</CustomText>
-            <OtpInput
-              digitCount={6}
-              value={confirmPasscode}
-              onChange={handleConfirmPasscodeChange}
-              error={!!error}
-              inputStyle="h-16 w-14"
-            />
-          </View>
-
-          {error ? (
-            <CustomText className="text-red-500 mb-6 text-sm font-semibold">
-              {error}
+            <CustomText size="xxl" className="mb-6">
+              Create Passcode
             </CustomText>
-          ) : null}
 
-          <CustomText secondary className="text-center">
-            By entering your 6-digit PASSCODE, you agree{"\n"}
-            to our <Text className="font-semibold">
-              Terms of Service
-            </Text> and <Text className="font-semibold">Privacy Policy</Text>
-          </CustomText>
+            <View className="mb-10">
+              <Text className="text-white text-sm mb-3">Passcode</Text>
+              <OtpInput
+                digitCount={6}
+                value={passcode}
+                onChange={handlePasscodeChange}
+                error={!!error}
+                inputStyle="h-16 w-14"
+              />
+            </View>
 
-          <View className="mt-10">
-            <Button
-              title={isLoading ? "Creating..." : "Create Passcode"}
-              variant="primary"
-              onPress={handleSubmit}
-              className="w-full"
-              disabled={!canSubmit || isLoading}
-            />
-          </View>
+            <View className="mb-6">
+              <CustomText className="mb-3">Confirm passcode</CustomText>
+              <OtpInput
+                digitCount={6}
+                value={confirmPasscode}
+                onChange={handleConfirmPasscodeChange}
+                error={!!error}
+                inputStyle="h-16 w-14"
+              />
+            </View>
+
+            {error ? (
+              <CustomText className="text-red-500 mb-6 text-sm font-semibold">
+                {error}
+              </CustomText>
+            ) : null}
+
+            <CustomText secondary className="text-center">
+              By entering your 6-digit PASSCODE, you agree{"\n"}
+              to our <Text className="font-semibold">
+                Terms of Service
+              </Text> and <Text className="font-semibold">Privacy Policy</Text>
+            </CustomText>
+
+            <View className="mt-10 pb-2">
+              <Button
+                title={isLoading ? "Creating..." : "Create Passcode"}
+                variant="primary"
+                onPress={handleSubmit}
+                className="w-full"
+                disabled={!canSubmit || isLoading}
+              />
+            </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </TouchableWithoutFeedback>

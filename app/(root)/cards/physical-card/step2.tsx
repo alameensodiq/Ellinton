@@ -6,7 +6,6 @@ import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
 import SelectableButton from "@/app/components/SelectableButton";
 import Button from "@/app/components/Button";
-import ConfirmationModal from "@/app/components/ConfirmationModal";
 import { colorGradients, colorOptions } from "@/app/lib/utils";
 import ColoredDot from "@/app/components/cards/ColoredDot";
 import images from "@/app/assets/images";
@@ -25,7 +24,6 @@ export default function PhysicalCardCreateStep2() {
   const router = useRouter();
 console.log(brand)
   const [selectedColor, setSelectedColor] = useState("gold");
-  const [showModal, setShowModal] = useState(false);
 
   const PhysicalCard1 = images.physical_card_1;
   const PhysicalCard2 = images.physical_card_2;
@@ -39,10 +37,8 @@ console.log(brand)
 
   const cardImage = cardImageMap[selectedColor];
 
-  const handleRequestCard = () => setShowModal(true);
+  const handleRequestCard = () => {
 
-  const handleConfirm = () => {
-    setShowModal(false);
     router.push({
       pathname: "/(root)/cards/physical-card/review",
       params: {
@@ -118,14 +114,6 @@ console.log(brand)
           onPress={handleRequestCard}
         />
       </View>
-
-      <ConfirmationModal
-        visible={showModal}
-        onClose={() => setShowModal(false)}
-        onConfirm={handleConfirm}
-        title="Confirmation"
-        message="You are about to request for a physical card"
-      />
     </SafeAreaView>
   );
 }

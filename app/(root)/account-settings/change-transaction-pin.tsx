@@ -124,6 +124,7 @@ const ConfirmTransactionPinScreen = () => {
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 20}
         >
           <View className="flex-row justify-start items-center pt-4 pb-6">
             <TouchableOpacity onPress={handleBack}>
@@ -135,6 +136,7 @@ const ConfirmTransactionPinScreen = () => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             className="flex-1"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}
           >
             <Text className="text-2xl font-bold text-white">
               Change Transaction PIN

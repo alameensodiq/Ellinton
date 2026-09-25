@@ -208,7 +208,7 @@ const safePackages = useMemo(() =>
               showsVerticalScrollIndicator={false}
             >
               <View className="flex-1 p-4">
-                {error && (
+                {((providersStatus === "failed" || packagesStatus === "failed") && error) && (
                   <View className="bg-red-500/10 border border-red-500 rounded-lg p-3 mb-4">
                     <Text className="text-red-500 text-sm">{error}</Text>
                   </View>

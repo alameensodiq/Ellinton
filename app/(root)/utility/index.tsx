@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import {
   getPackages,
   validateBillCustomer,
 } from "@/app/lib/thunks/billsThunks";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   clearError,
   clearPackages,
@@ -73,6 +73,14 @@ export default function UtilityBillPayment() {
 
     dispatch(getBillerProviders({ type: "electricity" })).catch(() => {});
   }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      // Clear any global or local errors when returning to this page
+      dispatch(clearError());
+      setError(null);
+    }, [dispatch])
+  );
 
   // When user selects a service, fetch its packages
   useEffect(() => {
@@ -184,7 +192,7 @@ export default function UtilityBillPayment() {
           contentContainerStyle={{ flexGrow: 1, padding: 16 }}
           keyboardShouldPersistTaps="handled"
         >
-          {(error || errorFromStore) && (
+          {(error || ((providersStatus === "failed" || packagesStatus === "failed") && errorFromStore)) && (
             <View className="bg-red-500/10 border border-red-500 rounded-lg p-3 mb-4">
               <Text className="text-red-500 text-sm">
                 {error || errorFromStore}

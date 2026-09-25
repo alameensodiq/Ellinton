@@ -176,7 +176,7 @@ export default function CablePayment() {
             showsVerticalScrollIndicator={false}
           >
             <View className="flex-1">
-              {(error || errorFromStore) && (
+              {(error || ((providersStatus === "failed" || packagesStatus === "failed") && errorFromStore)) && (
                 <View className="bg-red-500/10 border border-red-500 rounded-lg p-3 mb-4">
                   <Text className="text-red-500 text-sm">
                     {error || errorFromStore}

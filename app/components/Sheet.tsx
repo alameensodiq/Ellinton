@@ -2,6 +2,7 @@ import React from "react";
 import { View, Pressable, KeyboardAvoidingView, Platform } from "react-native";
 import Modal from "react-native-modal";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface BottomSheetProps {
   visible: boolean;
@@ -12,6 +13,8 @@ interface BottomSheetProps {
 }
 
 const Sheet = ({ visible, onClose, onModalHide, disableSwipe, children }: BottomSheetProps) => {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Modal
       isVisible={visible}
@@ -26,7 +29,10 @@ const Sheet = ({ visible, onClose, onModalHide, disableSwipe, children }: Bottom
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "padding"}
       >
-        <View className="bg-primary-100 rounded-t-3xl px-5 pt-4 pb-8">
+        <View 
+          className="bg-primary-100 rounded-t-3xl px-5 pt-4"
+          style={{ paddingBottom: Math.max(insets.bottom + 16, 32) }}
+        >
           <Pressable onPress={onClose} className="absolute right-4 top-4 z-10">
             <Ionicons name="close" size={22} color="#fff" />
           </Pressable>

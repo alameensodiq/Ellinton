@@ -60,16 +60,16 @@ export default function AuthorizePayment() {
       handlePay();
     }
   }, [passcode]);
- const normalizeAirtimeProvider = (value: string) => {
-   const v = value.toLowerCase().trim();
+  const normalizeAirtimeProvider = (value: string) => {
+    const v = value.toLowerCase().trim();
 
-   if (v.includes("mtn")) return "MTN_VTU";
-   if (v.includes("airtel")) return "AIRTEL_VTU";
-   if (v.includes("glo")) return "GLO_VTU";
-   if (v.includes("9mobile") || v.includes("etisalat")) return "9MOBILE_VTU";
+    if (v.includes("mtn")) return "MTN_VTU";
+    if (v.includes("airtel")) return "AIRTEL_VTU";
+    if (v.includes("glo")) return "GLO_VTU";
+    if (v.includes("9mobile") || v.includes("etisalat")) return "9MOBILE_VTU";
 
-   return value;
- };
+    return value;
+  };
 
 
   const handlePay = async () => {
@@ -101,6 +101,8 @@ export default function AuthorizePayment() {
         }),
       };
 
+      console.log(payload)
+
       const result = await dispatch(payBill(payload)).unwrap();
       dispatch(clearError());
 
@@ -113,12 +115,13 @@ export default function AuthorizePayment() {
         },
       });
     } catch (err: any) {
+      console.log(err)
       const msg =
         typeof err === "string" && err.trim()
           ? err
           : err?.message ||
-            err?.data?.message ||
-            "Service not available at this time, please try again later";
+          err?.data?.message ||
+          "Service not available at this time, please try again later";
       setError(msg);
       Vibration.vibrate(400);
       setPasscode("");

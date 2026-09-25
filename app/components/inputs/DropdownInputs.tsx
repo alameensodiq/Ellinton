@@ -12,6 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export interface DropdownOption {
   value: string;
@@ -43,6 +44,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const insets = useSafeAreaInsets();
 
   const selectedOption = options.find((opt) => opt.value === selectedValue);
 
@@ -146,7 +148,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
         >
           <View className="flex-1 bg-black/70 justify-end">
             <Pressable className="flex-1" onPress={handleClose} />
-            <View className="bg-primary-100 rounded-t-3xl border-t border-primary-300 h-[70%] p-4 pb-8">
+            <View className="bg-primary-100 rounded-t-3xl border-t border-primary-300 h-[70%] p-4">
               <View className="flex-row items-center justify-between py-3 px-2 border-b border-primary-300 mb-3">
                 <Text className="text-white text-lg font-bold">
                   {label || placeholder}
@@ -183,6 +185,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 renderItem={renderOption}
                 showsVerticalScrollIndicator={true}
                 keyboardShouldPersistTaps="handled"
+                contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 24) }}
                 ListEmptyComponent={
                   <View className="py-8 px-4 items-center">
                     <Text className="text-white/60 text-center text-base">

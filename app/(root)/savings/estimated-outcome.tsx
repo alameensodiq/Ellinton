@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { View, ScrollView, StatusBar } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
@@ -18,6 +18,7 @@ const money = (n: number) => `₦${Math.round(n).toLocaleString("en-NG")}`;
 export default function EstimatedOutcome() {
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, any>>();
+  const insets = useSafeAreaInsets();
 
   const dispatch = useAppDispatch();
   const { estimate, isLoading } = useAppSelector((s) => s.savings);
@@ -192,7 +193,7 @@ export default function EstimatedOutcome() {
             </CustomText>
           </ScrollView>
 
-          <View className="absolute left-0 right-0 bottom-5 px-4 pb-6 pt-3 bg-primary-100 border-t border-white/10">
+          <View className="absolute left-0 right-0 bottom-0 px-4 pt-3 bg-primary-100 border-t border-white/10" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
             <Button
               title="Continue"
               onPress={onContinue}

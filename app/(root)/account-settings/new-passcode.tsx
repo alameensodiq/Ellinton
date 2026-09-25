@@ -7,6 +7,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Vibration,
+  ScrollView,
+  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -64,48 +66,58 @@ const ResetPasscodeScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView className="flex-1 bg-primary-100 px-4">
-        <KeyboardAvoidingView behavior="padding" className="flex-1">
-          <Header title="" showCancel />
-          <CustomText size="xxl" className="mb-6">
-            Enter your new passcode
-          </CustomText>
-          <CustomText size="lg" className="mb-6" secondary>
-            Always keep your passcode private. Create a 6-digit passcode.
-          </CustomText>
-          <View className="mb-10">
-            <Text className="text-white text-sm mb-3">New passcode</Text>
-            <OtpInput
-              digitCount={6}
-              value={passcode}
-              onChange={setPasscode}
-              error={!!error}
-              inputStyle="h-16 w-14"
-            />
-          </View>
-          <View className="mb-6">
-            <CustomText className="mb-3">Confirm new passcode</CustomText>
-            <OtpInput
-              digitCount={6}
-              value={confirmPasscode}
-              onChange={setConfirmPasscode}
-              error={!!error}
-              inputStyle="h-16 w-14"
-            />
-          </View>
-          {error ? (
-            <CustomText className="text-red-500 text-left mb-6 text-sm font-semibold">
-              {error}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 20}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
+          >
+            <Header title="" showCancel />
+            <CustomText size="xxl" className="mb-6">
+              Enter your new passcode
             </CustomText>
-          ) : null}
-          {canShowButton && (
-            <Button
-              title={isLoading ? "Resetting..." : "Reset Passcode"}
-              variant="primary"
-              onPress={handleSubmit}
-              className="w-full mt-10"
-              disabled={isLoading}
-            />
-          )}
+            <CustomText size="lg" className="mb-6" secondary>
+              Always keep your passcode private. Create a 6-digit passcode.
+            </CustomText>
+            <View className="mb-10">
+              <Text className="text-white text-sm mb-3">New passcode</Text>
+              <OtpInput
+                digitCount={6}
+                value={passcode}
+                onChange={setPasscode}
+                error={!!error}
+                inputStyle="h-16 w-14"
+              />
+            </View>
+            <View className="mb-6">
+              <CustomText className="mb-3">Confirm new passcode</CustomText>
+              <OtpInput
+                digitCount={6}
+                value={confirmPasscode}
+                onChange={setConfirmPasscode}
+                error={!!error}
+                inputStyle="h-16 w-14"
+              />
+            </View>
+            {error ? (
+              <CustomText className="text-red-500 text-left mb-6 text-sm font-semibold">
+                {error}
+              </CustomText>
+            ) : null}
+            {canShowButton && (
+              <Button
+                title={isLoading ? "Resetting..." : "Reset Passcode"}
+                variant="primary"
+                onPress={handleSubmit}
+                className="w-full mt-10"
+                disabled={isLoading}
+              />
+            )}
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </TouchableWithoutFeedback>

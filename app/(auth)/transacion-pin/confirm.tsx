@@ -5,7 +5,8 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
+  ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,11 +20,12 @@ import {
 } from "@/app/lib/thunks/authThunks";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { RootState } from "@/app/lib/store";
 
 const ConfirmTransactionPinScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isLoading } = useAppSelector((state) => state.auth);
+  const { isLoading } = useAppSelector((state: RootState) => state.auth);
   const { userId, transactionPin, source } = useLocalSearchParams<{
     userId?: string;
     transactionPin?: string;
@@ -108,52 +110,62 @@ const ConfirmTransactionPinScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView className="flex-1 bg-primary-100 px-6">
-        <KeyboardAvoidingView behavior="padding" className="flex-1">
-          <View className="flex-row justify-start items-center pt-4 pb-6">
-            <TouchableOpacity onPress={handleBack}>
-              <Ionicons name="close" size={30} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <View className="flex-1 space-y-6 pt-4">
-            <Text className="text-2xl font-bold text-white">Confirm PIN</Text>
-            <Text className="text-accent-100 text-base leading-relaxed mt-6 mb-8">
-              Enter your PIN again to confirm
-            </Text>
-
-            <OtpInput
-              digitCount={4}
-              value={otp}
-              onChange={handleOtpChange}
-              error={error}
-              autoFocus
-              inputStyle="w-20 h-20"
-              secure
-            />
-
-            {error && (
-              <Text className="text-red-500 text-left mt-4 text-sm font-semibold">
-                {errorMessage}
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 20}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
+          >
+            <View className="flex-row justify-start items-center pt-4 pb-6">
+              <TouchableOpacity onPress={handleBack}>
+                <Ionicons name="close" size={30} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <View className="flex-1 space-y-6 pt-4">
+              <Text className="text-2xl font-bold text-white">Confirm PIN</Text>
+              <Text className="text-accent-100 text-base leading-relaxed mt-6 mb-8">
+                Enter your PIN again to confirm
               </Text>
-            )}
-          </View>
 
-          <View className="pb-2">
-            <Text className="text-center text-white/60 text-xs mb-6">
-              by entering your 4-digit PASSCODE. You agree{"\n"}
-              to our <Text className="font-semibold">
-                Terms of Service
-              </Text> and <Text className="font-semibold">Privacy Policy</Text>
-            </Text>
-            <Button
-              title={isComplete ? "Confirm" : "Enter PIN"}
-              variant="primary"
-              onPress={handleVerify}
-              disabled={!isComplete || isLoading}
-              className="w-full"
-            />
-          </View>
+              <OtpInput
+                digitCount={4}
+                value={otp}
+                onChange={handleOtpChange}
+                error={error}
+                autoFocus
+                inputStyle="w-20 h-20"
+                secure
+              />
 
-          <Loading visible={loading || isLoading} />
+              {error && (
+                <Text className="text-red-500 text-left mt-4 text-sm font-semibold">
+                  {errorMessage}
+                </Text>
+              )}
+            </View>
+
+            <View className="pb-2 mt-10">
+              <Text className="text-center text-white/60 text-xs mb-6">
+                by entering your 4-digit PASSCODE. You agree{"\n"}
+                to our <Text className="font-semibold">
+                  Terms of Service
+                </Text> and <Text className="font-semibold">Privacy Policy</Text>
+              </Text>
+              <Button
+                title={isComplete ? "Confirm" : "Enter PIN"}
+                variant="primary"
+                onPress={handleVerify}
+                disabled={!isComplete || isLoading}
+                className="w-full"
+              />
+            </View>
+
+            <Loading visible={loading || isLoading} />
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </TouchableWithoutFeedback>

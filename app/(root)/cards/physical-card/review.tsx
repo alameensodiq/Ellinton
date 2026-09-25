@@ -6,8 +6,8 @@ import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
 import Button from "@/app/components/Button";
 import ConfirmationModal from "@/app/components/ConfirmationModal";
-
 import images from "@/app/assets/images";
+
 
 export default function Review() {
   const params = useLocalSearchParams();

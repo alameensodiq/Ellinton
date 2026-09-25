@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { View, KeyboardAvoidingView, Platform } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, KeyboardAvoidingView, Platform, ScrollView, TouchableWithoutFeedback, Keyboard } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 import ProgressBar from "@/app/components/ProgressBar";
@@ -14,6 +14,7 @@ type PlanType = "basic" | "target" | "group" | "fixed";
 export default function PlanNameScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, any>>();
+  const insets = useSafeAreaInsets();
 
   const [planName, setPlanName] = useState("");
   const [planNameError, setPlanNameError] = useState("");
@@ -111,77 +112,88 @@ export default function PlanNameScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary-100">
+    <SafeAreaView className="flex-1 bg-primary-100" edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
-        {/* TOP */}
-        <View className="px-4 pt-4">
-          <ProgressBar currentStep={2} totalSteps={4} />
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+          <View className="flex-1">
+            <ScrollView 
+              className="flex-1" 
+              contentContainerStyle={{ flexGrow: 1 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
+          {/* TOP */}
+          <View className="px-4 pt-4">
+            <ProgressBar currentStep={2} totalSteps={4} />
 
-          <CustomText size="lg" weight="bold" className="mt-2">
-            Name your plan
-          </CustomText>
+            <CustomText size="lg" weight="bold" className="mt-2">
+              Name your plan
+            </CustomText>
 
-          <CustomText size="sm" secondary className="mt-1 mb-6">
-            Give your savings plan a meaningful name
-          </CustomText>
+            <CustomText size="sm" secondary className="mt-1 mb-6">
+              Give your savings plan a meaningful name
+            </CustomText>
 
-          <TextInputField
-            label="Plan name"
-            value={planName}
-            onChangeText={(t) => {
-              setPlanName(t);
-              if (planNameError) setPlanNameError("");
-            }}
-            placeholder="Plan name"
-            error={planNameError}
-            returnKeyType="done"
-            onSubmitEditing={handleContinue}
-          />
-        </View>
-
-        {/* SPACER (pushes bottom content down) */}
-        <View className="flex-1" />
-
-        {/* BOTTOM (fixed like your design) */}
-        <View className="px-4 pb-6">
-          <CustomText size="sm" weight="bold" className="mb-2">
-            {planMeta.title}
-          </CustomText>
-
-          <CustomText size="sm" secondary className="mb-4">
-            {planMeta.desc}
-          </CustomText>
-
-          <View className="bg-primary-400 rounded-2xl p-4 mb-6">
-            {planMeta.bullets.map((b: any, idx: number) => {
-              const Icon = b.icon;
-              const showBorder = idx !== planMeta.bullets.length - 1;
-
-              return (
-                <View
-                  key={idx}
-                  className={`flex-row gap-4 items-center py-4 ${
-                    showBorder ? "border-b border-primary-300" : ""
-                  }`}
-                >
-                  <Icon width={24} height={24} />
-                  <CustomText size="sm">{b.text}</CustomText>
-                </View>
-              );
-            })}
+            <TextInputField
+              label="Plan name"
+              value={planName}
+              onChangeText={(t) => {
+                setPlanName(t);
+                if (planNameError) setPlanNameError("");
+              }}
+              placeholder="Plan name"
+              error={planNameError}
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
+            />
           </View>
 
-          <Button
-            title="Continue"
-            variant="primary"
-            onPress={handleContinue}
-            disabled={!planName.trim()}
-          />
-        </View>
+          {/* SPACER (pushes bottom content down) */}
+          <View className="flex-1" />
+
+          {/* BOTTOM (fixed like your design) */}
+          <View className="px-4 pt-4" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+            <CustomText size="sm" weight="bold" className="mb-2">
+              {planMeta.title}
+            </CustomText>
+
+            <CustomText size="sm" secondary className="mb-4">
+              {planMeta.desc}
+            </CustomText>
+
+            <View className="bg-primary-400 rounded-2xl p-4 mb-6">
+              {planMeta.bullets.map((b: any, idx: number) => {
+                const Icon = b.icon;
+                const showBorder = idx !== planMeta.bullets.length - 1;
+
+                return (
+                  <View
+                    key={idx}
+                    className={`flex-row gap-4 items-center py-4 ${
+                      showBorder ? "border-b border-primary-300" : ""
+                    }`}
+                  >
+                    <Icon width={24} height={24} />
+                    <CustomText size="sm">{b.text}</CustomText>
+                  </View>
+                );
+              })}
+            </View>
+
+            <Button
+              title="Continue"
+              variant="primary"
+              onPress={handleContinue}
+              disabled={!planName.trim()}
+            />
+          </View>
+            </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

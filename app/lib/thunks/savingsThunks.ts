@@ -19,20 +19,20 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   const method = options.method?.toLowerCase() || "get";
   const headers = (options.headers as Record<string, string>) || {};
   const body = options.body ? JSON.parse(options.body as string) : undefined;
-  
+
   const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
-  
+
   let enhancedHeaders = { ...headers };
-  
+
   if (hasAuthToken) {
     const timestamp = Date.now().toString();
     const nonce = generateNonce();
     const deviceId = await getDeviceId();
-    
+
     // IMPORTANT: Extract ONLY the pathname, not the full URL
     const urlObj = new URL(url);
     const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
-    
+
     // console.log("📡 Request details:", {
     //   fullUrl: url,
     //   path,
@@ -40,7 +40,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     //   hasBody: !!body,
     //   deviceId
     // });
-    
+
     // Generate signature
     const { signature } = await generateSignature(
       method,
@@ -50,7 +50,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       timestamp,
       deviceId
     );
-    
+
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {
       ...headers,
@@ -59,7 +59,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       'x-signature': signature,
       'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
     };
-    
+
     // console.log("🔐 Added signature headers:", {
     //   timestamp,
     //   noncePreview: nonce.substring(0, 10) + "...",
@@ -69,7 +69,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     // console.log("🔓 No auth token, skipping signature");
   }
-  
+
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
@@ -175,8 +175,8 @@ export const calculateSavingsEstimate = createAsyncThunk<
         const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            data?.message ||
-            `Calculate failed (${res.status})`
+          data?.message ||
+          `Calculate failed (${res.status})`
         );
       }
 
@@ -215,6 +215,7 @@ export const createSaving = createAsyncThunk<
   try {
     const state = getState() as any;
     const token = state.auth.token;
+    console.log(payload)
 
     const res = await safeFetch(SAVINGS_CREATE_ENDPOINT, {
       method: "POST",
@@ -365,8 +366,8 @@ export const withdrawFromSaving = createAsyncThunk<
       const errorData = data as unknown as ErrorResponse;
       return rejectWithValue(
         errorData?.data?.message ||
-          data?.message ||
-          `Withdrawal failed (${res.status})`
+        data?.message ||
+        `Withdrawal failed (${res.status})`
       );
     }
 

@@ -72,10 +72,12 @@ const ChangePasscodeScreen = () => {
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
+          keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 20}
         >
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 120 }}
           >
             <CustomText size="xxl" className="mb-6">
               Change your passcode

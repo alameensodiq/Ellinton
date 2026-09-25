@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { View, ScrollView, Pressable, TextInput } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -39,6 +39,7 @@ export default function AddFriendsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, any>>();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
 
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -109,7 +110,8 @@ export default function AddFriendsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-primary-100">
+    <View className="flex-1 bg-primary-100">
+      <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
       <View className="px-4 pt-3">
         <View className="flex-row items-center justify-between">
           <ProgressBar currentStep={1} totalSteps={4} />
@@ -175,7 +177,7 @@ export default function AddFriendsScreen() {
       </ScrollView>
 
       {/* bottom fixed button */}
-      <View className="absolute left-0 right-0 bottom-0 bg-primary-100 px-4 pt-3 pb-8">
+      <View className="absolute left-0 right-0 bottom-0 bg-primary-100 px-4 pt-3 border-t border-white/10" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
         <Button
           title="Continue"
           variant="primary"
@@ -269,5 +271,6 @@ export default function AddFriendsScreen() {
         </View>
       </Sheet>
     </SafeAreaView>
+  </View>
   );
 }

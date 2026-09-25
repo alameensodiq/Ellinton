@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { View, ScrollView, StatusBar, Pressable, Alert } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -118,6 +118,7 @@ export default function PlanDetails() {
   const router = useRouter();
   const params = useLocalSearchParams<Record<string, any>>();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
 
   const [submitting, setSubmitting] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
@@ -337,7 +338,7 @@ export default function PlanDetails() {
         </View>
       </ScrollView>
 
-      <View className="px-5 pb-10 absolute w-full bottom-0 bg-primary-100">
+      <View className="px-5 absolute w-full bottom-0 bg-primary-100" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
         <Button
           title={submitting ? "Creating..." : "Create plan"}
           variant="primary"
