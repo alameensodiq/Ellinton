@@ -9,11 +9,14 @@ interface BottomSheetProps {
   onClose: () => void;
   onModalHide?: () => void;
   disableSwipe?: boolean;
+  position?: "bottom" | "center";
   children: React.ReactNode;
 }
 
-const Sheet = ({ visible, onClose, onModalHide, disableSwipe, children }: BottomSheetProps) => {
+const Sheet = ({ visible, onClose, onModalHide, disableSwipe, position = "bottom", children }: BottomSheetProps) => {
   const insets = useSafeAreaInsets();
+  
+  const isCenter = position === "center";
   
   return (
     <Modal
@@ -22,7 +25,7 @@ const Sheet = ({ visible, onClose, onModalHide, disableSwipe, children }: Bottom
       onSwipeComplete={disableSwipe ? undefined : onClose}
       onModalHide={onModalHide}
       swipeDirection={disableSwipe ? undefined : "down"}
-      style={{ margin: 0, justifyContent: "flex-end" }}
+      style={{ margin: isCenter ? 24 : 0, justifyContent: isCenter ? "center" : "flex-end" }}
       backdropOpacity={0.4}
       propagateSwipe
     >
@@ -30,8 +33,8 @@ const Sheet = ({ visible, onClose, onModalHide, disableSwipe, children }: Bottom
         behavior={Platform.OS === "ios" ? "padding" : "padding"}
       >
         <View 
-          className="bg-primary-100 rounded-t-3xl px-5 pt-4"
-          style={{ paddingBottom: Math.max(insets.bottom + 16, 32) }}
+          className={`bg-primary-100 px-5 pt-4 ${isCenter ? 'rounded-3xl' : 'rounded-t-3xl'}`}
+          style={{ paddingBottom: isCenter ? 32 : Math.max(insets.bottom + 16, 32) }}
         >
           <Pressable onPress={onClose} className="absolute right-4 top-4 z-10">
             <Ionicons name="close" size={22} color="#fff" />

@@ -112,165 +112,164 @@ export default function AddFriendsScreen() {
   return (
     <View className="flex-1 bg-primary-100">
       <SafeAreaView className="flex-1" edges={["top", "left", "right"]}>
-      <View className="px-4 pt-3">
-        <View className="flex-row items-center justify-between">
-          <ProgressBar currentStep={1} totalSteps={4} />
-        </View>
-
-        <CustomText size="lg" weight="bold" className="mt-6">
-          Add friends
-        </CustomText>
-
-        <CustomText size="sm" secondary className="mt-2">
-          The number of the member should not be an issue! You can add as much
-          as you can. We do the calculation for you
-        </CustomText>
-      </View>
-
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
-      >
-        {/* add / add more */}
-        <Pressable
-          onPress={openSheet}
-          className="border border-white/20 rounded-2xl px-4 py-5 items-center justify-center"
-          style={{ borderStyle: "dashed" }}
-        >
-          <View className="flex-row items-center gap-2">
-            <CustomText weight="bold">
-              {selected.length ? "Add more" : "Add friends"}
-            </CustomText>
-            <Ionicons name="add" size={18} color="#fff" />
+        <View className="px-4 pt-3">
+          <View className="flex-row items-center justify-between">
+            <ProgressBar currentStep={1} totalSteps={4} />
           </View>
-        </Pressable>
 
-        {/* selected list */}
-        <View className="mt-5">
-          {selected.map((u) => (
-            <View
-              key={u.id}
-              className="bg-primary-400 rounded-2xl p-4 mb-3 border border-white/10"
-            >
-              <View className="flex-row items-center justify-between">
-                <View className="flex-row items-center gap-3">
-                  <View className="w-10 h-10 rounded-full bg-primary-300 items-center justify-center">
-                    <Ionicons name="person-outline" size={18} color="#fff" />
-                  </View>
+          <CustomText size="lg" weight="bold" className="mt-6">
+            Add friends
+          </CustomText>
 
-                  <View>
-                    <CustomText weight="bold">{u.name}</CustomText>
-                    <CustomText size="sm" secondary className="mt-1">
-                      {u.account_number}
-                    </CustomText>
-                  </View>
-                </View>
-
-                <Pressable onPress={() => removeSelected(u.id)} className="p-2">
-                  <Ionicons name="close" size={18} color="#fff" />
-                </Pressable>
-              </View>
-            </View>
-          ))}
+          <CustomText size="sm" secondary className="mt-2">
+            The number of the member should not be an issue! You can add as much
+            as you can. We do the calculation for you
+          </CustomText>
         </View>
-      </ScrollView>
 
-      {/* bottom fixed button */}
-      <View className="absolute left-0 right-0 bottom-0 bg-primary-100 px-4 pt-3 border-t border-white/10" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
-        <Button
-          title="Continue"
-          variant="primary"
-          onPress={handleContinue}
-          disabled={selected.length === 0}
-          className="rounded-full"
-        />
-      </View>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        >
+          {/* add / add more */}
+          <Pressable
+            onPress={openSheet}
+            className="border border-white/20 rounded-2xl px-4 py-5 items-center justify-center"
+            style={{ borderStyle: "dashed" }}
+          >
+            <View className="flex-row items-center gap-2">
+              <CustomText weight="bold">
+                {selected.length ? "Add more" : "Add friends"}
+              </CustomText>
+              <Ionicons name="add" size={18} color="#fff" />
+            </View>
+          </Pressable>
 
-      {/* sheet */}
-      <Sheet visible={sheetOpen} onClose={closeSheet} disableSwipe>
-        <CustomText size="lg" weight="bold" className="text-center mb-4">
-          Add friends
-        </CustomText>
+          {/* selected list */}
+          <View className="mt-5">
+            {selected.map((u) => (
+              <View
+                key={u.id}
+                className="bg-primary-400 rounded-2xl p-4 mb-3 border border-white/10"
+              >
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-row items-center gap-3">
+                    <View className="w-10 h-10 rounded-full bg-primary-300 items-center justify-center">
+                      <Ionicons name="person-outline" size={18} color="#fff" />
+                    </View>
 
-        {/* search input */}
-        <View className="bg-primary-400 rounded-2xl px-4 py-3 flex-row items-center gap-2 border border-white/10">
-          <Ionicons name="search" size={18} color="#fff" />
-          <TextInput
-            value={query}
-            onChangeText={doSearch}
-            placeholder="Search by name, phone, account"
-            placeholderTextColor="rgba(255,255,255,0.5)"
-            className="flex-1 text-white"
-            autoCapitalize="none"
+                    <View>
+                      <CustomText weight="bold">{u.name}</CustomText>
+                      <CustomText size="sm" secondary className="mt-1">
+                        {u.account_number}
+                      </CustomText>
+                    </View>
+                  </View>
+
+                  <Pressable onPress={() => removeSelected(u.id)} className="p-2">
+                    <Ionicons name="close" size={18} color="#fff" />
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        {/* bottom fixed button */}
+        <View className="absolute left-0 right-0 bottom-0 bg-primary-100 px-4 pt-3 border-t border-white/10" style={{ paddingBottom: Math.max(insets.bottom, 24) }}>
+          <Button
+            title="Continue"
+            variant="primary"
+            onPress={handleContinue}
+            disabled={selected.length === 0}
+            className="rounded-full"
           />
         </View>
 
-        <ScrollView className="mt-4 max-h-[300px]" showsVerticalScrollIndicator={false}>
-          {isSearching ? (
-            <>
-              <LoadingRow />
-              <LoadingRow />
-              <LoadingRow />
-            </>
-          ) : results.length > 0 ? (
-            results.map((u) => {
-              const active = isSelected(u.id);
+        {/* sheet */}
+        <Sheet visible={sheetOpen} onClose={closeSheet} disableSwipe position="center">
+          <CustomText size="lg" weight="bold" className="text-center mb-4">
+            Add friends
+          </CustomText>
 
-              return (
-                <Pressable
-                  key={u.id}
-                  onPress={() => toggleSelect(u)}
-                  className="bg-primary-400 rounded-2xl p-4 mb-3 border border-white/10"
-                >
-                  <View className="flex-row items-center justify-between">
-                    <View className="flex-row items-center gap-3">
-                      <View className="w-10 h-10 rounded-full bg-primary-300 items-center justify-center">
-                        <Ionicons
-                          name="person-outline"
-                          size={18}
-                          color="#fff"
-                        />
+          {/* search input */}
+          <View className="bg-primary-400 rounded-2xl px-4 py-3 flex-row items-center gap-2 border border-white/10">
+            <Ionicons name="search" size={18} color="#fff" />
+            <TextInput
+              value={query}
+              onChangeText={doSearch}
+              placeholder="Search by name, phone, account"
+              placeholderTextColor="rgba(255,255,255,0.5)"
+              className="flex-1 text-white"
+              autoCapitalize="none"
+            />
+          </View>
+
+          <ScrollView className="mt-4 max-h-[300px]" showsVerticalScrollIndicator={false}>
+            {isSearching ? (
+              <>
+                <LoadingRow />
+                <LoadingRow />
+                <LoadingRow />
+              </>
+            ) : results.length > 0 ? (
+              results.map((u) => {
+                const active = isSelected(u.id);
+
+                return (
+                  <Pressable
+                    key={u.id}
+                    onPress={() => toggleSelect(u)}
+                    className="bg-primary-400 rounded-2xl p-4 mb-3 border border-white/10"
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3">
+                        <View className="w-10 h-10 rounded-full bg-primary-300 items-center justify-center">
+                          <Ionicons
+                            name="person-outline"
+                            size={18}
+                            color="#fff"
+                          />
+                        </View>
+
+                        <View>
+                          <CustomText weight="bold">{u.name}</CustomText>
+                          <CustomText size="sm" secondary className="mt-1">
+                            {u.account_number}
+                          </CustomText>
+                        </View>
                       </View>
 
-                      <View>
-                        <CustomText weight="bold">{u.name}</CustomText>
-                        <CustomText size="sm" secondary className="mt-1">
-                          {u.account_number}
-                        </CustomText>
+                      {/* radio */}
+                      <View
+                        className={`w-7 h-7 rounded-full border items-center justify-center ${active ? "border-primary-200" : "border-white/20"
+                          }`}
+                      >
+                        {active && (
+                          <View className="w-4 h-4 rounded-full bg-primary-200" />
+                        )}
                       </View>
                     </View>
+                  </Pressable>
+                );
+              })
+            ) : query.trim() ? (
+              <CustomText size="sm" secondary className="text-center mt-6">
+                No users found
+              </CustomText>
+            ) : (
+              <CustomText size="sm" secondary className="text-center mt-6">
+                Search to add friends
+              </CustomText>
+            )}
+          </ScrollView>
 
-                    {/* radio */}
-                    <View
-                      className={`w-7 h-7 rounded-full border items-center justify-center ${
-                        active ? "border-primary-200" : "border-white/20"
-                      }`}
-                    >
-                      {active && (
-                        <View className="w-4 h-4 rounded-full bg-primary-200" />
-                      )}
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })
-          ) : query.trim() ? (
-            <CustomText size="sm" secondary className="text-center mt-6">
-              No users found
-            </CustomText>
-          ) : (
-            <CustomText size="sm" secondary className="text-center mt-6">
-              Search to add friends
-            </CustomText>
-          )}
-        </ScrollView>
-
-        <View className="mt-4">
-          <Button title="Continue" variant="primary" onPress={closeSheet} />
-        </View>
-      </Sheet>
-    </SafeAreaView>
-  </View>
+          <View className="mt-4">
+            <Button title="Continue" variant="primary" onPress={closeSheet} />
+          </View>
+        </Sheet>
+      </SafeAreaView>
+    </View>
   );
 }
