@@ -557,6 +557,7 @@
 // }
 
 import { Stack, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { useDispatch } from "react-redux";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { AppDispatch, RootState } from "../lib/store";
@@ -675,6 +676,7 @@ export default function AuthWrapper() {
   useEffect(() => {
     if (!isRestoring && !isLoadingData) {
       setReady(true);
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [isRestoring, isLoadingData]);
 

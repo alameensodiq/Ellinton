@@ -425,10 +425,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded && initializationComplete) {
-      SplashScreen.hideAsync().catch((err) => {
-        console.warn("Failed to hide splash screen:", err);
-      });
-
       if (Platform.OS === "android") {
         NavigationBar.setBackgroundColorAsync("#3F401B").catch(() => { });
         NavigationBar.setButtonStyleAsync("light").catch(() => { });

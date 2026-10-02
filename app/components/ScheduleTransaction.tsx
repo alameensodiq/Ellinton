@@ -69,7 +69,7 @@ export default function ScheduleTransaction({
   return (
     <View className="mt-4">
       {/* Toggle */}
-      <View className="flex-row items-center justify-between mb-6">
+      {/* <View className="flex-row items-center justify-between mb-6">
         <View className="flex-row items-center">
           <Ionicons
             name="calendar-outline"
@@ -86,7 +86,7 @@ export default function ScheduleTransaction({
           thumbColor="#fff"
           ios_backgroundColor="#767577"
         />
-      </View>
+      </View> */}
 
       {/* Fields */}
       {scheduleEnabled && (
@@ -105,11 +105,10 @@ export default function ScheduleTransaction({
                 <TouchableOpacity
                   key={option.value}
                   onPress={() => setFrequency(option.value)}
-                  className={`px-6 py-4 rounded-xl ${
-                    frequency === option.value
+                  className={`px-6 py-4 rounded-xl ${frequency === option.value
                       ? "bg-primary-300"
                       : "bg-primary-400"
-                  }`}
+                    }`}
                 >
                   <Text className="font-medium text-white">{option.label}</Text>
                 </TouchableOpacity>
