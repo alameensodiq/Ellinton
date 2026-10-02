@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -23,7 +23,7 @@ import {
   getPackages,
   validateBillCustomer,
 } from "@/app/lib/thunks/billsThunks";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   clearError,
   clearPackages,
@@ -73,6 +73,13 @@ export default function BettingBillPayment() {
 
     dispatch(getBillerProviders({ type: "betting" })).catch(() => {});
   }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(clearError());
+      setError(null);
+    }, [dispatch])
+  );
 
   useEffect(() => {
     if (selectedService) {

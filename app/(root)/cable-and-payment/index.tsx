@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ScrollView
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import Header from "@/app/components/header-back";
 import Button from "@/app/components/Button";
@@ -78,6 +78,13 @@ export default function CablePayment() {
 
     dispatch(getBillerProviders({ type: "cable" })).catch(() => {});
   }, [dispatch]);
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(clearError());
+      setError(null);
+    }, [dispatch])
+  );
 
   useEffect(() => {
     if (selectedService) {

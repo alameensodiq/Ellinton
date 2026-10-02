@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { View, Text, Pressable, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import * as Contacts from "expo-contacts";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 
 import Header from "@/app/components/header-back";
 import Button from "@/app/components/Button";
@@ -24,6 +24,7 @@ import { providers, formatNigerianPhone } from "@/app/lib/utils";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { validatePhoneNumber } from "@/app/lib/thunks/billsThunks";
+import { clearError } from "@/app/lib/slices/billsSlice";
 export default function BuyAirtime() {
   const router = useRouter();
   const user = useAppSelector((state) => state.auth.user);
@@ -36,6 +37,14 @@ export default function BuyAirtime() {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const dispatch = useAppDispatch();
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(clearError());
+      setErrorMessage("");
+      setErrorModalVisible(false);
+    }, [dispatch])
+  );
 
   const parsedAmount = Number(amount.replace(/,/g, ""));
   const isFormValid =

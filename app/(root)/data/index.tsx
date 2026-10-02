@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -24,13 +24,14 @@ import CustomText from "@/app/components/CustomText";
 import ErrorModal from "@/app/components/ErrorModal";
 
 import { formatNigerianPhone, providers } from "@/app/lib/utils";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/lib/store";
 import {
   fetchBillerOptions,
   validatePhoneNumber,
 } from "@/app/lib/thunks/billsThunks";
+import { clearError } from "@/app/lib/slices/billsSlice";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 
 export default function BuyData() {
@@ -55,6 +56,14 @@ export default function BuyData() {
   const [validating, setValidating] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(clearError());
+      setErrorMessage("");
+      setErrorModalVisible(false);
+    }, [dispatch])
+  );
 
   useEffect(() => {
     if (selectedProvider) {
