@@ -200,7 +200,7 @@ const PhoneNumberScreen = () => {
  const handleContinue = () => {
    const fullPhone = `${selectedCountry.dialCode}${phoneNumber}`;
    router.push({
-     pathname: "/(auth)/email-identity",
+     pathname: "/(auth)/verify-phone-otp",
      params: { phone: fullPhone },
    });
  };

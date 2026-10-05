@@ -7,10 +7,12 @@ import {
   Keyboard,
   Vibration,
   ScrollView,
-  Platform
+  Platform,
+  Switch
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAvoidingView } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import Button from "@/app/components/Button";
@@ -18,6 +20,7 @@ import OtpInput from "@/app/components/inputs/OtpInput";
 import CustomText from "@/app/components/CustomText";
 import Header from "@/app/components/header-back";
 import { setupPasscode } from "@/app/lib/thunks/authThunks";
+import * as LocalAuthentication from "expo-local-authentication";
 
 const CreatePasscodeScreen = () => {
   const router = useRouter();
@@ -30,6 +33,7 @@ const CreatePasscodeScreen = () => {
   const [passcode, setPasscode] = useState("");
   const [confirmPasscode, setConfirmPasscode] = useState("");
   const [error, setError] = useState("");
+  const [enableBiometric, setEnableBiometric] = useState(false);
 
   const handleSubmit = async () => {
     setError("");
@@ -46,6 +50,29 @@ const CreatePasscodeScreen = () => {
     }
 
     try {
+      if (enableBiometric) {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        if (hasHardware && isEnrolled) {
+          const authResult = await LocalAuthentication.authenticateAsync({
+            promptMessage: "Enable biometric authentication",
+            fallbackLabel: "Use Passcode",
+          });
+          if (!authResult.success) {
+            setError("Biometric authentication failed. Please try again.");
+            return;
+          }
+          // Save passcode & biometric flag for future login
+          await AsyncStorage.setItem("userPin", passcode);
+          await AsyncStorage.setItem("loginBiometricEnabled", "true");
+        } else {
+          setError("Biometrics not available or enrolled on this device.");
+          return;
+        }
+      } else {
+        await AsyncStorage.setItem("loginBiometricEnabled", "false");
+      }
+
       await dispatch(
         setupPasscode({
           passcode,
@@ -53,10 +80,10 @@ const CreatePasscodeScreen = () => {
       ).unwrap();
 
       if (requiresTransactionPinSetup && user?.id) {
-        router.replace({
-          pathname: "/(auth)/transacion-pin",
-          params: { userId: user.id, source: "login" },
-        });
+        // router.replace({
+        //   pathname: "/(auth)/transacion-pin",
+        //   params: { userId: user.id, source: "login" },
+        // });
         return;
       }
 
@@ -86,7 +113,7 @@ const CreatePasscodeScreen = () => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView className="flex-1 bg-primary-100 px-4">
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           className="flex-1"
           keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 20}
@@ -121,6 +148,23 @@ const CreatePasscodeScreen = () => {
                 onChange={handleConfirmPasscodeChange}
                 error={!!error}
                 inputStyle="h-16 w-14"
+              />
+            </View>
+
+            <View className="flex-row items-center justify-between mb-6 p-4 bg-primary-200 rounded-xl border border-primary-300">
+              <View className="flex-1 pr-2">
+                <CustomText className="text-white text-base font-medium">
+                  Enable Biometrics
+                </CustomText>
+                <CustomText secondary className="text-xs">
+                  Log in quickly using Face ID or Fingerprint
+                </CustomText>
+              </View>
+              <Switch
+                value={enableBiometric}
+                onValueChange={setEnableBiometric}
+                trackColor={{ false: "#3a3a3c", true: "#007AFF" }}
+                thumbColor={enableBiometric ? "#ffffff" : "#f4f3f4"}
               />
             </View>
 

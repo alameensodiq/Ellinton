@@ -59,7 +59,7 @@ const CreateAccountScreen = () => {
   };
 
   const handleContinue = () => {
-    router.push("/(auth)/phone-number-screen");
+    router.push("/(auth)/personal-details");
   };
 
   const privacyPolicyContent = (
