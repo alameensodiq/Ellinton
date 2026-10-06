@@ -26,6 +26,10 @@ import {
   RESET_OTP_TRANSACTION_PIN_USERS_ENDPOINT,
   RESET_TRANSACTION_PIN_USERS_ENDPOINT,
   RESET_MFA_USERS_ENDPOINT,
+  REGISTER_NEW_USERS_ENDPOINT,
+  VERIFY_NEWOTP_USERS_ENDPOINT,
+  NEWPASSCODE_ENDPOINT,
+  RESEND_NEW_OTP_USERS_ENDPOINT,
 } from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout, setCredentials, setUserOnly } from "../slices/authSlice";
@@ -129,6 +133,20 @@ interface RegisterPayload {
   passcode: string;
   referral_code: string;
 }
+interface RegisterNewPayload {
+  first_name: string;
+  phone: string;
+  middle_name: string;
+  last_name: string;
+}
+
+interface NewUserPasscodePayload {
+  passcode: string;
+  phone: string;
+  verification_token: string;
+  confirm_passcode: string;
+}
+
 interface ForgotPasscodePayload {
   email: string;
 }
@@ -142,6 +160,17 @@ interface LoginPayload {
 interface VerifyOtpPayload {
   userId: string;
   otp: string;
+}
+
+
+interface VerifyNewOtpPayload {
+  phone: string;
+  otp: string;
+}
+
+interface ResendNewOtpPayload {
+  phone: string;
+  channel: string;
 }
 
 interface MultiFactorOtpPayload {
@@ -448,6 +477,114 @@ export const registerUser = createAsyncThunk(
   }
 );
 
+export const registerNewUser = createAsyncThunk(
+  "auth/registerNewUser",
+  async (payload: RegisterNewPayload, { rejectWithValue }) => {
+    try {
+      const response = await safeFetch(REGISTER_NEW_USERS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log(data);
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Registration failed (${response.status})`
+        );
+      }
+
+      return {
+        userId: data?.data?.user_id || "",
+        message:
+          data?.data?.message || data?.message || "User registered, OTP sent",
+      };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Registration error"
+      );
+    }
+  }
+);
+
+export const NewUserPasscode = createAsyncThunk(
+  "auth/NewUserPasscode",
+  async (payload: NewUserPasscodePayload, { rejectWithValue }) => {
+    try {
+      const response = await safeFetch(NEWPASSCODE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      console.log("NewUserPasscode Response:", data);
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Passcode setup failed (${response.status})`
+        );
+      }
+
+      if (!data?.data) {
+        return rejectWithValue("Invalid response structure");
+      }
+
+      const apiData = data.data;
+      const accessToken = apiData.access_token || apiData.token;
+      const user = apiData.user;
+      const challenge = apiData.challenge_token;
+
+      const requiresPasscodeSetup = apiData.requires_passcode_setup || false;
+      const requiresTransactionPinSetup =
+        apiData.requires_transaction_pin_setup || false;
+
+      await Promise.all([
+        persistUserProfile(user),
+        persistToken(accessToken),
+        persistData(apiData),
+        persistChallenge(challenge),
+      ]);
+
+      if (!user) {
+        return rejectWithValue("User data not found in response");
+      }
+
+      if (!accessToken) {
+        console.log("ℹ️ No access_token in NewUserPasscode response");
+        const existingToken = await AsyncStorage.getItem("authToken");
+        if (!existingToken) {
+          return rejectWithValue("Session expired. Please login again.");
+        }
+      } else {
+        console.log("✅ NewUserPasscode returned access_token, saving to storage...");
+        await AsyncStorage.setItem("authToken", accessToken);
+        if (user) {
+          await AsyncStorage.setItem("userProfile", JSON.stringify(user));
+        }
+      }
+
+      return {
+        user: user,
+        token: accessToken,
+        requiresPasscodeSetup: requiresPasscodeSetup,
+        requiresTransactionPinSetup: requiresTransactionPinSetup,
+      };
+    } catch (error: any) {
+      console.error("NewUserPasscode error:", error);
+      return rejectWithValue(
+        error.data?.message || error.message || "Passcode setup error"
+      );
+    }
+  }
+);
+
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (payload: LoginPayload, { rejectWithValue }) => {
@@ -547,6 +684,75 @@ export const verifyUserOtp = createAsyncThunk(
     }
   }
 );
+
+export const verifyNewUserOtp = createAsyncThunk<
+  { message: string; verification_token: string },
+  VerifyNewOtpPayload,
+  { rejectValue: string }
+>(
+  "auth/verifyNewUserOtp",
+  async (payload, { rejectWithValue }) => {
+    try {
+      const url = VERIFY_NEWOTP_USERS_ENDPOINT();
+      const response = await safeFetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otp: payload.otp, phone: payload.phone }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `OTP verification failed (${response.status})`
+        );
+      }
+      return {
+        message:
+          data?.data?.message || data?.message || "OTP verified successfully",
+        verification_token: data?.data?.verification_token || "",
+      };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "OTP verification error"
+      );
+    }
+  }
+);
+
+export const ResendNewUserOtp = createAsyncThunk
+  (
+    "auth/ResendNewOtp",
+    async (payload: ResendNewOtpPayload, { rejectWithValue }) => {
+      try {
+        const url = RESEND_NEW_OTP_USERS_ENDPOINT();
+        const response = await safeFetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channel: payload.channel, phone: payload.phone }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          return rejectWithValue(
+            data?.data?.message ||
+            data?.message ||
+            `OTP verification failed (${response.status})`
+          );
+        }
+        return {
+          message: data?.data?.message || data?.message || "OTP verified successfully"
+        };
+      } catch (error: any) {
+        return rejectWithValue(
+          error.data?.message || error.message || "OTP verification error"
+        );
+      }
+    }
+  );
 
 export const MultiFactorOtp = createAsyncThunk(
   "auth/verify-mfa-otp",

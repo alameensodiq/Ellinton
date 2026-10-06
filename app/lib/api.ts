@@ -3,9 +3,15 @@ const BASE_URL = "https://api.ellingtonbank.com/api/v2";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
+const REGISTER_NEW_USERS_ENDPOINT = `${BASE_URL}/v3/onboarding/register`;
+const NEWPASSCODE_ENDPOINT = `${BASE_URL}/v3/onboarding/set-passcode`;
 const LOGIN_USERS_ENDPOINT = `${BASE_URL}/users/login`;
 const VERIFY_OTP_USERS_ENDPOINT = (userId: string) =>
   `${BASE_URL}/users/${userId}/verify-otp`;
+const VERIFY_NEWOTP_USERS_ENDPOINT = () =>
+  `${BASE_URL}/v3/onboarding/verify-otp`;
+const RESEND_NEW_OTP_USERS_ENDPOINT = () =>
+  `${BASE_URL}/v3/onboarding/resend-otp`;
 const RESEND_OTP_USERS_ENDPOINT = (userId: string) =>
   `${BASE_URL}/users/${userId}/resend-otp`;
 const VERIFY_BVN_USERS_ENDPOINT = (userId: string) =>
@@ -238,5 +244,9 @@ export {
   RESEND_DEVICE_OTP,
   LOAN_REPAYMENT_ENDPOINT,
   TRANSACTION_PIN_VALIDATE,
-  PHONE_VALIDATE_ENDPOINT
+  PHONE_VALIDATE_ENDPOINT,
+  REGISTER_NEW_USERS_ENDPOINT,
+  VERIFY_NEWOTP_USERS_ENDPOINT,
+  RESEND_NEW_OTP_USERS_ENDPOINT,
+  NEWPASSCODE_ENDPOINT
 };

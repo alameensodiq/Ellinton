@@ -15,10 +15,14 @@ import Button from "@/app/components/Button";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import CustomText from "@/app/components/CustomText";
 import InfoText from "@/app/components/InfoText";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { verifyNewUserOtp, ResendNewUserOtp } from "@/app/lib/thunks/authThunks";
+
 
 const VerifyPhoneOtpScreen = () => {
   const router = useRouter();
-  const { phone } = useLocalSearchParams();
+  const dispatch = useAppDispatch();
 
   const [otp, setOtp] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -26,6 +30,11 @@ const VerifyPhoneOtpScreen = () => {
   const [remainingTime, setRemainingTime] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [resendModalVisible, setResendModalVisible] = useState(false);
+  const { phone } = useLocalSearchParams<{
+    phone: string;
+  }>();
+
+  const { isLoading } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -41,28 +50,50 @@ const VerifyPhoneOtpScreen = () => {
     setResendModalVisible(true);
   };
 
-  const handleConfirmResend = (channel: "sms" | "whatsapp") => {
-    // Endpoint integration will be added here for channel (SMS or WhatsApp)
+  const handleConfirmResend = async (channel: "sms" | "whatsapp") => {
     setResendModalVisible(false);
-    setRemainingTime(60);
-    setCanResend(false);
-    setOtp("");
     setErrorMessage("");
+    try {
+      await dispatch(
+        ResendNewUserOtp({ phone: phone || "", channel })
+      ).unwrap();
+
+      setRemainingTime(60);
+      setCanResend(false);
+      setOtp("");
+    } catch (err: any) {
+      setErrorMessage(
+        typeof err === "string" ? err : err?.message || "Failed to resend OTP"
+      );
+    }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (otp.length < 6) {
       setErrorMessage("Please enter a valid 6-digit code.");
       return;
     }
+    setErrorMessage("");
     setIsSubmitting(true);
-    
-    // Simulate verification delay, then navigate
-    // In actual implementation, call endpoint here
-    setTimeout(() => {
+
+    try {
+      const result = await dispatch(
+        verifyNewUserOtp({ phone: phone || "", otp })
+      ).unwrap();
+
+      const verificationToken = result.verification_token;
+
       setIsSubmitting(false);
-      router.push("/(auth)/create-passcode");
-    }, 1000);
+      router.push({
+        pathname: "/(auth)/create-passcode",
+        params: { verification_token: verificationToken, phone },
+      });
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setErrorMessage(
+        typeof err === "string" ? err : err?.message || "OTP verification failed"
+      );
+    }
   };
 
   return (
@@ -95,9 +126,8 @@ const VerifyPhoneOtpScreen = () => {
             ) : null}
 
             <InfoText
-              text={`Code not received? ${
-                canResend ? "Send again" : `Resend in ${remainingTime}s`
-              }`}
+              text={`Code not received? ${canResend ? "Send again" : `Resend in ${remainingTime}s`
+                }`}
               actionText={canResend ? "Send again" : ""}
               onPress={canResend ? handleResendClick : undefined}
               disabled={!canResend}

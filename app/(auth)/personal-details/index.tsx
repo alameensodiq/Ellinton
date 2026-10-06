@@ -20,7 +20,14 @@ const PersonalDetailsScreen = () => {
   const [middleName, setMiddleName] = useState("");
 
   const handleContinue = () => {
-    router.push("/(auth)/phone-number-screen");
+    router.push({
+      pathname: "/(auth)/phone-number-screen",
+      params: {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        middleName: middleName.trim(),
+      },
+    });
   };
 
   const isFormValid = firstName.trim().length > 0 && lastName.trim().length > 0;

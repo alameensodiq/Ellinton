@@ -18,16 +18,22 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import Button from "@/app/components/Button";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import CustomText from "@/app/components/CustomText";
-import Header from "@/app/components/header-back";
-import { setupPasscode } from "@/app/lib/thunks/authThunks";
 import * as LocalAuthentication from "expo-local-authentication";
+import { NewUserPasscode } from "@/app/lib/thunks/authThunks";
+import Header from "@/app/components/header-back";
 
 const CreatePasscodeScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isLoading, requiresTransactionPinSetup, user } = useAppSelector(
+  const { isLoading } = useAppSelector(
     (state) => state.auth
   );
+
+
+  const { phone, verification_token } = useLocalSearchParams<{
+    phone: string;
+    verification_token: string;
+  }>();
 
 
   const [passcode, setPasscode] = useState("");
@@ -73,19 +79,16 @@ const CreatePasscodeScreen = () => {
         await AsyncStorage.setItem("loginBiometricEnabled", "false");
       }
 
+
+
       await dispatch(
-        setupPasscode({
+        NewUserPasscode({
+          phone: phone || "",
+          verification_token: verification_token || "",
           passcode,
+          confirm_passcode: confirmPasscode,
         })
       ).unwrap();
-
-      if (requiresTransactionPinSetup && user?.id) {
-        // router.replace({
-        //   pathname: "/(auth)/transacion-pin",
-        //   params: { userId: user.id, source: "login" },
-        // });
-        return;
-      }
 
       router.push({
         pathname: "/(root)/(tabs)",

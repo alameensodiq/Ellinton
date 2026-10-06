@@ -1,6 +1,10 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import {
+  NewUserPasscode,
+  ResendNewUserOtp,
+  verifyNewUserOtp,
   registerUser,
+  registerNewUser,
   loginUser,
   verifyUserOtp,
   MultiFactorOtp,
@@ -73,6 +77,7 @@ interface AuthState {
   requiresPasscodeSetup?: boolean;
   requiresTransactionPinSetup?: boolean;
   pendingUserId: string | null;
+  pendingNewUserId: string | null;
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -86,6 +91,7 @@ const initialState: AuthState = {
   user: null,
   token: null,
   pendingUserId: null,
+  pendingNewUserId: null,
   isLoading: false,
   error: null,
   isAuthenticated: false,
@@ -179,6 +185,30 @@ const authSlice = createSlice({
       });
 
     /** -----------------------------------------
+* REGISTER NEW USER
+* ----------------------------------------- */
+    builder
+      .addCase(registerNewUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        registerNewUser.fulfilled,
+        (
+          state,
+          action: PayloadAction<{ userId: string; message?: string }>
+        ) => {
+          state.isLoading = false;
+          state.pendingNewUserId = action.payload.userId;
+          state.error = null;
+        }
+      )
+      .addCase(registerNewUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    /** -----------------------------------------
      * LOGIN USER
      * ----------------------------------------- */
     builder
@@ -260,6 +290,41 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(resendUserOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    /** -----------------------------------------
+* PASSCODE USER 
+* ----------------------------------------- */
+    builder
+      .addCase(NewUserPasscode.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        NewUserPasscode.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            user: User;
+            token: string;
+            requiresPasscodeSetup: boolean;
+            requiresTransactionPinSetup: boolean;
+          }>
+        ) => {
+          state.isLoading = false;
+          state.user = { ...state.user, ...action.payload.user };
+          state.token = action.payload.token;
+          state.requiresPasscodeSetup = action.payload.requiresPasscodeSetup;
+          state.requiresTransactionPinSetup =
+            action.payload.requiresTransactionPinSetup;
+          state.pendingNewUserId = null;
+          state.isAuthenticated = true;
+          state.error = null;
+        }
+      )
+      .addCase(NewUserPasscode.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
@@ -519,6 +584,47 @@ const authSlice = createSlice({
         }
       )
       .addCase(verifyForgotOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    /** -----------------------------------------
+* VERIFY NEW OTP
+* ----------------------------------------- */
+    builder
+      .addCase(verifyNewUserOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        verifyNewUserOtp.fulfilled,
+        (state, action: PayloadAction<{ message: string; verification_token: string }>) => {
+          state.isLoading = false;
+          state.error = null;
+          // Note: verification_token is returned by unwrap() in component; not stored in state
+        }
+      )
+      .addCase(verifyNewUserOtp.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      });
+
+    /** -----------------------------------------
+* RESEND NEW OTP
+* ----------------------------------------- */
+    builder
+      .addCase(ResendNewUserOtp.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        ResendNewUserOtp.fulfilled,
+        (state) => {
+          state.isLoading = false;
+          state.error = null;
+        }
+      )
+      .addCase(ResendNewUserOtp.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
