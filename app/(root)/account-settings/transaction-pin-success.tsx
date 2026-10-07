@@ -23,12 +23,12 @@ const TransactionSuccessScreen = () => {
         <Text className="text-8xl">🎉</Text>
 
         <CustomText size="xxxl" className="mb-6 text-center">
-          Transaction pin updated successful
+          Transaction pin updated successfully
         </CustomText>
 
         <CustomText size="lg" className="mb- text-center" secondary>
-          {firstname}, your passwcode has been updated
-          
+          {firstname}, your pin has been updated
+
         </CustomText>
       </View>
 

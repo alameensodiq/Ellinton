@@ -210,9 +210,10 @@ export default function CablePayment() {
               <TextInputField
                 label="Enter Account ID/User ID"
                 value={accountId}
-                onChangeText={setAccountId}
+                onChangeText={(text) => setAccountId(text.slice(0, 11))}
                 keyboardType="default"
                 placeholder="Enter Account ID/User ID"
+                maxLength={11}
               />
 
               {selectedPackageData?.amount ? (
