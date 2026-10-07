@@ -215,9 +215,10 @@ export default function BettingBillPayment() {
           <TextInputField
             label="Enter User ID"
             value={meterNumber}
-            onChangeText={setMeterNumber}
+            onChangeText={(text) => setMeterNumber(text.slice(0, 11))}
             keyboardType="number-pad"
             placeholder="Enter User ID"
+            maxLength={11}
           />
 
           {predefinedAmount ? (

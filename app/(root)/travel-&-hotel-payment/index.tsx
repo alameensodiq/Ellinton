@@ -252,9 +252,10 @@ export default function InternetServicesPayment() {
                 <TextInputField
                   label="Enter Account ID/User ID"
                   value={accountId}
-                  onChangeText={handleAccountIdChange}
+                  onChangeText={(text) => handleAccountIdChange(text.slice(0, 11))}
                   keyboardType="default"
                   placeholder="Enter Account ID/User ID"
+                  maxLength={11}
                 />
 
                 {hasPackageAmount ? (

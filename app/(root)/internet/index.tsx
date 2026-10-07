@@ -236,8 +236,9 @@ export default function InternetServicesPayment() {
                 <TextInputField
                   label="Enter Account ID / User ID"
                   value={accountId}
-                  onChangeText={setAccountId}
+                  onChangeText={(text) => setAccountId(text.slice(0, 11))}
                   placeholder="Enter Account ID / User ID"
+                  maxLength={11}
                   rightIcon={
                     <Ionicons name="person-circle" size={24} color="white" />
                   }

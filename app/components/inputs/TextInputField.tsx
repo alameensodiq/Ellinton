@@ -24,8 +24,18 @@ const TextInputField: React.FC<TextInputFieldProps> = ({
   disabled = false,
   rightIcon,
   onRightIconPress,
+  onChangeText,
+  maxLength,
   ...props
 }) => {
+  const handleTextChange = (text: string) => {
+    if (maxLength !== undefined && text.length > maxLength) {
+      onChangeText(text.slice(0, maxLength));
+    } else {
+      onChangeText(text);
+    }
+  };
+
   return (
     <View className="mb-6">
       <Text className="text-white text-sm mb-3">{label}</Text>
@@ -36,6 +46,8 @@ const TextInputField: React.FC<TextInputFieldProps> = ({
       >
         <TextInput
           {...props}
+          maxLength={maxLength}
+          onChangeText={handleTextChange}
           editable={!disabled}
           placeholderTextColor="#999999"
           className="flex-1 text-white text-base font-bold h-full"

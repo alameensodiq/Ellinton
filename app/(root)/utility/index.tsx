@@ -219,9 +219,10 @@ export default function UtilityBillPayment() {
           <TextInputField
             label="Enter meter number"
             value={meterNumber}
-            onChangeText={setMeterNumber}
+            onChangeText={(text) => setMeterNumber(text.slice(0, 11))}
             keyboardType="number-pad"
             placeholder="Enter meter number"
+            maxLength={11}
           />
 
           {predefinedAmount ? (
