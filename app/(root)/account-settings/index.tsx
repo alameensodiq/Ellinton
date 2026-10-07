@@ -138,7 +138,7 @@ const AccountSettings = () => {
   const handleResetTransactionPin = async () => {
     try {
       await dispatch(ResetPinOtp()).unwrap();
-        router.push("/(root)/account-settings/reset-transaction-pin");
+      router.push("/(root)/account-settings/reset-transaction-pin");
     } catch (error) {
       console.error("Failed to send OTP:", error);
     }
@@ -367,7 +367,7 @@ const AccountSettings = () => {
     <CustomText secondary className="text-center text-sm leading-5">
       To reset your passcode, we will send a verification code to your
       registered email address. You will need to provide this code to reset your
-      PIN.
+      Passcode.
     </CustomText>
   );
 

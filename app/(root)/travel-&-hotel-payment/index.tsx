@@ -45,35 +45,50 @@ export default function InternetServicesPayment() {
   const [accountId, setAccountId] = useState("");
   const [customAmount, setCustomAmount] = useState("");
   const [validating, setValidating] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
-  // const safeProviders = useMemo(() => providers ?? [], [providers]);
-  // const safePackages = useMemo(() => packages ?? [], [packages]);
+  const safeProviders = useMemo(() =>
+    Array.isArray(providers) ? providers : [],
+    [providers]);
 
-  const safeProviders = useMemo(() => 
-  Array.isArray(providers) ? providers : [], 
-[providers]);
-
-const safePackages = useMemo(() => 
-  Array.isArray(packages) ? packages : [], 
-[packages]);
+  const safePackages = useMemo(() =>
+    Array.isArray(packages) ? packages : [],
+    [packages]);
 
   const isLoading =
-    providersStatus === "loading" || packagesStatus === "loading";
+    providersStatus === "loading" || packagesStatus === "loading" || validating;
+
+  const displayError = validationError || ((providersStatus === "failed" || packagesStatus === "failed") ? error : null);
+
+  const clearAllErrors = useCallback(() => {
+    setValidationError(null);
+    if (error) {
+      dispatch(clearError());
+    }
+  }, [dispatch, error]);
 
   useEffect(() => {
     dispatch(clearError());
+    return () => {
+      dispatch(clearError());
+    };
   }, [dispatch]);
 
   useFocusEffect(
     useCallback(() => {
+      setValidationError(null);
       dispatch(clearError());
+      return () => {
+        setValidationError(null);
+        dispatch(clearError());
+      };
     }, [dispatch])
   );
 
   useEffect(() => {
-     dispatch(clearProviders());
-     dispatch(clearPackages());
-    dispatch(getBillerProviders({ type: "travel" })).catch(() => {});
+    dispatch(clearProviders());
+    dispatch(clearPackages());
+    dispatch(getBillerProviders({ type: "travel" })).catch(() => { });
   }, [dispatch]);
 
   useEffect(() => {
@@ -81,9 +96,10 @@ const safePackages = useMemo(() =>
       dispatch(clearPackages());
       setSelectedProduct("");
       setCustomAmount("");
-      dispatch(getPackages({ slug: selectedService })).catch(() => {});
+      clearAllErrors();
+      dispatch(getPackages({ slug: selectedService })).catch(() => { });
     }
-  }, [selectedService, dispatch]);
+  }, [selectedService, dispatch, clearAllErrors]);
 
   const serviceOptions = useMemo(
     () =>
@@ -128,36 +144,31 @@ const safePackages = useMemo(() =>
 
   const handleAccountIdChange = (text: string) => {
     setAccountId(text);
-    if (error) {
-      dispatch(clearError());
-    }
+    clearAllErrors();
   };
 
   const handleCustomAmountChange = (text: string) => {
     setCustomAmount(text);
-    if (error) {
-      dispatch(clearError());
-    }
+    clearAllErrors();
   };
 
   const handleServiceChange = (value: string) => {
     setSelectedService(value);
-    if (error) {
-      dispatch(clearError());
-    }
+    clearAllErrors();
   };
 
   const handleProductChange = (value: string) => {
     setSelectedProduct(value);
-    if (error) {
-      dispatch(clearError());
-    }
+    clearAllErrors();
   };
 
   const handleContinue = async () => {
     if (!selectedProviderData || !selectedPackageData || !accountId) return;
 
     setValidating(true);
+    setValidationError(null);
+    dispatch(clearError());
+
     try {
       await dispatch(
         validateBillCustomer({
@@ -182,7 +193,9 @@ const safePackages = useMemo(() =>
           packageSlug: selectedPackageData.slug,
         },
       });
-    } catch (error) {
+    } catch (err: any) {
+      const message = typeof err === "string" ? err : err?.message || err?.error || "Validation failed";
+      setValidationError(message);
     } finally {
       setValidating(false);
     }
@@ -214,9 +227,9 @@ const safePackages = useMemo(() =>
               showsVerticalScrollIndicator={false}
             >
               <View className="flex-1 p-4">
-                {((providersStatus === "failed" || packagesStatus === "failed") && error) && (
+                {Boolean(displayError) && (
                   <View className="bg-red-500/10 border border-red-500 rounded-lg p-3 mb-4">
-                    <Text className="text-red-500 text-sm">{error}</Text>
+                    <Text className="text-red-500 text-sm">{displayError}</Text>
                   </View>
                 )}
 

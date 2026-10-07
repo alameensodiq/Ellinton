@@ -194,14 +194,15 @@ export default function AddFriendsScreen() {
           </CustomText>
 
           {/* search input */}
-          <View className="bg-primary-400 rounded-2xl px-4 py-3 flex-row items-center gap-2 border border-white/10">
+          <View className="bg-primary-400 rounded-2xl px-4 h-14 flex-row items-center gap-2 border border-white/10">
             <Ionicons name="search" size={18} color="#fff" />
             <TextInput
               value={query}
               onChangeText={doSearch}
               placeholder="Search by name, phone, account"
               placeholderTextColor="rgba(255,255,255,0.5)"
-              className="flex-1 text-white"
+              className="flex-1 text-white text-base h-full"
+              style={{ paddingVertical: 0, textAlignVertical: "center" }}
               autoCapitalize="none"
             />
           </View>

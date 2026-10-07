@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "172",
+      "buildNumber": "173",
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -49,7 +49,7 @@
     },
     "android": {
       "package": "com.ellingtonmfb.app",
-      "versionCode": 152,
+      "versionCode": 154,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
@@ -108,8 +108,8 @@
           },
           "android": {
             "ndkVersion": "26.1.10909125",
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
             "abiFilters": [
               "arm64-v8a"
             ],
