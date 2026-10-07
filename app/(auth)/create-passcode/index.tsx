@@ -56,6 +56,8 @@ const CreatePasscodeScreen = () => {
     }
 
     try {
+      // Always save userPin for biometric / quick passcode logins
+      await AsyncStorage.setItem("userPin", passcode);
       if (enableBiometric) {
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -68,15 +70,13 @@ const CreatePasscodeScreen = () => {
             setError("Biometric authentication failed. Please try again.");
             return;
           }
-          // Save passcode & biometric flag for future login
-          await AsyncStorage.setItem("userPin", passcode);
           await AsyncStorage.setItem("loginBiometricEnabled", "true");
         } else {
           setError("Biometrics not available or enrolled on this device.");
           return;
         }
       } else {
-        await AsyncStorage.setItem("loginBiometricEnabled", "false");
+        await AsyncStorage.setItem("loginBiometricEnabled", "true");
       }
 
 
@@ -91,7 +91,7 @@ const CreatePasscodeScreen = () => {
       ).unwrap();
 
       router.push({
-        pathname: "/(root)/(tabs)",
+        pathname: "/(auth)/login",
       });
     } catch (err: any) {
       setError(err || "Setup failed");

@@ -45,7 +45,7 @@ export default function CurrentUser() {
   const [showPasscode, setShowPasscode] = useState(false);
   const [isCheckingBiometrics, setIsCheckingBiometrics] = useState(true);
 
-  const email = user?.email || "";
+  const userIdentifier = user?.email || user?.phone || "";
   const FingerprintIcon = svgIcons.fingerprint;
   const FaceIcon = svgIcons.faceicon;
   const BiometricIcon = Platform.OS === "ios" ? FaceIcon : FingerprintIcon;
@@ -79,7 +79,7 @@ export default function CurrentUser() {
       try {
         const savedPin =
           pinOverride || (await AsyncStorage.getItem("userPin"));
-        if (!savedPin || !email || isLoading) return;
+        if (!savedPin || !userIdentifier || isLoading) return;
 
         const authResult = await LocalAuthentication.authenticateAsync({
           promptMessage: `Log in with ${biometricLabel}`,
@@ -89,9 +89,12 @@ export default function CurrentUser() {
 
         if (authResult.success) {
           const deviceId = await getDeviceId();
-          await dispatch(
-            loginUser({ email, passcode: savedPin, device_id: deviceId })
-          ).unwrap();
+          const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userIdentifier) || userIdentifier.includes("@");
+          const payload = isEmail
+            ? { email: userIdentifier.toLowerCase(), passcode: savedPin, device_id: deviceId }
+            : { phone: userIdentifier, passcode: savedPin, device_id: deviceId };
+
+          await dispatch(loginUser(payload)).unwrap();
 
           const token = await registerForPushNotificationsAsync();
           if (token) {
@@ -102,7 +105,7 @@ export default function CurrentUser() {
         console.error("Biometric authentication failed:", err);
       }
     },
-    [biometricLabel, dispatch, email, isLoading]
+    [biometricLabel, dispatch, userIdentifier, isLoading]
   );
 
   useEffect(() => {
@@ -159,18 +162,18 @@ export default function CurrentUser() {
       }
     };
 
-    if (user && email) {
+    if (user && userIdentifier) {
       checkBiometricSupport();
     } else {
       setIsCheckingBiometrics(false);
     }
-  }, [user, email]);
+  }, [user, userIdentifier]);
 
   useEffect(() => {
     if (passcode.length === 6 && !isLoading) {
       const t = setTimeout(async () => {
         try {
-          if (!email) {
+          if (!userIdentifier) {
             setError(true);
             Vibration.vibrate(400);
             setPasscode("");
@@ -179,9 +182,12 @@ export default function CurrentUser() {
 
           if (isLoading) return;
           const [deviceId] = await Promise.all([getDeviceId()]);
-          await dispatch(
-            loginUser({ email, passcode, device_id: deviceId })
-          ).unwrap();
+          const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userIdentifier) || userIdentifier.includes("@");
+          const payload = isEmail
+            ? { email: userIdentifier.toLowerCase(), passcode, device_id: deviceId }
+            : { phone: userIdentifier, passcode, device_id: deviceId };
+
+          await dispatch(loginUser(payload)).unwrap();
 
           // Save PIN for future biometric logins
           await AsyncStorage.setItem("userPin", passcode);
@@ -207,7 +213,7 @@ export default function CurrentUser() {
 
       return () => clearTimeout(t);
     }
-  }, [passcode, dispatch, email, isLoading]);
+  }, [passcode, dispatch, userIdentifier, isLoading]);
 
   const userName = user?.full_name || user?.name || "User";
   const userAvatar = user?.passport;

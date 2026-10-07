@@ -676,7 +676,7 @@ export default function AuthWrapper() {
   useEffect(() => {
     if (!isRestoring && !isLoadingData) {
       setReady(true);
-      SplashScreen.hideAsync().catch(() => {});
+      SplashScreen.hideAsync().catch(() => { });
     }
   }, [isRestoring, isLoadingData]);
 
@@ -777,28 +777,28 @@ export default function AuthWrapper() {
         }
 
         // Normal flow based on user status
-        if (user?.status === "otp_verified") {
-          router.replace("/(auth)/profile-update");
-          return;
-        }
+        // if (user?.status === "otp_verified") {
+        //   router.replace("/(auth)/profile-update");
+        //   return;
+        // }
 
-        if (user?.status === "bvn_verified") {
-          router.replace("/(auth)/facial-verification");
-          return;
-        }
+        // if (user?.status === "bvn_verified") {
+        //   router.replace("/(auth)/facial-verification");
+        //   return;
+        // }
 
-        if (requiresPasscodeSetup) {
-          router.replace("/(auth)/create-passcode");
-          return;
-        }
+        // if (requiresPasscodeSetup) {
+        //   router.replace("/(auth)/create-passcode");
+        //   return;
+        // }
 
-        if (requiresTransactionPinSetup && user?.id) {
-          router.replace({
-            pathname: "/(auth)/transacion-pin",
-            params: { userId: user.id, source: "login" }
-          });
-          return;
-        }
+        // if (requiresTransactionPinSetup && user?.id) {
+        //   router.replace({
+        //     pathname: "/(auth)/transacion-pin",
+        //     params: { userId: user.id, source: "login" }
+        //   });
+        //   return;
+        // }
 
         router.replace("/(root)/(tabs)");
         return;

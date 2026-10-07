@@ -307,20 +307,20 @@ const authSlice = createSlice({
         (
           state,
           action: PayloadAction<{
-            user: User;
-            token: string;
-            requiresPasscodeSetup: boolean;
-            requiresTransactionPinSetup: boolean;
+            message?: string;
+            user_id?: string;
+            account_number?: string | null;
+            user?: User;
+            token?: string;
           }>
         ) => {
           state.isLoading = false;
-          state.user = { ...state.user, ...action.payload.user };
-          state.token = action.payload.token;
-          state.requiresPasscodeSetup = action.payload.requiresPasscodeSetup;
-          state.requiresTransactionPinSetup =
-            action.payload.requiresTransactionPinSetup;
-          state.pendingNewUserId = null;
-          state.isAuthenticated = true;
+          if (action.payload?.user) {
+            state.user = { ...state.user, ...action.payload.user };
+          }
+          if (action.payload?.token) {
+            state.token = action.payload.token;
+          }
           state.error = null;
         }
       )

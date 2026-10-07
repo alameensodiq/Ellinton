@@ -152,7 +152,8 @@ interface ForgotPasscodePayload {
 }
 
 interface LoginPayload {
-  email: string;
+  email?: string;
+  phone?: string;
   passcode: string;
   device_id: string;
 }
@@ -536,49 +537,24 @@ export const NewUserPasscode = createAsyncThunk(
         );
       }
 
-      if (!data?.data) {
-        return rejectWithValue("Invalid response structure");
+      const apiData = data?.data || data;
+
+      if (apiData?.user) {
+        await persistUserProfile(apiData.user);
       }
 
-      const apiData = data.data;
-      const accessToken = apiData.access_token || apiData.token;
-      const user = apiData.user;
-      const challenge = apiData.challenge_token;
-
-      const requiresPasscodeSetup = apiData.requires_passcode_setup || false;
-      const requiresTransactionPinSetup =
-        apiData.requires_transaction_pin_setup || false;
-
-      await Promise.all([
-        persistUserProfile(user),
-        persistToken(accessToken),
-        persistData(apiData),
-        persistChallenge(challenge),
-      ]);
-
-      if (!user) {
-        return rejectWithValue("User data not found in response");
-      }
-
-      if (!accessToken) {
-        console.log("ℹ️ No access_token in NewUserPasscode response");
-        const existingToken = await AsyncStorage.getItem("authToken");
-        if (!existingToken) {
-          return rejectWithValue("Session expired. Please login again.");
-        }
-      } else {
-        console.log("✅ NewUserPasscode returned access_token, saving to storage...");
+      const accessToken = apiData?.access_token || apiData?.token;
+      if (accessToken) {
+        await persistToken(accessToken);
         await AsyncStorage.setItem("authToken", accessToken);
-        if (user) {
-          await AsyncStorage.setItem("userProfile", JSON.stringify(user));
-        }
       }
 
       return {
-        user: user,
+        message: apiData?.message || "Passcode set successfully",
+        user_id: apiData?.user_id,
+        account_number: apiData?.account_number,
+        user: apiData?.user,
         token: accessToken,
-        requiresPasscodeSetup: requiresPasscodeSetup,
-        requiresTransactionPinSetup: requiresTransactionPinSetup,
       };
     } catch (error: any) {
       console.error("NewUserPasscode error:", error);

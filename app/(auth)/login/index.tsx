@@ -36,7 +36,7 @@ import {
   registerDeviceWithBackend,
   registerForPushNotificationsAsync
 } from "@/app/lib/notification.service";
-import { getDeviceId } from "@/app/lib/utils";
+import { getDeviceId, formatPhoneNumber } from "@/app/lib/utils";
 import * as LocalAuthentication from "expo-local-authentication";
 
 const FingerprintIcon = svgIcons.fingerprint;
@@ -151,25 +151,27 @@ const Login = () => {
 
     // Validation for passcode input
     if (!email || !pin || pin.length !== 6) {
-      setCustomError("Please enter your email and 6-digit passcode.");
+      setCustomError("Please enter your email or phone number and 6-digit passcode.");
       setShowErrorModal(true);
       return;
     }
 
     try {
       const deviceId = await getDeviceId();
+      const trimmedInput = email.trim();
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedInput) || trimmedInput.includes("@");
 
-      await dispatch(
-        loginUser({
-          email: email.trim().toLowerCase(),
-          passcode: pin,
-          device_id: deviceId
-        })
-      ).unwrap();
+      const payload = isEmail
+        ? { email: trimmedInput.toLowerCase(), passcode: pin, device_id: deviceId }
+        : { phone: formatPhoneNumber(trimmedInput), passcode: pin, device_id: deviceId };
+      console.log(payload)
+
+      await dispatch(loginUser(payload)).unwrap();
 
       await AsyncStorage.setItem("userPin", pin);
-      await AsyncStorage.setItem("userEmail", email.trim().toLowerCase());
+      await AsyncStorage.setItem("userEmail", trimmedInput);
       await AsyncStorage.setItem("hasLoggedInBefore", "true");
+      await AsyncStorage.setItem("loginBiometricEnabled", "true");
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const token = await registerForPushNotificationsAsync();
@@ -180,7 +182,7 @@ const Login = () => {
         }
       }
     } catch (error) {
-      console.error("❌ Login failed:", error);
+      // console.error("❌ Login failed:", error);
     }
   };
 
@@ -213,17 +215,18 @@ const Login = () => {
       ]);
 
       const parsedProfile = userProfile ? JSON.parse(userProfile) : null;
-      const targetEmail = (
+      const targetIdentifier = (
         email ||
         storedEmail ||
         parsedProfile?.email ||
+        parsedProfile?.phone ||
         ""
-      ).trim().toLowerCase();
+      ).trim();
       const targetPin = pin || savedPin;
 
-      if (!targetEmail || !targetPin) {
+      if (!targetIdentifier || !targetPin) {
         setCustomError(
-          "No saved passcode found. Please enter your email and passcode."
+          "No saved passcode found. Please enter your email or phone number and passcode."
         );
         setUseBiometric(false);
         setShowErrorModal(true);
@@ -282,14 +285,13 @@ const Login = () => {
       }
 
       const deviceId = await getDeviceId();
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetIdentifier) || targetIdentifier.includes("@");
 
-      await dispatch(
-        loginUser({
-          email: targetEmail,
-          passcode: targetPin,
-          device_id: deviceId,
-        })
-      ).unwrap();
+      const payload = isEmail
+        ? { email: targetIdentifier.toLowerCase(), passcode: targetPin, device_id: deviceId }
+        : { phone: formatPhoneNumber(targetIdentifier), passcode: targetPin, device_id: deviceId };
+
+      await dispatch(loginUser(payload)).unwrap();
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -388,10 +390,10 @@ const Login = () => {
               ) : (
                 <>
                   <TextInputField
-                    label="Email"
-                    placeholder="Enter your email address"
+                    label="Email or Phone Number"
+                    placeholder="Enter your email or phone number"
                     value={email}
-                    keyboardType="email-address"
+                    keyboardType="default"
                     onChangeText={handleEmailChange}
                     onFocus={() => setInputFocused(true)}
                     onBlur={() => setInputFocused(false)}

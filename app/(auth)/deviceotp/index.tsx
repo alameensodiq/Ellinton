@@ -279,7 +279,7 @@ const DeviceOtpScreen = () => {
               </CustomText>
             )}
             <CustomText secondary className="mb-2 mt-6">
-              Email Otp
+              SMS Otp
             </CustomText>
             <OtpInput
               digitCount={6}
@@ -296,9 +296,8 @@ const DeviceOtpScreen = () => {
             )}
 
             <InfoText
-              text={`Code not received? ${
-                canResend ? "Send again" : `Resend in ${remainingTime}s`
-              }`}
+              text={`Code not received? ${canResend ? "Send again" : `Resend in ${remainingTime}s`
+                }`}
               actionText={canResend ? "Send again" : ""}
               onPress={canResend ? handleResend : undefined}
               disabled={!canResend}

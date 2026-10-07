@@ -1246,6 +1246,25 @@ const formatNigerianPhone = (input: string): string => {
   return digits ? `+234${digits}` : "";
 };
 
+const formatPhoneNumber = (phone: string): string => {
+  let cleaned = phone.trim();
+  if (!cleaned) return "";
+
+  if (cleaned.startsWith("0")) {
+    cleaned = cleaned.substring(1);
+  }
+
+  if (cleaned.substring(0, 4) !== "+234") {
+    if (cleaned.startsWith("234")) {
+      cleaned = "+" + cleaned;
+    } else {
+      cleaned = "+234" + cleaned;
+    }
+  }
+
+  return cleaned;
+};
+
 
 
 const getDeviceId = async (): Promise<string> => {
@@ -1462,6 +1481,7 @@ export {
   stateOptions,
   formatMoney,
   formatNigerianPhone,
+  formatPhoneNumber,
   getDeviceId,
   clearDeviceId
 };
