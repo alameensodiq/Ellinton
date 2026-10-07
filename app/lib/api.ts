@@ -1,111 +1,111 @@
-const BASE_URL = "https://api.ellingtonbank.com/api/v2";
-// const BASE_URL = "https://stagingapi.ellingtonbank.com/api/v2";
+// const BASE_URL = "https://api.ellingtonbank.com/api/";
+const BASE_URL = "https://stagingapi.ellingtonbank.com/api/";
 
 //users endpoint
-const REGISTER_USERS_ENDPOINT = `${BASE_URL}/users/register`;
-const REGISTER_NEW_USERS_ENDPOINT = `${BASE_URL}/v3/onboarding/register`;
-const NEWPASSCODE_ENDPOINT = `${BASE_URL}/v3/onboarding/set-passcode`;
-const LOGIN_USERS_ENDPOINT = `${BASE_URL}/users/login`;
+const REGISTER_USERS_ENDPOINT = `${BASE_URL}v2/users/register`;
+const REGISTER_NEW_USERS_ENDPOINT = `${BASE_URL}v3/onboarding/register`;
+const NEWPASSCODE_ENDPOINT = `${BASE_URL}v3/onboarding/set-passcode`;
+const LOGIN_USERS_ENDPOINT = `${BASE_URL}v2/users/login`;
 const VERIFY_OTP_USERS_ENDPOINT = (userId: string) =>
-  `${BASE_URL}/users/${userId}/verify-otp`;
+  `${BASE_URL}v2/users/${userId}/verify-otp`;
 const VERIFY_NEWOTP_USERS_ENDPOINT = () =>
-  `${BASE_URL}/v3/onboarding/verify-otp`;
+  `${BASE_URL}v3/onboarding/verify-otp`;
 const RESEND_NEW_OTP_USERS_ENDPOINT = () =>
-  `${BASE_URL}/v3/onboarding/resend-otp`;
+  `${BASE_URL}v3/onboarding/resend-otp`;
 const RESEND_OTP_USERS_ENDPOINT = (userId: string) =>
-  `${BASE_URL}/users/${userId}/resend-otp`;
+  `${BASE_URL}v2/users/${userId}/resend-otp`;
 const VERIFY_BVN_USERS_ENDPOINT = (userId: string) =>
-  `${BASE_URL}/users/${userId}/verify-bvn`;
+  `${BASE_URL}v2/users/${userId}/verify-bvn`;
 const VERIFY_FACIAL_USERS_ENDPOINT = (userId: string) =>
-  `${BASE_URL}/users/${userId}/verify-facial`;
+  `${BASE_URL}v2/users/${userId}/verify-facial`;
 const CREATE_ACCOUNT_USERS_ENDPOINT = (userId: string) =>
-  `${BASE_URL}/users/${userId}/create-account`;
+  `${BASE_URL}v2/users/${userId}/create-account`;
 const CREATE_TRANSACTION_PIN_USERS_ENDPOINT = (userId: string) =>
-  `${BASE_URL}/users/${userId}/create-transaction-pin`;
-const SEARCH_USERS_ENDPOINT = `${BASE_URL}/users/search`;
-const FORGET_PASSCODE_VERIFY_OTP_AUTH_ENDPOINT = `${BASE_URL}/auth/forgot-passcode/verify-otp`;
+  `${BASE_URL}v2/users/${userId}/create-transaction-pin`;
+const SEARCH_USERS_ENDPOINT = `${BASE_URL}v2/users/search`;
+const FORGET_PASSCODE_VERIFY_OTP_AUTH_ENDPOINT = `${BASE_URL}v2/auth/forgot-passcode/verify-otp`;
 
 //auth
-const SETUP_PASSCODE_AUTH_ENDPOINT = `${BASE_URL}/auth/setup-passcode`;
-const MULTI_FACTOR_OTP_ENDPOINT = `${BASE_URL}/auth/verify-mfa-otp`;
-const DEVICE_ENDPOINT = `${BASE_URL}/auth/verify-device`;
-const RESEND_DEVICE_OTP = `${BASE_URL}/auth/resend-device-otp`;
-const LOGOUT_AUTH_ENDPOINT = `${BASE_URL}/auth/logout`;
-const FORGET_PASSCODE_AUTH_ENDPOINT = `${BASE_URL}/auth/forgot-passcode`;
-const FORGET_PASSCODE_RESET_AUTH_ENDPOINT = `${BASE_URL}/auth/forgot-passcode/reset`;
-const CHANGE_PASSCODE_AUTH_ENDPOINT = `${BASE_URL}/auth/change-passcode`;
+const SETUP_PASSCODE_AUTH_ENDPOINT = `${BASE_URL}v2/auth/setup-passcode`;
+const MULTI_FACTOR_OTP_ENDPOINT = `${BASE_URL}v2/auth/verify-mfa-otp`;
+const DEVICE_ENDPOINT = `${BASE_URL}v2/auth/verify-device`;
+const RESEND_DEVICE_OTP = `${BASE_URL}v2/auth/resend-device-otp`;
+const LOGOUT_AUTH_ENDPOINT = `${BASE_URL}v2/auth/logout`;
+const FORGET_PASSCODE_AUTH_ENDPOINT = `${BASE_URL}v2/auth/forgot-passcode`;
+const FORGET_PASSCODE_RESET_AUTH_ENDPOINT = `${BASE_URL}v2/auth/forgot-passcode/reset`;
+const CHANGE_PASSCODE_AUTH_ENDPOINT = `${BASE_URL}v2/auth/change-passcode`;
 
 //profile
-const GET_USER_PROFILE_ENDPOINT = `${BASE_URL}/users/me`;
-const UPDATE_USER_PROFILE_ENDPOINT = `${BASE_URL}/users/me`;
-const UPDATE_USER_ADDRESS_PROFILE_ENDPOINT = `${BASE_URL}/users/address`;
-const UPDATE_USER_PROFILE_PASSWORD_ENDPOINT = `${BASE_URL}/users/profile/passport`;
-export const CHANGE_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}/users/change-transaction-pin`;
-export const RESET_OTP_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}/users/transaction-pin/forgot`;
-export const RESET_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}/users/transaction-pin/reset`;
-export const RESET_MFA_USERS_ENDPOINT = `${BASE_URL}/users/mfa`;
+const GET_USER_PROFILE_ENDPOINT = `${BASE_URL}v2/users/me`;
+const UPDATE_USER_PROFILE_ENDPOINT = `${BASE_URL}v2/users/me`;
+const UPDATE_USER_ADDRESS_PROFILE_ENDPOINT = `${BASE_URL}v2/users/address`;
+const UPDATE_USER_PROFILE_PASSWORD_ENDPOINT = `${BASE_URL}v2/users/profile/passport`;
+export const CHANGE_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}v2/users/change-transaction-pin`;
+export const RESET_OTP_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}v2/users/transaction-pin/forgot`;
+export const RESET_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}v2/users/transaction-pin/reset`;
+export const RESET_MFA_USERS_ENDPOINT = `${BASE_URL}v2/users/mfa`;
 
 //kyc
-const KYC_STATUS_ENDPOINT = `${BASE_URL}/kyc/status`;
-const KYC_NIN_VERIFY_ENDPOINT = `${BASE_URL}/kyc/verify-nin`;
-const KYC_NEXT_OF_KIN_ENDPOINT = `${BASE_URL}/kyc/next-of-kin`;
-const KYC_SIGNATURE_ENDPOINT = `${BASE_URL}/kyc/signature`;
-const KYC_SUMMARY_ENDPOINT = `${BASE_URL}/kyc/summary`;
-const KYC_SUBMIT_ENDPOINT = `${BASE_URL}/kyc/submit`;
-const KYC_UTILITY_BILL_ENDPOINT = `${BASE_URL}/kyc/utility-bill`;
-const KYC_TIER3_ENDPOINT = `${BASE_URL}/kyc/tier3/submit`;
-const KYC_UTILITY_BILL_URL_ENDPOINT = `${BASE_URL}/kyc/utility-bill-url`;
+const KYC_STATUS_ENDPOINT = `${BASE_URL}v2/kyc/status`;
+const KYC_NIN_VERIFY_ENDPOINT = `${BASE_URL}v2/kyc/verify-nin`;
+const KYC_NEXT_OF_KIN_ENDPOINT = `${BASE_URL}v2/kyc/next-of-kin`;
+const KYC_SIGNATURE_ENDPOINT = `${BASE_URL}v2/kyc/signature`;
+const KYC_SUMMARY_ENDPOINT = `${BASE_URL}v2/kyc/summary`;
+const KYC_SUBMIT_ENDPOINT = `${BASE_URL}v2/kyc/submit`;
+const KYC_UTILITY_BILL_ENDPOINT = `${BASE_URL}v2/kyc/utility-bill`;
+const KYC_TIER3_ENDPOINT = `${BASE_URL}v2/kyc/tier3/submit`;
+const KYC_UTILITY_BILL_URL_ENDPOINT = `${BASE_URL}v2/kyc/utility-bill-url`;
 
 //account
-const ACCOUNT_INFO_ENDPOINT = `${BASE_URL}/accounts/info`;
-const ACCOUNT_VALIDATE_NIP_ENDPOINT = `${BASE_URL}/accounts/validate/nip`;
-const ACCOUNT_VALIDATE_ELLINGLON_ENDPOINT = `${BASE_URL}/accounts/validate/ellington`;
-const BENEFICIARIES_ENDPOINT = `${BASE_URL}/beneficiaries/transfer`;
-const BANKS_ENDPOINT = `${BASE_URL}/utilities/banks`;
-const TRANSFER_SAME_BANK = `${BASE_URL}/transfers/intra-bank`;
-const TRANSACTION_PIN_VALIDATE = `${BASE_URL}/users/transaction-pin/validate`;
-const TRANSFER_OTHER_BANK = `${BASE_URL}/transfers/inter-bank`;
-export const FETCH_ACCOUNT_TRANSACTIONS = `${BASE_URL}/transactions/account`;
-export const FETCH_TRANSFER_FEE = `${BASE_URL}/transfer-fees/quote`;
+const ACCOUNT_INFO_ENDPOINT = `${BASE_URL}v2/accounts/info`;
+const ACCOUNT_VALIDATE_NIP_ENDPOINT = `${BASE_URL}v2/accounts/validate/nip`;
+const ACCOUNT_VALIDATE_ELLINGLON_ENDPOINT = `${BASE_URL}v2/accounts/validate/ellington`;
+const BENEFICIARIES_ENDPOINT = `${BASE_URL}v2/beneficiaries/transfer`;
+const BANKS_ENDPOINT = `${BASE_URL}v2/utilities/banks`;
+const TRANSFER_SAME_BANK = `${BASE_URL}v2/transfers/intra-bank`;
+const TRANSACTION_PIN_VALIDATE = `${BASE_URL}v2/users/transaction-pin/validate`;
+const TRANSFER_OTHER_BANK = `${BASE_URL}v2/transfers/inter-bank`;
+export const FETCH_ACCOUNT_TRANSACTIONS = `${BASE_URL}v2/transactions/account`;
+export const FETCH_TRANSFER_FEE = `${BASE_URL}v2/transfer-fees/quote`;
 export const FETCH_SINGLE_ACCOUNT_TRANSACTION = (reference: string) =>
-  `${BASE_URL}/transactions/${reference}/single`;
+  `${BASE_URL}v2/transactions/${reference}/single`;
 
 //cards
-const CARD_INITIATE_PAYMENT_ENDPOINT = `${BASE_URL}/cards/initiate-payment`;
-const CARD_FETCH_PHYSICAL_ENDPOINT = `${BASE_URL}/cards/physical-cards`;
-const CARD_REQUEST_PHYSICAL_ENDPOINT = `${BASE_URL}/cards/physical-cards/request`;
+const CARD_INITIATE_PAYMENT_ENDPOINT = `${BASE_URL}v2/cards/initiate-payment`;
+const CARD_FETCH_PHYSICAL_ENDPOINT = `${BASE_URL}v2/cards/physical-cards`;
+const CARD_REQUEST_PHYSICAL_ENDPOINT = `${BASE_URL}v2/cards/physical-cards/request`;
 
 //bills
-const BILLS_DATA_OPTIONS_ENDPOINT = `${BASE_URL}/bills/data/options`;
-const BILLS_VALIDATE_CUSTOMER_ENDPOINT = `${BASE_URL}/bills/data/validate-customer`;
-const BILLS_PAY_ENDPOINT = `${BASE_URL}/bills/pay-bill`;
-const BILLS_PROVIDERS_ENDPOINT = `${BASE_URL}/bills/get-providers`;
-const BILLS_PACKAGES_ENDPOINT = `${BASE_URL}/bills/get-packages`;
-const PHONE_VALIDATE_ENDPOINT = `${BASE_URL}/bills/validate-phone-number`;
+const BILLS_DATA_OPTIONS_ENDPOINT = `${BASE_URL}v2/bills/data/options`;
+const BILLS_VALIDATE_CUSTOMER_ENDPOINT = `${BASE_URL}v2/bills/data/validate-customer`;
+const BILLS_PAY_ENDPOINT = `${BASE_URL}v2/bills/pay-bill`;
+const BILLS_PROVIDERS_ENDPOINT = `${BASE_URL}v2/bills/get-providers`;
+const BILLS_PACKAGES_ENDPOINT = `${BASE_URL}v2/bills/get-packages`;
+const PHONE_VALIDATE_ENDPOINT = `${BASE_URL}v2/bills/validate-phone-number`;
 
 // virtual cards
-const VIRTUAL_CARD_REQUEST_ENDPOINT = `${BASE_URL}/virtual-cards/request`;
-const VIRTUAL_CARDS_FETCH_ALL_ENDPOINT = `${BASE_URL}/virtual-cards/customer/all`;
+const VIRTUAL_CARD_REQUEST_ENDPOINT = `${BASE_URL}v2/virtual-cards/request`;
+const VIRTUAL_CARDS_FETCH_ALL_ENDPOINT = `${BASE_URL}v2/virtual-cards/customer/all`;
 const VIRTUAL_CARD_FETCH_ONE_ENDPOINT = (id: string) =>
-  `${BASE_URL}/virtual-cards/customer/card/${id}`;
-const VIRTUAL_CARD_FUND_ENDPOINT = `${BASE_URL}/virtual-cards/fund`;
-const VIRTUAL_CARD_WITHDRAW_ENDPOINT = `${BASE_URL}/virtual-cards/withdraw`;
+  `${BASE_URL}v2/virtual-cards/customer/card/${id}`;
+const VIRTUAL_CARD_FUND_ENDPOINT = `${BASE_URL}v2/virtual-cards/fund`;
+const VIRTUAL_CARD_WITHDRAW_ENDPOINT = `${BASE_URL}v2/virtual-cards/withdraw`;
 const VIRTUAL_CARD_FREEZE_ENDPOINT = (id: string) =>
-  `${BASE_URL}/virtual-cards/customer/card/${id}/freeze`;
+  `${BASE_URL}v2/virtual-cards/customer/card/${id}/freeze`;
 const VIRTUAL_CARD_UNFREEZE_ENDPOINT = (id: string) =>
-  `${BASE_URL}/virtual-cards/customer/card/${id}/unfreeze`;
+  `${BASE_URL}v2/virtual-cards/customer/card/${id}/unfreeze`;
 
 // loans
-const LOAN_PRODUCTS_ENDPOINT = `${BASE_URL}/loans/products`;
-const LOAN_COMMERCIAL_BANKS_ENDPOINT = `${BASE_URL}/loans/commercial-banks`;
+const LOAN_PRODUCTS_ENDPOINT = `${BASE_URL}v2/loans/products`;
+const LOAN_COMMERCIAL_BANKS_ENDPOINT = `${BASE_URL}v2/loans/commercial-banks`;
 const LOAN_CREDIT_CHECK_ENDPOINT = `${BASE_URL}/loans/crc-credit-check`;
-const LOAN_CALCULATE_ENDPOINT = `${BASE_URL}/loans/calculate`;
-const LOAN_APPLY_ENDPOINT = `${BASE_URL}/loans/mida-execute`;
-const LOAN_REPAYMENT_ENDPOINT = `${BASE_URL}/loans`;
-const FETCH_USER_LOANS_ENDPOINT = `${BASE_URL}/loans`;
-const FETCH_SINGLE_LOAN_ENDPOINT = (id: string) => `${BASE_URL}/loans/${id}`;
+const LOAN_CALCULATE_ENDPOINT = `${BASE_URL}v2/loans/calculate`;
+const LOAN_APPLY_ENDPOINT = `${BASE_URL}v2/loans/mida-execute`;
+const LOAN_REPAYMENT_ENDPOINT = `${BASE_URL}v2/loans`;
+const FETCH_USER_LOANS_ENDPOINT = `${BASE_URL}v2/loans`;
+const FETCH_SINGLE_LOAN_ENDPOINT = (id: string) => `${BASE_URL}v2/loans/${id}`;
 
-const LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT = `${BASE_URL}/webhooks/loans/disbursement`;
+const LOAN_DISBURSEMENT_WEBHOOK_ENDPOINT = `${BASE_URL}v2/webhooks/loans/disbursement`;
 
 const STATEMENTS_REQUEST_ENDPOINT = `${BASE_URL}/statements/request`;
 const STATEMENTS_HISTORY_ENDPOINT = (page?: number, limit?: number) => {
@@ -113,43 +113,43 @@ const STATEMENTS_HISTORY_ENDPOINT = (page?: number, limit?: number) => {
   if (page) params.set("page", String(page));
   if (limit) params.set("limit", String(limit));
   const q = params.toString();
-  return q ? `${BASE_URL}/statements?${q}` : `${BASE_URL}/statements`;
+  return q ? `${BASE_URL}v2/statements?${q}` : `${BASE_URL}v2/statements`;
 };
-const STATEMENT_BY_ID_ENDPOINT = (id: string) => `${BASE_URL}/statements/${id}`;
+const STATEMENT_BY_ID_ENDPOINT = (id: string) => `${BASE_URL}v2/statements/${id}`;
 
 // gold
-const GOLD_DASHBOARD_ENDPOINT = `${BASE_URL}/gold/dashboard`;
-const GOLD_PRICE_ENDPOINT = `${BASE_URL}/gold/price`;
-const GOLD_PRICE_HISTORY_ENDPOINT = `${BASE_URL}/gold/price/history`;
-const GOLD_BUY_ENDPOINT = `${BASE_URL}/gold/buy`;
-const GOLD_SELL_ENDPOINT = `${BASE_URL}/gold/sell`;
-const GOLD_GIFT_ENDPOINT = `${BASE_URL}/gold/gift`;
-const GOLD_WITHDRAW_ENDPOINT = `${BASE_URL}/gold/withdraw`;
-const GOLD_TRANSACTIONS_ENDPOINT = `${BASE_URL}/gold/transactions`;
+const GOLD_DASHBOARD_ENDPOINT = `${BASE_URL}v2/gold/dashboard`;
+const GOLD_PRICE_ENDPOINT = `${BASE_URL}v2/gold/price`;
+const GOLD_PRICE_HISTORY_ENDPOINT = `${BASE_URL}v2/gold/price/history`;
+const GOLD_BUY_ENDPOINT = `${BASE_URL}v2/gold/buy`;
+const GOLD_SELL_ENDPOINT = `${BASE_URL}v2/gold/sell`;
+const GOLD_GIFT_ENDPOINT = `${BASE_URL}v2/gold/gift`;
+const GOLD_WITHDRAW_ENDPOINT = `${BASE_URL}v2/gold/withdraw`;
+const GOLD_TRANSACTIONS_ENDPOINT = `${BASE_URL}v2/gold/transactions`;
 const GOLD_TRANSACTION_BY_ID_ENDPOINT = (id: string) =>
-  `${BASE_URL}/gold/transactions/${id}`;
-const GOLD_TRIGGERS_ENDPOINT = `${BASE_URL}/gold/triggers`;
+  `${BASE_URL}v2/gold/transactions/${id}`;
+const GOLD_TRIGGERS_ENDPOINT = `${BASE_URL}v2/gold/triggers`;
 const GOLD_TRIGGER_BY_ID_ENDPOINT = (id: string) =>
-  `${BASE_URL}/gold/triggers/${id}`;
-const GOLD_SKR_ENDPOINT = `${BASE_URL}/gold/skr`;
+  `${BASE_URL}v2/gold/triggers/${id}`;
+const GOLD_SKR_ENDPOINT = `${BASE_URL}v2/gold/skr`;
 const LOAN_CONFIRM_CONSENT_ENDPOINT = (id: string) =>
-  `${BASE_URL}/loans/${id}/confirm-consent`;
+  `${BASE_URL}v2/loans/${id}/confirm-consent`;
 
 // savings
-const SAVINGS_PRODUCTS_ENDPOINT = `${BASE_URL}/savings/products`;
-const SAVINGS_CALCULATE_ESTIMATE_ENDPOINT = `${BASE_URL}/savings/calculate-estimate`;
-const SAVINGS_CREATE_ENDPOINT = `${BASE_URL}/savings`;
-const SAVINGS_FETCH_USER_ENDPOINT = `${BASE_URL}/savings`;
-const SAVINGS_TOP_UP_ENDPOINT = `${BASE_URL}/savings/top-up`;
-const SAVINGS_WITHDRAWAL_ENDPOINT = `${BASE_URL}/savings/withdrawal`;
-const SAVINGS_TRANSACTIONS_ENDPOINT = `${BASE_URL}/savings/transactions`;
-const OVERDRAFT_APPLY_ENDPOINT = `${BASE_URL}/overdrafts/apply`;
-const OVERDRAFT_ACCOUNT_ENDPOINT = `${BASE_URL}/overdrafts/account`;
-const OVERDRAFT_POSITION_ENDPOINT = `${BASE_URL}/overdrafts/account/position`;
+const SAVINGS_PRODUCTS_ENDPOINT = `${BASE_URL}v2/savings/products`;
+const SAVINGS_CALCULATE_ESTIMATE_ENDPOINT = `${BASE_URL}v2/savings/calculate-estimate`;
+const SAVINGS_CREATE_ENDPOINT = `${BASE_URL}v2/savings`;
+const SAVINGS_FETCH_USER_ENDPOINT = `${BASE_URL}v2/savings`;
+const SAVINGS_TOP_UP_ENDPOINT = `${BASE_URL}v2/savings/top-up`;
+const SAVINGS_WITHDRAWAL_ENDPOINT = `${BASE_URL}v2/savings/withdrawal`;
+const SAVINGS_TRANSACTIONS_ENDPOINT = `${BASE_URL}v2/savings/transactions`;
+const OVERDRAFT_APPLY_ENDPOINT = `${BASE_URL}v2/overdrafts/apply`;
+const OVERDRAFT_ACCOUNT_ENDPOINT = `${BASE_URL}v2/overdrafts/account`;
+const OVERDRAFT_POSITION_ENDPOINT = `${BASE_URL}v2/overdrafts/account/position`;
 
 // wallet
-const WALLET_BONUS_BALANCE_ENDPOINT = `${BASE_URL}/wallet/balance/bonus`;
-const WALLET_WITHDRAW_ENDPOINT = `${BASE_URL}/wallet/withdraw`;
+const WALLET_BONUS_BALANCE_ENDPOINT = `${BASE_URL}v2/wallet/balance/bonus`;
+const WALLET_WITHDRAW_ENDPOINT = `${BASE_URL}v2/wallet/withdraw`;
 
 export {
   BASE_URL,

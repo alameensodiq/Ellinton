@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   Text,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import OtpInput from "@/app/components/inputs/OtpInput";
@@ -23,6 +23,7 @@ import { verifyNewUserOtp, ResendNewUserOtp } from "@/app/lib/thunks/authThunks"
 const VerifyPhoneOtpScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
 
   const [otp, setOtp] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -153,7 +154,10 @@ const VerifyPhoneOtpScreen = () => {
           onRequestClose={() => setResendModalVisible(false)}
         >
           <View className="flex-1 bg-black/60 justify-end">
-            <View className="bg-primary-100 rounded-t-3xl p-6 border-t border-primary-300">
+            <View
+              className="bg-primary-100 rounded-t-3xl p-6 border-t border-primary-300"
+              style={{ paddingBottom: Math.max(insets.bottom + 36, 52) }}
+            >
               <View className="flex-row justify-between items-center mb-4">
                 <Text className="text-white text-lg font-bold">Resend OTP via</Text>
                 <TouchableOpacity onPress={() => setResendModalVisible(false)}>

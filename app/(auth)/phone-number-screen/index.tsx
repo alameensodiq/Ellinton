@@ -1,30 +1,35 @@
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
   View,
   ScrollView,
   KeyboardAvoidingView,
   StatusBar,
+  Modal,
+  TouchableOpacity,
+  Text,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import { Country, PhoneInput } from "@/app/components/inputs/PhoneInput";
 import InfoText from "@/app/components/InfoText";
 import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
-import { useLocalSearchParams } from "expo-router";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
-import { registerNewUser } from "@/app/lib/thunks/authThunks";
+import { registerNewUser, ResendNewUserOtp } from "@/app/lib/thunks/authThunks";
 
 const PhoneNumberScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
 
   const { isLoading } = useAppSelector((state) => state.auth);
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
+  const [resendModalVisible, setResendModalVisible] = useState(false);
   const { firstName, lastName, middleName } = useLocalSearchParams<{
     firstName: string;
     lastName: string;
@@ -207,7 +212,25 @@ const PhoneNumberScreen = () => {
     { code: "ZW", flag: "🇿🇼", dialCode: "+263", name: "Zimbabwe" },
   ];
 
+  const handleConfirmResend = async (channel: "sms" | "whatsapp") => {
+    setResendModalVisible(false);
+    setError("");
+    const fullPhone = `${selectedCountry.dialCode}${phoneNumber}`;
+    try {
+      await dispatch(
+        ResendNewUserOtp({ phone: fullPhone, channel })
+      ).unwrap();
 
+      router.push({
+        pathname: "/(auth)/verify-phone-otp",
+        params: { phone: fullPhone },
+      });
+    } catch (err: any) {
+      setError(
+        typeof err === "string" ? err : err?.message || "Failed to resend OTP"
+      );
+    }
+  };
 
   const handleContinue = async () => {
     const fullPhone = `${selectedCountry.dialCode}${phoneNumber}`;
@@ -230,10 +253,23 @@ const PhoneNumberScreen = () => {
         params: { phone: fullPhone },
       });
     } else if (registerNewUser.rejected.match(resultAction)) {
-      setError((resultAction.payload as string) || "Registration failed. Please try again.");
+      const payload = resultAction.payload as any;
+      const status = typeof payload === "object" ? payload?.status : null;
+      if (
+        status === 409 ||
+        payload?.statusCode === 409 ||
+        (typeof payload === "string" && payload.includes("409"))
+      ) {
+        setResendModalVisible(true);
+      } else {
+        setError(
+          typeof payload === "string"
+            ? payload
+            : payload?.message || "Registration failed. Please try again."
+        );
+      }
     }
   };
-
 
   return (
     <SafeAreaView className="flex-1 bg-primary-100 pt-4">
@@ -284,6 +320,49 @@ const PhoneNumberScreen = () => {
             disabled={!phoneNumber || isLoading}
           />
         </View>
+
+        <Modal
+          visible={resendModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setResendModalVisible(false)}
+        >
+          <View className="flex-1 bg-black/60 justify-end">
+            <View
+              className="bg-primary-100 rounded-t-3xl p-6 border-t border-primary-300"
+              style={{ paddingBottom: Math.max(insets.bottom + 36, 52) }}
+            >
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-white text-lg font-bold">Resend OTP via</Text>
+                <TouchableOpacity onPress={() => setResendModalVisible(false)}>
+                  <Ionicons name="close" size={24} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                className="flex-row items-center p-4 bg-primary-200 rounded-xl mb-3 border border-primary-300"
+                onPress={() => handleConfirmResend("sms")}
+              >
+                <Ionicons name="chatbox-ellipses-outline" size={24} color="#fff" />
+                <View className="ml-3">
+                  <Text className="text-white font-semibold text-base">Send via SMS</Text>
+                  <Text className="text-accent-100 text-xs">Receive standard text message OTP</Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-row items-center p-4 bg-primary-200 rounded-xl border border-primary-300"
+                onPress={() => handleConfirmResend("whatsapp")}
+              >
+                <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
+                <View className="ml-3">
+                  <Text className="text-white font-semibold text-base">Send via WhatsApp</Text>
+                  <Text className="text-accent-100 text-xs">Receive verification code on WhatsApp</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

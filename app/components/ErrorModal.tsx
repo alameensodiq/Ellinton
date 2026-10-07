@@ -7,11 +7,32 @@ const { width } = Dimensions.get("window");
 
 interface ErrorModalProps {
   visible: boolean;
-  title?: string;
-  message?: string;
+  title?: React.ReactNode;
+  message?: React.ReactNode;
   buttonText?: string;
   onDismiss: () => void;
 }
+
+const formatModalText = (content: any): React.ReactNode => {
+  if (content == null) return "";
+  if (typeof content === "string" || typeof content === "number" || typeof content === "boolean") {
+    return String(content);
+  }
+  if (React.isValidElement(content)) {
+    return content;
+  }
+  if (typeof content === "object") {
+    if (typeof content.message === "string") return content.message;
+    if (typeof content.error === "string") return content.error;
+    if (content.message) return formatModalText(content.message);
+    try {
+      return JSON.stringify(content);
+    } catch {
+      return String(content);
+    }
+  }
+  return String(content);
+};
 
 const ErrorModal: React.FC<ErrorModalProps> = ({
   visible,
@@ -33,11 +54,11 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
           style={{ width: Math.min(width - 24, 420) }}
         >
           <CustomText weight="bold" size="lg" className="text-center mb-2">
-            {title}
+            {formatModalText(title)}
           </CustomText>
 
           <CustomText size="lg" className="text-center leading-6 mt-4 mb-6">
-            {message}
+            {formatModalText(message)}
           </CustomText>
 
           <Button

@@ -445,7 +445,9 @@ const Login = () => {
           title="Login Error"
           message={
             customError ||
-            error ||
+            (typeof error === "string"
+              ? error
+              : (error as any)?.message || (error as any)?.error) ||
             "We could not complete your login, give it another shot"
           }
           onDismiss={handleDismissError}

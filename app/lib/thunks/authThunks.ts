@@ -491,11 +491,13 @@ export const registerNewUser = createAsyncThunk(
       console.log(data);
 
       if (!response.ok) {
-        return rejectWithValue(
-          data?.data?.message ||
-          data?.message ||
-          `Registration failed (${response.status})`
-        );
+        return rejectWithValue({
+          status: response.status,
+          message:
+            data?.data?.message ||
+            data?.message ||
+            `Registration failed (${response.status})`,
+        });
       }
 
       return {
@@ -504,9 +506,11 @@ export const registerNewUser = createAsyncThunk(
           data?.data?.message || data?.message || "User registered, OTP sent",
       };
     } catch (error: any) {
-      return rejectWithValue(
-        error.data?.message || error.message || "Registration error"
-      );
+      return rejectWithValue({
+        status: error?.status || error?.statusCode || 500,
+        message:
+          error?.data?.message || error?.message || "Registration error",
+      });
     }
   }
 );
