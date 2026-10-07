@@ -66,20 +66,18 @@ Holder: ${accountHolder}`;
 
     await Clipboard.setStringAsync(details);
 
-    showToast(); 
+    showToast();
   };
 
   const shareDetails = async () => {
-    const message = `Bank: ${bankName}\nAccount: ${accountNumber}\nHolder: ${accountHolder}\nBalance: $${accountBalance.toFixed(
-      2
-    )}`;
+    const message = `Bank: ${bankName}\nAccount: ${accountNumber}\nHolder: ${accountHolder}\n`;
 
     try {
       await Share.share({
         message,
         title: "My Bank Details",
       });
-    } catch {}
+    } catch { }
   };
 
   // ----------- ERROR UI -----------
