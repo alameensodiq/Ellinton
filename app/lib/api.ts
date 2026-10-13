@@ -12,6 +12,20 @@ const VERIFY_NEWOTP_USERS_ENDPOINT = () =>
   `${BASE_URL}v3/onboarding/verify-otp`;
 const RESEND_NEW_OTP_USERS_ENDPOINT = () =>
   `${BASE_URL}v3/onboarding/resend-otp`;
+const UPDATE_PROFILE_ENDPOINT = () =>
+  `${BASE_URL}v3/users/profile/personal`;
+const UPDATE_RESIDENTIAL_ENDPOINT = () =>
+  `${BASE_URL}v3/users/profile/residential`;
+const UPDATE_NEXTOFKIN_ENDPOINT = () =>
+  `${BASE_URL}v3/users/profile/next-of-kin`;
+const UPDATE_FINANCIAL_ENDPOINT = () =>
+  `${BASE_URL}v3/users/profile/financial`;
+const NIN_ENDPOINT = () =>
+  `${BASE_URL}v3/onboarding/nin`;
+const INDUSTRIES_ENDPOINT = () =>
+  `${BASE_URL}v3/users/profile/industries`;
+const BVN_ENDPOINT = () =>
+  `${BASE_URL}v3/onboarding/bvn-liveness`;
 const RESEND_OTP_USERS_ENDPOINT = (userId: string) =>
   `${BASE_URL}v2/users/${userId}/resend-otp`;
 const VERIFY_BVN_USERS_ENDPOINT = (userId: string) =>
@@ -248,5 +262,12 @@ export {
   REGISTER_NEW_USERS_ENDPOINT,
   VERIFY_NEWOTP_USERS_ENDPOINT,
   RESEND_NEW_OTP_USERS_ENDPOINT,
-  NEWPASSCODE_ENDPOINT
+  NEWPASSCODE_ENDPOINT,
+  UPDATE_PROFILE_ENDPOINT,
+  UPDATE_RESIDENTIAL_ENDPOINT,
+  UPDATE_NEXTOFKIN_ENDPOINT,
+  UPDATE_FINANCIAL_ENDPOINT,
+  NIN_ENDPOINT,
+  INDUSTRIES_ENDPOINT,
+  BVN_ENDPOINT
 };

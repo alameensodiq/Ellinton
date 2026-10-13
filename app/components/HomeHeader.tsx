@@ -5,24 +5,25 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import CustomText from "./CustomText";
 
 interface HeaderProps {
-  onMenuPress: () => void;
+  onMenuPress?: () => void;
+  onAvatarPress?: () => void;
   username?: string;
   avatar?: string;
 }
 
 const HomeHeader: React.FC<HeaderProps> = ({
   onMenuPress,
+  onAvatarPress,
   username = "",
   avatar = "",
 }) => {
   return (
     <View className="w-full h-20 px-4 flex-row items-center justify-between bg-[#3F401B]">
       <View className="flex-row items-center">
-        <TouchableOpacity onPress={onMenuPress} className="mr-4">
-          <MaterialCommunityIcons name="menu" size={26} color="#FFFFFF" />
-        </TouchableOpacity>
-
-        <TouchableOpacity className="w-10 h-10 rounded-full overflow-hidden bg-[#FF4D00] mr-3">
+        <TouchableOpacity
+          onPress={onAvatarPress}
+          className="w-10 h-10 rounded-full overflow-hidden bg-[#FF4D00] mr-3"
+        >
           <Image
             source={{ uri: avatar }}
             className="w-full h-full"

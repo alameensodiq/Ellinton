@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { ScrollView, View, RefreshControl } from "react-native";
 import SliderCard from "@/app/components/SliderCard";
-import BottomMenu from "@/app/components/BottomMenu";
 import HomeHeader from "@/app/components/HomeHeader";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ServicesSection from "@/app/components/ServiceSection";
@@ -24,7 +23,6 @@ import {
 } from "@/app/lib/notification.service";
 
 const HomeScreen = () => {
-  const [menuVisible, setMenuVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [storedProfile, setStoredProfile] = useState<any>(null);
@@ -121,7 +119,7 @@ const HomeScreen = () => {
     <SafeAreaView className="flex-1 bg-primary-100">
       <StatusBar barStyle="light-content" />
       <HomeHeader
-        onMenuPress={() => setMenuVisible(true)}
+        onAvatarPress={() => router.push("/(root)/(tabs)/account" as any)}
         username={user?.full_name}
         avatar={user?.passport}
       />
@@ -164,16 +162,6 @@ const HomeScreen = () => {
         />
       </ScrollView>
 
-      <BottomMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-        user={{
-          mfa_required: user?.mfa_enabled,
-          name: user?.full_name || user?.name || "User",
-          email: user?.email || "",
-          avatar: user?.passport || ""
-        }}
-      />
 
       <AccountDetailsModal
         visible={modalVisible}

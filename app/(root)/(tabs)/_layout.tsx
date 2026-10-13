@@ -48,7 +48,7 @@ export default function TabsLayout() {
               color={color}
               size={size}
             />
-          )
+          ),
         }}
       />
 
@@ -63,25 +63,30 @@ export default function TabsLayout() {
               color={color}
               size={size}
             />
-          )
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="account"
+        options={{
+          title: "Account",
+          tabBarLabel: "Account",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons
+              name="account-outline"
+              color={color}
+              size={size}
+            />
+          ),
         }}
       />
 
       <Tabs.Screen
         name="chat"
         options={{
-          title: "Live Chat",
-          tabBarLabel: "Live Chat",
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="chat" color={color} size={size} />
-          )
+          href: null,
         }}
-        // listeners={{
-        //   tabPress: (e) => {
-        //     e.preventDefault();
-        //     openWhatsApp();
-        //   }
-        // }}
       />
 
       {/* <Tabs.Screen

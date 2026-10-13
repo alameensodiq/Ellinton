@@ -30,6 +30,13 @@ import {
   VERIFY_NEWOTP_USERS_ENDPOINT,
   NEWPASSCODE_ENDPOINT,
   RESEND_NEW_OTP_USERS_ENDPOINT,
+  UPDATE_PROFILE_ENDPOINT,
+  UPDATE_RESIDENTIAL_ENDPOINT,
+  UPDATE_NEXTOFKIN_ENDPOINT,
+  UPDATE_FINANCIAL_ENDPOINT,
+  INDUSTRIES_ENDPOINT,
+  NIN_ENDPOINT,
+  DOCUPLOAD_ENDPOINT,
 } from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout, setCredentials, setUserOnly } from "../slices/authSlice";
@@ -1575,6 +1582,306 @@ export const updateUserProfile = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(
         error.data?.message || error.message || "Profile update error"
+      );
+    }
+  }
+);
+
+export interface UpdatePersonalProfilePayload {
+  email?: string;
+  local_government?: string;
+  address_2?: string;
+  marital_status?: string;
+  nationality?: string;
+  occupation?: string;
+  alternate_phone?: string;
+  gender?: string;
+}
+
+export const updatePersonalProfile = createAsyncThunk(
+  "auth/updatePersonalProfile",
+  async (payload: UpdatePersonalProfilePayload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(UPDATE_PROFILE_ENDPOINT(), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Profile update failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Profile update error"
+      );
+    }
+  }
+);
+
+export interface UpdateResidentialPayload {
+  file_base64?: string;
+  address_1?: string;
+  city?: string;
+  state?: string;
+  landmark?: string;
+  state_of_origin?: string;
+  lga_of_origin?: string;
+}
+
+export const updateResidentialAddress = createAsyncThunk(
+  "auth/updateResidentialAddress",
+  async (payload: UpdateResidentialPayload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(UPDATE_RESIDENTIAL_ENDPOINT(), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Residential update failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Residential update error"
+      );
+    }
+  }
+);
+
+export interface UpdateNextOfKinPayload {
+  first_name?: string;
+  last_name?: string;
+  relationship?: string;
+  phone?: string;
+  address_1?: string;
+}
+
+export const updateNextOfKin = createAsyncThunk(
+  "auth/updateNextOfKin",
+  async (payload: UpdateNextOfKinPayload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(UPDATE_NEXTOFKIN_ENDPOINT(), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Next of Kin update failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Next of Kin update error"
+      );
+    }
+  }
+);
+
+export interface UpdateFinancialPayload {
+  industry?: string;
+  employer?: string;
+  employment_status?: string;
+  estimated_monthly_income?: number;
+}
+
+export const updateFinancialProfile = createAsyncThunk(
+  "auth/updateFinancialProfile",
+  async (payload: UpdateFinancialPayload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(UPDATE_FINANCIAL_ENDPOINT(), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Financial update failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Financial update error"
+      );
+    }
+  }
+);
+
+export const fetchIndustries = createAsyncThunk(
+  "auth/fetchIndustries",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(INDUSTRIES_ENDPOINT(), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data?.message || "Failed to fetch industries");
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Industry fetch error");
+    }
+  }
+);
+
+export const submitNin = createAsyncThunk(
+  "auth/submitNin",
+  async (nin: string, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(NIN_ENDPOINT(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ nin }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `NIN submission failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "NIN submission error"
+      );
+    }
+  }
+);
+
+// ── Doc upload enums & thunk ──────────────────────────────────────────────────
+export enum GovernmentIdType {
+  NIN = 'nin',
+  PASSPORT = 'international_passport',
+  DRIVERS_LICENSE = 'drivers_license',
+  VOTERS_CARD = 'voters_card',
+  NATIONAL_ID = 'national_id',
+}
+
+export enum ProofOfAddressType {
+  METER_RECEIPT = 'prepaid_meter_receipt',
+  LAWMA_BILL = 'lawma_bill',
+  BANK_STATEMENT = 'three_month_bank_statement',
+}
+
+export interface DocUploadPayload {
+  address?: string;
+  city?: string;
+  state?: string;
+  government_id_type?: GovernmentIdType | string;
+  identification_number?: string;
+  government_id?: string;          // base64
+  proof_of_address_type?: ProofOfAddressType | string;
+  proof_of_address?: string;       // base64
+}
+
+export const submitDocUpload = createAsyncThunk(
+  "auth/submitDocUpload",
+  async (payload: DocUploadPayload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(DOCUPLOAD_ENDPOINT(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Document upload failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Document upload error"
       );
     }
   }
