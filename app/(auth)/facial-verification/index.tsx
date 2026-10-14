@@ -12,7 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { verifyUserFacial } from "@/app/lib/thunks/authThunks";
 import { SESSIONTOKEN_ENDPOINT } from "@/app/lib/api";
-import { useQoreIdSdk } from "@qore-id/react-native-qoreid-sdk";
+import { useQoreIdSdk } from "@/app/lib/qoreidShim";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { prepareImageForUpload } from "@/app/lib/imageUpload";

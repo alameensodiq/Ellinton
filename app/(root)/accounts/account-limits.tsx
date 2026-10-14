@@ -14,7 +14,7 @@ import Header from "@/app/components/header-back";
 import BottomSheet from "@/app/components/BottomSheet";
 import FaceVerificationProgressModal from "@/app/components/FaceVerificationProgressModal";
 import { SESSIONTOKEN_ENDPOINT } from "@/app/lib/api";
-import { useQoreIdSdk } from "@qore-id/react-native-qoreid-sdk";
+import { useQoreIdSdk } from "@/app/lib/qoreidShim";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useRouter } from "expo-router";
