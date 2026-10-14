@@ -106,6 +106,7 @@ export default function AccountLimitsScreen() {
   const [bvnError, setBvnError] = useState("");
 
   const onQoreResult = (data: any) => {
+    console.log(data)
     if (data?.event === "SUCCESS_RESULT") {
       setIsVerifyingFace(false);
       showFb("success", "Verification", "BVN liveness completed.");
@@ -285,11 +286,17 @@ export default function AccountLimitsScreen() {
       const formData: any = {
         sessionToken,
         applicantData: {
-          firstName: user?.first_name || user?.firstName || "",
+          // firstName: user?.first_name || user?.firstName || "",
+          // middleName: user?.middle_name || user?.middleName || "",
+          // lastName: user?.last_name || user?.lastName || "",
+          // gender: user?.gender || "",
+          // phoneNumber: user?.phone || "",
+          // email: user?.email || "",
+                 firstName:  "Samson",
           middleName: user?.middle_name || user?.middleName || "",
-          lastName: user?.last_name || user?.lastName || "",
+          lastName: "Jabo",
           gender: user?.gender || "",
-          phoneNumber: user?.phone || "",
+          phoneNumber: "+2348000000001",
           email: user?.email || "",
         },
         identityData: { idType: "BVN", idNumber: String(rawBvn) },
