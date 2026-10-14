@@ -73,6 +73,7 @@
     },
     "plugins": [
       "expo-router",
+      "@qore-id/react-native-qoreid-sdk/plugin",
       [
         "expo-local-authentication",
         {

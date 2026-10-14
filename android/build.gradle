@@ -15,7 +15,10 @@ buildscript {
 }
 
 allprojects {
-  repositories {
+    repositories {
+      maven {
+          url = uri("https://repo.qoreid.com/repository/maven-releases/")
+        }
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }

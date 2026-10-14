@@ -106,12 +106,12 @@ export default function AccountLimitsScreen() {
   const [bvnError, setBvnError] = useState("");
 
   const onQoreResult = (data: any) => {
-    // simple handler: show success feedback and refresh page (or navigate)
-    setIsVerifyingFace(false);
-    if (data && data.status === "success") {
+    if (data?.event === "SUCCESS_RESULT") {
+      setIsVerifyingFace(false);
       showFb("success", "Verification", "BVN liveness completed.");
-    } else {
-      showFb("error", "Verification", JSON.stringify(data || "Unknown response"));
+    } else if (data?.event === "ERROR_RESULT") {
+      setIsVerifyingFace(false);
+      showFb("error", "Verification", data?.message || JSON.stringify(data || "Unknown response"));
     }
   };
 

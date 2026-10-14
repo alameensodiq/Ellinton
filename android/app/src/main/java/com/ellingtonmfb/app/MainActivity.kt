@@ -10,6 +10,7 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnable
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 import expo.modules.ReactActivityDelegateWrapper
+import com.qoreid.reactnativeqoreidsdk.RNQoreIdSdkModule
 
 class MainActivity : ReactActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,7 +22,9 @@ class MainActivity : ReactActivity() {
     SplashScreenManager.registerOnActivity(this)
     // @generated end expo-splashscreen
     super.onCreate(null)
-  }
+     
+RNQoreIdSdkModule.initialize(this)
+ }
 
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule

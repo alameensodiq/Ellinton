@@ -148,11 +148,16 @@ const FacialVerificationScreen = () => {
 
   const onQoreResult = async (data: any) => {
     console.debug("QoreId result:", data);
-    // handle as needed; navigate on success
-    try {
-      router.push({ pathname: "/(auth)/transacion-pin", params: { userId: resolvedUserId } });
-    } catch (e) {
-      console.warn("Failed to navigate after QoreId result", e);
+    if (data?.event === "ERROR_RESULT") {
+      presentError(data?.message || "Facial verification failed");
+      return;
+    }
+    if (data?.event === "SUCCESS_RESULT") {
+      try {
+        router.push({ pathname: "/(auth)/transacion-pin", params: { userId: resolvedUserId } });
+      } catch (e) {
+        console.warn("Failed to navigate after QoreId result", e);
+      }
     }
   };
 
