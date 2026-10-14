@@ -11,6 +11,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { verifyUserFacial } from "@/app/lib/thunks/authThunks";
+import { SESSIONTOKEN_ENDPOINT } from "@/app/lib/api";
+import { useQoreIdSdk } from "@qore-id/react-native-qoreid-sdk";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { prepareImageForUpload } from "@/app/lib/imageUpload";
@@ -24,8 +26,9 @@ const SELFIE_REQUEST_ENVELOPE_BYTES = JSON.stringify({ selfie: "" }).length;
 const FacialVerificationScreen = () => {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { isLoading, user } = useAppSelector((state) => state.auth);
+  const { isLoading, user, token } = useAppSelector((state) => state.auth);
   const { userId } = useLocalSearchParams();
+  const { bvn } = useLocalSearchParams();
   const [showCamera, setShowCamera] = useState(false);
   const [isVerifyingFace, setIsVerifyingFace] = useState(false);
   const [verificationError, setVerificationError] = useState("");
@@ -140,6 +143,87 @@ const FacialVerificationScreen = () => {
       } finally {
         setIsVerifyingFace(false);
       }
+    }
+  };
+
+  const onQoreResult = async (data: any) => {
+    console.debug("QoreId result:", data);
+    // handle as needed; navigate on success
+    try {
+      router.push({ pathname: "/(auth)/transacion-pin", params: { userId: resolvedUserId } });
+    } catch (e) {
+      console.warn("Failed to navigate after QoreId result", e);
+    }
+  };
+
+  const { launchQoreId } = useQoreIdSdk({ onResult: onQoreResult });
+
+  const handleLaunchBVNLiveness = async () => {
+    if (!bvn) {
+      setVerificationError("BVN not provided for liveness");
+      setShowErrorModal(true);
+      return;
+    }
+
+    const reference = `${bvn}_${Date.now()}`;
+    const body = { type: "collection", productCode: "liveness_bvn", reference };
+
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    try {
+      setIsVerifyingFace(true);
+      const resp = await fetch(SESSIONTOKEN_ENDPOINT(), {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        const message = json?.data?.message || json?.message || `Session token request failed (${resp.status})`;
+        setVerificationError(message);
+        setShowErrorModal(true);
+        return;
+      }
+
+      const sessionToken = json?.data?.session_token || json?.data?.sessionToken || json?.session_token || json?.sessionToken;
+
+      if (!sessionToken) {
+        setVerificationError("Session token not returned from server");
+        setShowErrorModal(true);
+        return;
+      }
+
+      const formData: any = {
+        sessionToken,
+        applicantData: {
+          firstName: user?.first_name || user?.firstName || "",
+          middleName: user?.middle_name || user?.middleName || "",
+          lastName: user?.last_name || user?.lastName || "",
+          gender: user?.gender || "",
+          phoneNumber: user?.phone || "",
+          email: user?.email || "",
+        },
+        identityData: {
+          idType: "BVN",
+          idNumber: String(bvn),
+        },
+        addressData: {
+          address: user?.address_1 || "",
+          city: user?.city || "",
+          lga: user?.local_government || "",
+        },
+      };
+
+      // Launch the QoreId flow
+      launchQoreId(formData);
+    } catch (error: any) {
+      console.error("Failed to get session token:", error);
+      setVerificationError(error?.message || "Failed to request session token");
+      setShowErrorModal(true);
+    } finally {
+      setIsVerifyingFace(false);
     }
   };
 
@@ -268,6 +352,18 @@ const FacialVerificationScreen = () => {
               Tap to take a picture
             </Text>
           </TouchableOpacity>
+
+          {bvn ? (
+            <TouchableOpacity
+              onPress={handleLaunchBVNLiveness}
+              className="items-center mb-6"
+              activeOpacity={0.8}
+            >
+              <View className="bg-yellow-500 rounded-full px-6 py-3">
+                <Text className="text-black font-semibold">Run BVN Liveness</Text>
+              </View>
+            </TouchableOpacity>
+          ) : null}
 
           <View className="w-full mb-8">
             <Text className="text-accent-100 text-lg font-semibold mb-4">

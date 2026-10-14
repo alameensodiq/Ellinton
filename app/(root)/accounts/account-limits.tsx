@@ -12,6 +12,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import Header from "@/app/components/header-back";
 import BottomSheet from "@/app/components/BottomSheet";
+import FaceVerificationProgressModal from "@/app/components/FaceVerificationProgressModal";
+import { SESSIONTOKEN_ENDPOINT } from "@/app/lib/api";
+import { useQoreIdSdk } from "@qore-id/react-native-qoreid-sdk";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useRouter } from "expo-router";
@@ -95,6 +98,24 @@ export default function AccountLimitsScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const token = useAppSelector((state) => (state as any).auth.token);
+
+  const [isVerifyingFace, setIsVerifyingFace] = useState(false);
+  const [bvnModalVisible, setBvnModalVisible] = useState(false);
+  const [bvnInput, setBvnInput] = useState("");
+  const [bvnError, setBvnError] = useState("");
+
+  const onQoreResult = (data: any) => {
+    // simple handler: show success feedback and refresh page (or navigate)
+    setIsVerifyingFace(false);
+    if (data && data.status === "success") {
+      showFb("success", "Verification", "BVN liveness completed.");
+    } else {
+      showFb("error", "Verification", JSON.stringify(data || "Unknown response"));
+    }
+  };
+
+  const { launchQoreId } = useQoreIdSdk({ onResult: onQoreResult });
 
   const hasAccount = Boolean(user?.account_number);
   const kycLevel = hasAccount ? (user?.kyc_level || 1) : 0;
@@ -216,6 +237,67 @@ export default function AccountLimitsScreen() {
     } finally { setUploadingGovtId(false); }
   };
 
+  const handleLaunchBVNLiveness = async (providedBvn?: string) => {
+    const rawBvn = providedBvn || (user as any)?.bvn || (user as any)?.bvn_number || null;
+    if (!rawBvn) {
+      // If we don't have a raw BVN, prompt user for it via modal (no navigation)
+      setBvnInput("");
+      setBvnError("");
+      setBvnModalVisible(true);
+      return;
+    }
+
+    const reference = `${rawBvn}_${Date.now()}`;
+    const body = { type: "collection", productCode: "liveness_bvn", reference };
+
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    try {
+      setIsVerifyingFace(true);
+      const resp = await fetch(SESSIONTOKEN_ENDPOINT(), {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+      });
+
+      const json = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        const message = json?.data?.message || json?.message || `Session token request failed (${resp.status})`;
+        showFb("error", "Session Token Error", message);
+        setIsVerifyingFace(false);
+        return;
+      }
+
+      const sessionToken = json?.data?.session_token || json?.data?.sessionToken || json?.session_token || json?.sessionToken;
+      if (!sessionToken) {
+        showFb("error", "Session Token Error", "Session token not returned from server");
+        setIsVerifyingFace(false);
+        return;
+      }
+
+      const formData: any = {
+        sessionToken,
+        applicantData: {
+          firstName: user?.first_name || user?.firstName || "",
+          middleName: user?.middle_name || user?.middleName || "",
+          lastName: user?.last_name || user?.lastName || "",
+          gender: user?.gender || "",
+          phoneNumber: user?.phone || "",
+          email: user?.email || "",
+        },
+        identityData: { idType: "BVN", idNumber: String(rawBvn) },
+        addressData: { address: user?.address_1 || "", city: user?.city || "", lga: user?.local_government || "" },
+      };
+
+      // Launch the QoreId flow
+      launchQoreId(formData);
+    } catch (error: any) {
+      showFb("error", "Launch Error", error?.message || "Failed to request session token");
+      setIsVerifyingFace(false);
+    }
+  };
+
   // ── Tier card component ─────────────────────────────────────────────────
   const TierCard = ({
     tier,
@@ -316,7 +398,7 @@ export default function AccountLimitsScreen() {
               >
                 {row.value}
               </Text>
-            </View>
+              </View>
           ))}
 
           <View className="flex-row items-center gap-2 pt-2">
@@ -432,11 +514,18 @@ export default function AccountLimitsScreen() {
                 sublabel="11-digit BVN"
                 pill={<StatusPill status="COMPLETED" />}
               /> */}
+              {
+                // Determine BVN liveness status from user flags
+              }
               <ReqRow
                 dark
                 label="BVN Liveness Check"
                 sublabel="Facial liveness match"
-                pill={<StatusPill status="COMPLETED" />}
+                pill={
+                  (user?.facial_verification_status === "verified" || user?.bvn_verified)
+                    ? <StatusPill status="COMPLETED" />
+                    : <StatusPill status="VERIFY" onPress={() => handleLaunchBVNLiveness()} />
+                }
               />
             </>
           }
@@ -528,10 +617,13 @@ export default function AccountLimitsScreen() {
         {/* Upgrade CTA */}
         {kycLevel < 3 && (
           <Pressable
-            onPress={() => {
-              if (kycLevel === 0 || kycLevel === 1) router.push("/(root)/kyc");
-              else handleTier3UploadPress("utility");
-            }}
+              onPress={() => {
+                // debug: log upgrade click and navigate
+                console.log("Upgrade CTA clicked - kycLevel:", kycLevel);
+                showFb("info", "Navigation", `Attempting to navigate for kycLevel ${kycLevel}`);
+                if (kycLevel === 0 || kycLevel === 1) router.push("/(root)/kyc");
+                else handleTier3UploadPress("utility");
+              }}
             style={{ backgroundColor: C.bgDark }}
             className="rounded-2xl py-4 items-center shadow-sm active:opacity-90 flex-row justify-center gap-2"
           >
@@ -570,6 +662,42 @@ export default function AccountLimitsScreen() {
           </Text>
         </View>
       </BottomSheet>
+
+      {/* BVN input modal (used when raw BVN not available) */}
+      <Modal transparent animationType="fade" visible={bvnModalVisible} onRequestClose={() => setBvnModalVisible(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }} onPress={() => setBvnModalVisible(false)}>
+          <Pressable style={{ backgroundColor: "#fff", borderRadius: 16, padding: 20, width: "100%", maxWidth: 420 }} onPress={() => {}}>
+            <Text style={{ fontFamily: "OutfitBold", fontSize: 17, color: "#2A2B0F", marginBottom: 8 }}>Enter your BVN</Text>
+            <Text style={{ fontFamily: "Outfit", fontSize: 13, color: "#7A7B5A", marginBottom: 12 }}>Provide your 11-digit BVN to run the liveness check.</Text>
+            <TextInput
+              value={bvnInput}
+              onChangeText={(t) => { setBvnInput(t.replace(/\D/g, "")); setBvnError(""); }}
+              placeholder="12345678901"
+              keyboardType="numeric"
+              maxLength={11}
+              placeholderTextColor="#9A9B7A"
+              style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, color: C.textPrimary, fontFamily: "Outfit", fontSize: 14, marginBottom: 8 }}
+            />
+            {bvnError ? <Text style={{ color: "#EF4444", fontSize: 12, marginBottom: 8 }}>{bvnError}</Text> : null}
+            <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
+              <Pressable onPress={() => setBvnModalVisible(false)} style={{ paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: C.bgDark, marginRight: 8 }}>
+                <Text style={{ color: "#fff", fontFamily: "OutfitBold" }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={async () => {
+                  const isValid = /^\d{11}$/.test(bvnInput);
+                  if (!isValid) { setBvnError("BVN must be 11 digits"); return; }
+                  setBvnModalVisible(false);
+                  await handleLaunchBVNLiveness(bvnInput);
+                }}
+                style={{ paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: C.green }}
+              >
+                <Text style={{ color: "#fff", fontFamily: "OutfitBold" }}>Submit</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* PROOF OF ADDRESS BOTTOM SHEET */}
       <BottomSheet
@@ -700,6 +828,7 @@ export default function AccountLimitsScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+      <FaceVerificationProgressModal visible={isVerifyingFace} />
     </SafeAreaView>
   );
 }

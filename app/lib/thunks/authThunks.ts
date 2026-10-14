@@ -36,7 +36,7 @@ import {
   UPDATE_FINANCIAL_ENDPOINT,
   INDUSTRIES_ENDPOINT,
   NIN_ENDPOINT,
-  DOCUPLOAD_ENDPOINT,
+  DOCUPLOAD_ENDPOINT
 } from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout, setCredentials, setUserOnly } from "../slices/authSlice";

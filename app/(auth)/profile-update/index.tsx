@@ -217,7 +217,7 @@ const EmailIdentityScreen = () => {
 
       router.push({
         pathname: "/(auth)/facial-verification",
-        params: { userId: userId as string || user?.id },
+        params: { userId: userId as string || user?.id, bvn },
       });
     } catch (err: any) {
       console.error("Profile update API error:", err);

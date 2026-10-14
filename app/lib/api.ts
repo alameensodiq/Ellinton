@@ -26,6 +26,10 @@ const INDUSTRIES_ENDPOINT = () =>
   `${BASE_URL}v3/users/profile/industries`;
 const BVN_ENDPOINT = () =>
   `${BASE_URL}v3/onboarding/bvn-liveness`;
+const DOCUPLOAD_ENDPOINT = () =>
+  `${BASE_URL}v3/onboarding/tier-three`;
+const SESSIONTOKEN_ENDPOINT = () =>
+  `${BASE_URL}v3/onboarding/liveness-sdk-session-token`;
 const RESEND_OTP_USERS_ENDPOINT = (userId: string) =>
   `${BASE_URL}v2/users/${userId}/resend-otp`;
 const VERIFY_BVN_USERS_ENDPOINT = (userId: string) =>
@@ -269,5 +273,7 @@ export {
   UPDATE_FINANCIAL_ENDPOINT,
   NIN_ENDPOINT,
   INDUSTRIES_ENDPOINT,
-  BVN_ENDPOINT
+  BVN_ENDPOINT,
+  DOCUPLOAD_ENDPOINT,
+  SESSIONTOKEN_ENDPOINT
 };
