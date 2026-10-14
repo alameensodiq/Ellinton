@@ -187,7 +187,11 @@ const FacialVerificationScreen = () => {
         return;
       }
 
-      const sessionToken = json?.data?.session_token || json?.data?.sessionToken || json?.session_token || json?.sessionToken;
+      const sessionToken =
+        json?.data?.sdkSessionToken || json?.data?.sdk_session_token ||
+        json?.data?.session_token || json?.data?.sessionToken ||
+        json?.sdkSessionToken || json?.sdk_session_token ||
+        json?.session_token || json?.sessionToken;
 
       if (!sessionToken) {
         setVerificationError("Session token not returned from server");

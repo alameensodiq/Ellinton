@@ -248,6 +248,7 @@ export default function AccountLimitsScreen() {
     }
 
     const reference = `${rawBvn}_${Date.now()}`;
+    console.log(rawBvn)
     const body = { type: "collection", productCode: "liveness_bvn", reference };
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -262,6 +263,7 @@ export default function AccountLimitsScreen() {
       });
 
       const json = await resp.json().catch(() => ({}));
+      console.log(json)
       if (!resp.ok) {
         const message = json?.data?.message || json?.message || `Session token request failed (${resp.status})`;
         showFb("error", "Session Token Error", message);
@@ -269,7 +271,11 @@ export default function AccountLimitsScreen() {
         return;
       }
 
-      const sessionToken = json?.data?.session_token || json?.data?.sessionToken || json?.session_token || json?.sessionToken;
+      const sessionToken =
+        json?.data?.sdkSessionToken || json?.data?.sdk_session_token ||
+        json?.data?.session_token || json?.data?.sessionToken ||
+        json?.sdkSessionToken || json?.sdk_session_token ||
+        json?.session_token || json?.sessionToken;
       if (!sessionToken) {
         showFb("error", "Session Token Error", "Session token not returned from server");
         setIsVerifyingFace(false);
