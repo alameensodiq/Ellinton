@@ -6,6 +6,7 @@ import {
   Pressable,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -53,6 +54,7 @@ export default function BeneficiariesAndCardsScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const rawBeneficiaries = useAppSelector((state) => state.beneficiaries.beneficiaries);
+  const isLoadingBeneficiaries = useAppSelector((state) => state.beneficiaries.isLoading);
 
   const [activeTab, setActiveTab] = useState<ActiveTab>("beneficiaries");
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,15 +77,7 @@ export default function BeneficiariesAndCardsScreen() {
   }, [dispatch]);
 
   useEffect(() => {
-    if (rawBeneficiaries && rawBeneficiaries.length > 0) {
-      setBeneficiariesList(rawBeneficiaries);
-    } else {
-      setBeneficiariesList([
-        { account_name: "Adekunle Gold Kosoko", account_number: "0123456789", bank_name: "Access Bank", bank_code: "044" },
-        { account_name: "Chioma Chukwuka", account_number: "2098765432", bank_name: "Zenith Bank", bank_code: "057" },
-        { account_name: "Babatunde Fashola", account_number: "0011223344", bank_name: "Guaranty Trust Bank", bank_code: "058" },
-      ]);
-    }
+    setBeneficiariesList(rawBeneficiaries ?? []);
   }, [rawBeneficiaries]);
 
   const loadCards = async () => {
@@ -167,7 +161,8 @@ export default function BeneficiariesAndCardsScreen() {
       {/* Tab switcher */}
       <View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>
         <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1, borderRadius: 16, flexDirection: "row", padding: 4 }}>
-          {(["beneficiaries", "cards"] as ActiveTab[]).map((tab) => {
+          {/* {(["beneficiaries", "cards"] as ActiveTab[]).map((tab) => { */}
+          {(["beneficiaries"] as ActiveTab[]).map((tab) => {
             const isActive = activeTab === tab;
             return (
               <Pressable
@@ -210,7 +205,12 @@ export default function BeneficiariesAndCardsScreen() {
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 60 }}>
-            {filteredBeneficiaries.length === 0 ? (
+            {isLoadingBeneficiaries && !rawBeneficiaries ? (
+              <View style={{ alignItems: "center", paddingVertical: 48 }}>
+                <ActivityIndicator color={C.accent} />
+                <Text style={{ color: C.textMuted, fontSize: 12, fontFamily: "Outfit", marginTop: 10 }}>Loading beneficiaries...</Text>
+              </View>
+            ) : filteredBeneficiaries.length === 0 ? (
               <View style={{ alignItems: "center", paddingVertical: 48 }}>
                 <MaterialCommunityIcons name="account-search-outline" size={48} color={C.cardBorder} />
                 <Text style={{ color: C.textMuted, fontSize: 12, fontFamily: "Outfit", marginTop: 10 }}>No beneficiaries found</Text>

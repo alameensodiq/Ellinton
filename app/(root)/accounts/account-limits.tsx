@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -13,14 +13,13 @@ import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import Header from "@/app/components/header-back";
 import BottomSheet from "@/app/components/BottomSheet";
 import FaceVerificationProgressModal from "@/app/components/FaceVerificationProgressModal";
-import { SESSIONTOKEN_ENDPOINT } from "@/app/lib/api";
+import { ONBOARDING_ENDPOINT, SESSIONTOKEN_ENDPOINT } from "@/app/lib/api";
 import { useQoreIdSdk } from "@/app/lib/qoreidShim";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import * as DocumentPicker from "expo-document-picker";
-import { submitDocUpload, GovernmentIdType, ProofOfAddressType } from "@/app/lib/thunks/authThunks";
+import { fetchProfileCompletion, getUserProfile, submitDocUpload, GovernmentIdType, ProofOfAddressType, type ProfileCompletion } from "@/app/lib/thunks/authThunks";
 
 // ─── App Colors ──────────────────────────────────────────────────────────────
 const C = {
@@ -99,20 +98,75 @@ export default function AccountLimitsScreen() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const token = useAppSelector((state) => (state as any).auth.token);
+  const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion | null>(null);
 
   const [isVerifyingFace, setIsVerifyingFace] = useState(false);
+  const livenessRequest = useRef<{ reference: string; bvn: string } | null>(null);
+  const isCheckingLiveness = useRef(false);
   const [bvnModalVisible, setBvnModalVisible] = useState(false);
   const [bvnInput, setBvnInput] = useState("");
   const [bvnError, setBvnError] = useState("");
 
-  const onQoreResult = (data: any) => {
-    console.log(data)
-    if (data?.event === "SUCCESS_RESULT") {
+  const onQoreResult = async () => {
+    if (isCheckingLiveness.current) return;
+
+    const request = livenessRequest.current;
+    if (!request) {
       setIsVerifyingFace(false);
-      showFb("success", "Verification", "BVN liveness completed.");
-    } else if (data?.event === "ERROR_RESULT") {
+      showFb("error", "Verification", "Unable to confirm the liveness result.");
+      return;
+    }
+
+    isCheckingLiveness.current = true;
+    try {
+      // QoreID completes first; allow the provider time to persist the result
+      // before asking our backend for the definitive verification status.
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const response = await fetch(ONBOARDING_ENDPOINT(request.reference), {
+        method: "GET",
+        headers,
+      });
+      const payload = await response.json().catch(() => ({}));
+      const result = payload?.data ?? payload;
+      const status = String(
+        result?.verification_status ?? result?.liveness_status ?? result?.status ?? ""
+      ).toLowerCase();
+      const verified =
+        response.ok &&
+        payload?.success !== false &&
+        (result?.verified === true ||
+          result?.is_verified === true ||
+          result?.bvn_verified === true ||
+          status === "verified" ||
+          status === "success" ||
+          payload?.success === true);
+
+      if (verified) {
+        // Refresh the Redux user state so the new BVN/KYC status is reflected
+        // everywhere as soon as liveness verification is confirmed.
+        await dispatch(getUserProfile()).unwrap().catch((error) => {
+          console.warn("Unable to refresh profile after liveness verification:", error);
+        });
+        setIsVerifyingFace(false);
+        showFb("success", "Verification", "BVN liveness completed.");
+      } else {
+        setIsVerifyingFace(false);
+        showFb(
+          "error",
+          "Verification",
+          result?.message || payload?.message || "BVN liveness verification was not successful."
+        );
+      }
+    } catch (error: any) {
       setIsVerifyingFace(false);
-      showFb("error", "Verification", data?.message || JSON.stringify(data || "Unknown response"));
+      showFb("error", "Verification", error?.message || "Unable to retrieve the BVN liveness result.");
+    } finally {
+      livenessRequest.current = null;
+      isCheckingLiveness.current = false;
     }
   };
 
@@ -121,7 +175,19 @@ export default function AccountLimitsScreen() {
   const hasAccount = Boolean(user?.account_number);
   const kycLevel = hasAccount ? (user?.kyc_level || 1) : 0;
 
-  const isProfileComplete = Boolean(user?.address_1 && user?.city && user?.state);
+  const isProfileComplete =
+    profileCompletion?.completion_percentage === 100 &&
+    Array.isArray(profileCompletion.missing_fields) &&
+    profileCompletion.missing_fields.length === 0;
+  const hasCompletedKyc1 = kycLevel >= 1;
+  const hasCompletedKyc2 = kycLevel >= 2;
+
+  useEffect(() => {
+    dispatch(fetchProfileCompletion())
+      .unwrap()
+      .then(setProfileCompletion)
+      .catch((error) => console.warn("Unable to load profile completion:", error));
+  }, [dispatch]);
 
   // ── Feedback modal state
   type FBType = "success" | "error" | "info";
@@ -166,7 +232,10 @@ export default function AccountLimitsScreen() {
         : "REQUIRED";
 
   const handleTier3UploadPress = (type: "utility" | "govtid") => {
-    if (!isProfileComplete) { setPrereqModalVisible(true); return; }
+    if (!hasCompletedKyc1 || !hasCompletedKyc2 || !isProfileComplete) {
+      router.push("/(root)/kyc");
+      return;
+    }
     if (type === "utility") setUtilityModalVisible(true);
     else setGovtIdModalVisible(true);
   };
@@ -249,6 +318,7 @@ export default function AccountLimitsScreen() {
     }
 
     const reference = `${rawBvn}_${Date.now()}`;
+    livenessRequest.current = { reference, bvn: String(rawBvn) };
     console.log(rawBvn)
     const body = { type: "collection", productCode: "liveness_bvn", reference };
 
@@ -292,7 +362,7 @@ export default function AccountLimitsScreen() {
           // gender: user?.gender || "",
           // phoneNumber: user?.phone || "",
           // email: user?.email || "",
-                 firstName:  "Samson",
+          firstName: "Samson",
           middleName: user?.middle_name || user?.middleName || "",
           lastName: "Jabo",
           gender: user?.gender || "",
@@ -306,6 +376,7 @@ export default function AccountLimitsScreen() {
       // Launch the QoreId flow
       launchQoreId(formData);
     } catch (error: any) {
+      livenessRequest.current = null;
       showFb("error", "Launch Error", error?.message || "Failed to request session token");
       setIsVerifyingFace(false);
     }
@@ -411,7 +482,7 @@ export default function AccountLimitsScreen() {
               >
                 {row.value}
               </Text>
-              </View>
+            </View>
           ))}
 
           <View className="flex-row items-center gap-2 pt-2">
@@ -630,13 +701,13 @@ export default function AccountLimitsScreen() {
         {/* Upgrade CTA */}
         {kycLevel < 3 && (
           <Pressable
-              onPress={() => {
-                // debug: log upgrade click and navigate
-                console.log("Upgrade CTA clicked - kycLevel:", kycLevel);
-                showFb("info", "Navigation", `Attempting to navigate for kycLevel ${kycLevel}`);
-                if (kycLevel === 0 || kycLevel === 1) router.push("/(root)/kyc");
-                else handleTier3UploadPress("utility");
-              }}
+            onPress={() => {
+              // debug: log upgrade click and navigate
+              console.log("Upgrade CTA clicked - kycLevel:", kycLevel);
+              showFb("info", "Navigation", `Attempting to navigate for kycLevel ${kycLevel}`);
+              if (kycLevel === 0 || kycLevel === 1) router.push("/(root)/kyc");
+              else handleTier3UploadPress("utility");
+            }}
             style={{ backgroundColor: C.bgDark }}
             className="rounded-2xl py-4 items-center shadow-sm active:opacity-90 flex-row justify-center gap-2"
           >
@@ -679,7 +750,7 @@ export default function AccountLimitsScreen() {
       {/* BVN input modal (used when raw BVN not available) */}
       <Modal transparent animationType="fade" visible={bvnModalVisible} onRequestClose={() => setBvnModalVisible(false)}>
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }} onPress={() => setBvnModalVisible(false)}>
-          <Pressable style={{ backgroundColor: "#fff", borderRadius: 16, padding: 20, width: "100%", maxWidth: 420 }} onPress={() => {}}>
+          <Pressable style={{ backgroundColor: "#fff", borderRadius: 16, padding: 20, width: "100%", maxWidth: 420 }} onPress={() => { }}>
             <Text style={{ fontFamily: "OutfitBold", fontSize: 17, color: "#2A2B0F", marginBottom: 8 }}>Enter your BVN</Text>
             <Text style={{ fontFamily: "Outfit", fontSize: 13, color: "#7A7B5A", marginBottom: 12 }}>Provide your 11-digit BVN to run the liveness check.</Text>
             <TextInput

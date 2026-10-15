@@ -372,15 +372,15 @@ export default function AccountScreen() {
             subtitle="Generate official PDF account statements"
             onPress={() => router.push("/(root)/accounts/statements" as any)}
           />
-          {/* <Divider /> */}
-          {/* <Row
+          <Divider />
+          <Row
             icon="credit-card-outline"
             iconBg="#EEEEE4"
             iconColor={C.bgMid}
             title="Saved Beneficiaries & Cards"
             subtitle="Manage transfer contacts and linked debit cards"
             onPress={() => router.push("/(root)/accounts/beneficiaries-cards" as any)}
-          /> */}
+          />
         </View>
 
         {/* ── SECURITY & PREFERENCES ───────────────────────────────────────── */}

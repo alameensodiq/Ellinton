@@ -36,7 +36,8 @@ import {
   UPDATE_FINANCIAL_ENDPOINT,
   INDUSTRIES_ENDPOINT,
   NIN_ENDPOINT,
-  DOCUPLOAD_ENDPOINT
+  DOCUPLOAD_ENDPOINT,
+  PROFILE_COMPLETION_ENDPOINT,
 } from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout, setCredentials, setUserOnly } from "../slices/authSlice";
@@ -1851,6 +1852,46 @@ export interface DocUploadPayload {
   proof_of_address_type?: ProofOfAddressType | string;
   proof_of_address?: string;       // base64
 }
+
+export interface ProfileCompletion {
+  completion_percentage: number;
+  completed_fields: number;
+  total_fields: number;
+  missing_fields: string[];
+}
+
+export const fetchProfileCompletion = createAsyncThunk<ProfileCompletion>(
+  "auth/fetchProfileCompletion",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+      const response = await safeFetch(PROFILE_COMPLETION_ENDPOINT(), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+
+      const completion = data?.data ?? data;
+      if (!response.ok || data.success === false || !completion) {
+        return rejectWithValue(
+          data?.data?.message ||
+            data?.message ||
+            `Profile completion fetch failed (${response.status})`
+        );
+      }
+
+      return completion as ProfileCompletion;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Profile completion fetch failed"
+      );
+    }
+  }
+);
 
 export const submitDocUpload = createAsyncThunk(
   "auth/submitDocUpload",

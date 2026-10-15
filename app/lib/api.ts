@@ -30,6 +30,10 @@ const DOCUPLOAD_ENDPOINT = () =>
   `${BASE_URL}v3/onboarding/tier-three`;
 const SESSIONTOKEN_ENDPOINT = () =>
   `${BASE_URL}v3/onboarding/liveness-sdk-session-token`;
+const ONBOARDING_ENDPOINT = (reference: string) =>
+  `${BASE_URL}v3/onboarding/liveness-check?reference=${reference}`;
+const PROFILE_COMPLETION_ENDPOINT = () =>
+  `${BASE_URL}v3/users/profile/completion`;
 const RESEND_OTP_USERS_ENDPOINT = (userId: string) =>
   `${BASE_URL}v2/users/${userId}/resend-otp`;
 const VERIFY_BVN_USERS_ENDPOINT = (userId: string) =>
@@ -276,5 +280,7 @@ export {
   INDUSTRIES_ENDPOINT,
   BVN_ENDPOINT,
   DOCUPLOAD_ENDPOINT,
-  SESSIONTOKEN_ENDPOINT
+  SESSIONTOKEN_ENDPOINT,
+  PROFILE_COMPLETION_ENDPOINT,
+  ONBOARDING_ENDPOINT
 };
