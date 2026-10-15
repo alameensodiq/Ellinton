@@ -3,6 +3,7 @@ import {
   validateEllingtonAccount,
   validateNipAccount,
   fetchAccountInfo,
+  updateNotificationPreference,
   fetchBanks,
   Bank,
 } from "../thunks/accountThunks"; // Adjust path
@@ -16,6 +17,7 @@ interface AccountInfo {
   accountName: string;
   accountNumber: string;
   accountBalance: number;
+  notificationPreference?: number;
 }
 
 export interface AccountState {
@@ -111,6 +113,11 @@ const accountSlice = createSlice({
       .addCase(fetchAccountInfo.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      .addCase(updateNotificationPreference.fulfilled, (state, action) => {
+        if (state.accountInfo) {
+          state.accountInfo.notificationPreference = action.payload;
+        }
       });
 
     /** -----------------------------------------

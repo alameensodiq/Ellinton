@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import {
+  ALERT_ENDPOINT,
   ACCOUNT_INFO_ENDPOINT,
   ACCOUNT_VALIDATE_NIP_ENDPOINT,
   ACCOUNT_VALIDATE_ELLINGLON_ENDPOINT,
@@ -104,6 +105,7 @@ export interface AccountInfo {
   accountName: string;
   accountNumber: string;
   accountBalance: number;
+  notificationPreference?: number;
 }
 
 export interface Bank {
@@ -260,6 +262,40 @@ export const fetchAccountInfo = createAsyncThunk<
     console.log("Fetch error:", error);
     return rejectWithValue(
       error.data?.message || error.message || "Account info fetch error"
+    );
+  }
+});
+
+export const updateNotificationPreference = createAsyncThunk<
+  number,
+  number
+>("accounts/updateNotificationPreference", async (notificationPreference, { rejectWithValue, getState }) => {
+  try {
+    const state = getState() as any;
+    const token = state.auth.token;
+
+    const response = await safeFetch(ALERT_ENDPOINT, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ notificationPreference }),
+    });
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      return rejectWithValue(
+        data?.data?.message ||
+          data?.message ||
+          `Notification preference update failed (${response.status})`
+      );
+    }
+
+    return notificationPreference;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.data?.message || error.message || "Notification preference update failed"
     );
   }
 });

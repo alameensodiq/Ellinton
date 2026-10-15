@@ -372,15 +372,15 @@ export default function AccountScreen() {
             subtitle="Generate official PDF account statements"
             onPress={() => router.push("/(root)/accounts/statements" as any)}
           />
-          <Divider />
-          <Row
+          {/* <Divider /> */}
+          {/* <Row
             icon="credit-card-outline"
             iconBg="#EEEEE4"
             iconColor={C.bgMid}
             title="Saved Beneficiaries & Cards"
             subtitle="Manage transfer contacts and linked debit cards"
             onPress={() => router.push("/(root)/accounts/beneficiaries-cards" as any)}
-          />
+          /> */}
         </View>
 
         {/* ── SECURITY & PREFERENCES ───────────────────────────────────────── */}
@@ -426,9 +426,9 @@ export default function AccountScreen() {
             subtitle="SMS alerts, transaction emails, push notifications"
             onPress={() => router.push("/(root)/accounts/notifications" as any)}
           />
-          <Divider />
+          {/* <Divider /> */}
           {/* Appearance row with inline toggle */}
-          <View className="px-4 py-4 flex-row items-center justify-between">
+          {/* <View className="px-4 py-4 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3.5 flex-1 mr-2">
               <View style={{ backgroundColor: "#EEEEE4" }} className="w-10 h-10 rounded-xl justify-center items-center">
                 <MaterialCommunityIcons name="circle-half-full" size={20} color={C.bgMid} />
@@ -439,7 +439,7 @@ export default function AccountScreen() {
               </Pressable>
             </View>
             <Feather name="chevron-right" size={18} color={C.chevron} />
-          </View>
+          </View> */}
         </View>
 
         {/* ── SUPPORT & LEGAL ──────────────────────────────────────────────── */}
@@ -483,7 +483,7 @@ export default function AccountScreen() {
             </View>
             <Text className="text-sm font-outfit-bold text-red-500">Sign Out</Text>
           </Pressable>
-          <Divider />
+          {/* <Divider />
           <Pressable
             onPress={() => router.push("/(root)/accounts/delete-account" as any)}
             style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
@@ -493,7 +493,7 @@ export default function AccountScreen() {
               <Feather name="trash-2" size={18} color="#EF4444" />
             </View>
             <Text className="text-sm font-outfit-bold text-red-500">Delete Account</Text>
-          </Pressable>
+          </Pressable> */}
         </View>
 
         {/* ── FOOTER ───────────────────────────────────────────────────────── */}

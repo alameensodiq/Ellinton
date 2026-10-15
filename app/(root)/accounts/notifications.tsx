@@ -1,123 +1,102 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, ScrollView, Switch } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Header from "@/app/components/header-back";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
+import { fetchAccountInfo, updateNotificationPreference } from "@/app/lib/thunks/accountThunks";
 
 const C = {
   bgPage: "#3F401B",
-  bgDark: "#969841",
-  bgMid: "#4a4b20",
   accent: "#969841",
-  gold: "#FBCD58",
   white: "#FFFFFF",
   cardBorder: "#E8E5DC",
   textPrimary: "#2A2B0F",
   textSub: "#7A7B5A",
-  textMuted: "#9A9B7A",
 };
 
-const NOTIF_STORAGE_KEY = "user_notification_preferences";
+const PREFERENCES = [
+  { value: 0, title: "No alerts", subtitle: "Do not send transaction alerts" },
+  { value: 1, title: "SMS alerts", subtitle: "Send alerts to your verified phone number" },
+  { value: 2, title: "Email alerts", subtitle: "Send alerts to your registered email address" },
+  { value: 3, title: "SMS & email alerts", subtitle: "Send alerts by both SMS and email" },
+] as const;
 
 export default function NotificationPreferencesScreen() {
-  const [pushTxAlerts, setPushTxAlerts] = useState(true);
-  const [pushSecurityAlerts, setPushSecurityAlerts] = useState(true);
-  const [pushOffers, setPushOffers] = useState(false);
-  const [smsTxAlerts, setSmsTxAlerts] = useState(true);
-  const [smsSecurityOtp, setSmsSecurityOtp] = useState(true);
-  const [emailInstantReceipts, setEmailInstantReceipts] = useState(true);
-  const [emailMonthlySummary, setEmailMonthlySummary] = useState(true);
-  const [emailNewsletters, setEmailNewsletters] = useState(false);
+  const dispatch = useAppDispatch();
+  const accountInfo = useAppSelector((state) => state.accounts.accountInfo);
+  const [preference, setPreference] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => { loadPreferences(); }, []);
+  useEffect(() => {
+    dispatch(fetchAccountInfo());
+  }, [dispatch]);
 
-  const loadPreferences = async () => {
+  console.log(accountInfo)
+
+  useEffect(() => {
+    const value = accountInfo?.notificationPreference;
+    if (value !== undefined && value >= 0 && value <= 3) {
+      setPreference(value);
+    }
+  }, [accountInfo?.notificationPreference]);
+
+  const selectPreference = async (value: number) => {
+    if (isSaving || value === preference) return;
+
+    const previousPreference = preference;
+    setPreference(value);
+    setIsSaving(true);
+
     try {
-      const stored = await AsyncStorage.getItem(NOTIF_STORAGE_KEY);
-      if (stored) {
-        const p = JSON.parse(stored);
-        if (p.pushTxAlerts !== undefined) setPushTxAlerts(p.pushTxAlerts);
-        if (p.pushSecurityAlerts !== undefined) setPushSecurityAlerts(p.pushSecurityAlerts);
-        if (p.pushOffers !== undefined) setPushOffers(p.pushOffers);
-        if (p.smsTxAlerts !== undefined) setSmsTxAlerts(p.smsTxAlerts);
-        if (p.smsSecurityOtp !== undefined) setSmsSecurityOtp(p.smsSecurityOtp);
-        if (p.emailInstantReceipts !== undefined) setEmailInstantReceipts(p.emailInstantReceipts);
-        if (p.emailMonthlySummary !== undefined) setEmailMonthlySummary(p.emailMonthlySummary);
-        if (p.emailNewsletters !== undefined) setEmailNewsletters(p.emailNewsletters);
-      }
-    } catch (e) { console.log(e); }
+      await dispatch(updateNotificationPreference(value)).unwrap();
+    } catch (error) {
+      setPreference(previousPreference);
+      Alert.alert("Unable to update alerts", typeof error === "string" ? error : "Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
-
-  const savePreference = async (key: string, value: boolean) => {
-    try {
-      const stored = await AsyncStorage.getItem(NOTIF_STORAGE_KEY);
-      const existing = stored ? JSON.parse(stored) : {};
-      existing[key] = value;
-      await AsyncStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(existing));
-    } catch (e) { console.log(e); }
-  };
-
-  const SectionLabel = ({ label }: { label: string }) => (
-    <Text style={{ color: "#D1D1D1", fontSize: 11, fontFamily: "OutfitBold", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8, marginLeft: 4, marginTop: 4 }}>
-      {label}
-    </Text>
-  );
-
-  const Divider = () => <View style={{ height: 1, backgroundColor: C.cardBorder, marginHorizontal: 16 }} />;
-
-  const ToggleRow = ({ title, subtitle, value, onChange, disabled }: {
-    title: string; subtitle: string; value: boolean; onChange?: (v: boolean) => void; disabled?: boolean;
-  }) => (
-    <View style={{ paddingHorizontal: 16, paddingVertical: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-      <View style={{ flex: 1, marginRight: 12 }}>
-        <Text style={{ color: C.textPrimary, fontSize: 13, fontFamily: "OutfitBold" }}>{title}</Text>
-        <Text style={{ color: C.textSub, fontSize: 11, fontFamily: "Outfit", marginTop: 3 }}>{subtitle}</Text>
-      </View>
-      <Switch value={value} onValueChange={onChange} disabled={disabled} trackColor={{ false: "#CBD5E1", true: C.accent }} />
-    </View>
-  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bgPage }}>
       <Header title="Notification Preferences" />
 
       <ScrollView className="flex-1 px-4 py-2" contentContainerStyle={{ paddingBottom: 50 }} showsVerticalScrollIndicator={false}>
+        <Text style={{ color: "#D1D1D1", fontSize: 11, fontFamily: "OutfitBold", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8, marginLeft: 4, marginTop: 4 }}>
+          Transaction alerts
+        </Text>
 
-        <SectionLabel label="Push Notifications" />
-        <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl mb-5 shadow-sm overflow-hidden">
-          <ToggleRow title="Transaction Alerts" subtitle="Instant alerts on money received, sent, or bill payments" value={pushTxAlerts} onChange={(v) => { setPushTxAlerts(v); savePreference("pushTxAlerts", v); }} />
-          <Divider />
-          <ToggleRow title="Security Notices" subtitle="New device logins, passcode resets, and card freezes" value={pushSecurityAlerts} onChange={(v) => { setPushSecurityAlerts(v); savePreference("pushSecurityAlerts", v); }} />
-          <Divider />
-          <ToggleRow title="Product Updates & Rates" subtitle="New savings rates, features, and system maintenance" value={pushOffers} onChange={(v) => { setPushOffers(v); savePreference("pushOffers", v); }} />
-        </View>
-
-        <SectionLabel label="SMS Alerts" />
         <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl mb-2 shadow-sm overflow-hidden">
-          <ToggleRow title="Debit & Credit SMS" subtitle="Real-time SMS to your verified phone number" value={smsTxAlerts} onChange={(v) => { setSmsTxAlerts(v); savePreference("smsTxAlerts", v); }} />
-          <Divider />
-          <ToggleRow title="Critical Security OTPs" subtitle="Required one-time codes (mandatory for safety)" value={smsSecurityOtp} disabled />
+          {PREFERENCES.map((option, index) => {
+            const selected = preference === option.value;
+            return (
+              <React.Fragment key={option.value}>
+                {index > 0 && <View style={{ height: 1, backgroundColor: C.cardBorder, marginHorizontal: 16 }} />}
+                <Pressable
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: selected, disabled: isSaving }}
+                  disabled={isSaving}
+                  onPress={() => selectPreference(option.value)}
+                  style={{ paddingHorizontal: 16, paddingVertical: 16, flexDirection: "row", alignItems: "center" }}
+                >
+                  <View style={{ flex: 1, marginRight: 12 }}>
+                    <Text style={{ color: C.textPrimary, fontSize: 14, fontFamily: "OutfitBold" }}>{option.title}</Text>
+                    <Text style={{ color: C.textSub, fontSize: 11, fontFamily: "Outfit", marginTop: 3 }}>{option.subtitle}</Text>
+                  </View>
+                  <MaterialCommunityIcons name={selected ? "radiobox-marked" : "radiobox-blank"} size={24} color={selected ? C.accent : "#94A3B8"} />
+                </Pressable>
+              </React.Fragment>
+            );
+          })}
         </View>
 
-        {/* Regulatory Disclosure */}
-        <View
-          style={{ backgroundColor: "rgba(251,205,88,0.12)", borderColor: "rgba(251,205,88,0.5)", borderWidth: 1 }}
-          className="p-3 rounded-xl mb-5 flex-row items-center gap-2.5"
-        >
-          <MaterialCommunityIcons name="information" size={18} color="#ca8a04" />
+        <View style={{ backgroundColor: "rgba(251,205,88,0.12)", borderColor: "rgba(251,205,88,0.5)", borderWidth: 1 }} className="p-3 rounded-xl mb-5 flex-row items-center gap-2.5">
+          {isSaving ? <ActivityIndicator size="small" color="#ca8a04" /> : <MaterialCommunityIcons name="information" size={18} color="#ca8a04" />}
           <Text style={{ color: "#78350f", fontSize: 11, fontFamily: "Outfit", lineHeight: 16, flex: 1 }}>
-            CBN Regulatory Disclosure: Standard SMS notification charges of ₦4.00 per SMS may apply to voluntary transaction SMS alerts.
+            Standard SMS notification charges of ₦6.50 per SMS may apply to SMS transaction alerts.
           </Text>
-        </View>
-
-        <SectionLabel label="Email Statements & Receipts" />
-        <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl mb-5 shadow-sm overflow-hidden">
-          <ToggleRow title="Instant Email Receipts" subtitle="Official PDF receipt sent after every transfer" value={emailInstantReceipts} onChange={(v) => { setEmailInstantReceipts(v); savePreference("emailInstantReceipts", v); }} />
-          <Divider />
-          <ToggleRow title="Monthly Summary Statement" subtitle="Account statement emailed on the 1st of each month" value={emailMonthlySummary} onChange={(v) => { setEmailMonthlySummary(v); savePreference("emailMonthlySummary", v); }} />
-          <Divider />
-          <ToggleRow title="Newsletters & Finance Tips" subtitle="Quarterly market digests and wealth management tips" value={emailNewsletters} onChange={(v) => { setEmailNewsletters(v); savePreference("emailNewsletters", v); }} />
         </View>
       </ScrollView>
     </SafeAreaView>

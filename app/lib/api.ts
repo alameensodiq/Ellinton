@@ -62,6 +62,7 @@ export const CHANGE_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}v2/users/change
 export const RESET_OTP_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}v2/users/transaction-pin/forgot`;
 export const RESET_TRANSACTION_PIN_USERS_ENDPOINT = `${BASE_URL}v2/users/transaction-pin/reset`;
 export const RESET_MFA_USERS_ENDPOINT = `${BASE_URL}v2/users/mfa`;
+export const ALERT_ENDPOINT = `${BASE_URL}v2/accounts/notification-preferences`;
 
 //kyc
 const KYC_STATUS_ENDPOINT = `${BASE_URL}v2/kyc/status`;
