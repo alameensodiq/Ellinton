@@ -8,3 +8,4 @@ export const useQoreIdSdk = (opts?: QoreIdOptions) =>
   });
 
 export default { useQoreIdSdk };
+  

@@ -97,6 +97,7 @@ export default function AccountLimitsScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  console.log(user)
   const token = useAppSelector((state) => (state as any).auth.token);
   const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion | null>(null);
 
