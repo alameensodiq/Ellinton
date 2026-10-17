@@ -58,17 +58,17 @@ const billPaymentServices: ServiceItem[] = [
 
 const otherServices: ServiceItem[] = [
   { id: "9", icon: SERVICE_ICONS.requestLoan, label: "Request loan" },
-  { id: "10", icon: SERVICE_ICONS.insurance, label: "Buy Insurance" },
-  { id: "11", icon: SERVICE_ICONS.schedule, label: "Schedule transaction" },
+  // { id: "10", icon: SERVICE_ICONS.insurance, label: "Buy Insurance" },
+  // { id: "11", icon: SERVICE_ICONS.schedule, label: "Schedule transaction" },
 ];
 
-const   wealthManagement: ServiceItem[] = [
-  { id: "12", icon: SERVICE_ICONS.basicSavings, label: "Basic savings" },
-  { id: "13", icon: SERVICE_ICONS.targetSavings, label: "Target savings" },
-  { id: "14", icon: SERVICE_ICONS.groupSavings, label: "Group savings" },
-  { id: "15", icon: SERVICE_ICONS.fixedDeposit, label: "Fixed deposit" },
-  { id: "16", icon: SERVICE_ICONS.shares, label: "Buy shares" },
-  { id: "17", icon: SERVICE_ICONS.gold, label: "Gold" },
+const wealthManagement: ServiceItem[] = [
+  // { id: "12", icon: SERVICE_ICONS.basicSavings, label: "Basic savings" },
+  // { id: "13", icon: SERVICE_ICONS.targetSavings, label: "Target savings" },
+  // { id: "14", icon: SERVICE_ICONS.groupSavings, label: "Group savings" },
+  // { id: "15", icon: SERVICE_ICONS.fixedDeposit, label: "Fixed deposit" },
+  // { id: "16", icon: SERVICE_ICONS.shares, label: "Buy shares" },
+  // { id: "17", icon: SERVICE_ICONS.gold, label: "Gold" },
 ];
 
 const utilityserviceItems = [
@@ -1277,18 +1277,18 @@ const getDeviceId = async (): Promise<string> => {
   try {
     // Try to get from SecureStore
     let deviceId = await SecureStore.getItemAsync(DEVICE_ID_KEY);
-    
+
     if (deviceId && isValidUUID(deviceId)) {
       // Valid ID found - return it
       return deviceId;
     }
-    
+
     if (deviceId && !isValidUUID(deviceId)) {
       // Invalid format - corrupted data, delete it
       console.warn('Corrupted device ID found, deleting:', deviceId);
       await SecureStore.deleteItemAsync(DEVICE_ID_KEY);
     }
-    
+
     // Check backup location (in case SecureStore failed)
     let backupId = await AsyncStorage.getItem(DEVICE_ID_BACKUP_KEY);
     if (backupId && isValidUUID(backupId)) {
@@ -1297,25 +1297,25 @@ const getDeviceId = async (): Promise<string> => {
       await SecureStore.setItemAsync(DEVICE_ID_KEY, backupId);
       return backupId;
     }
-    
+
     // Generate NEW ID (only on first install OR complete data loss)
     console.log('Generating new device ID (first time or all data lost)');
     const newDeviceId = Crypto.randomUUID();
     await SecureStore.setItemAsync(DEVICE_ID_KEY, newDeviceId);
     await AsyncStorage.setItem(DEVICE_ID_BACKUP_KEY, newDeviceId);
-    
+
     return newDeviceId;
-    
+
   } catch (error) {
     console.error("SecureStore error, using backup:", error);
-    
+
     // Fallback: try AsyncStorage backup only
     let backupId = await AsyncStorage.getItem(DEVICE_ID_BACKUP_KEY);
     if (backupId) {
       console.log('Using backup ID due to SecureStore error:', backupId);
       return backupId;
     }
-    
+
     // Generate and store in backup only (last resort)
     console.log('Creating emergency backup ID');
     const emergencyId = Crypto.randomUUID();

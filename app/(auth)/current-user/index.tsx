@@ -187,6 +187,8 @@ export default function CurrentUser() {
             ? { email: userIdentifier.toLowerCase(), passcode, device_id: deviceId }
             : { phone: userIdentifier, passcode, device_id: deviceId };
 
+          console.log(passcode, "passcode")
+
           await dispatch(loginUser(payload)).unwrap();
 
           // Save PIN for future biometric logins

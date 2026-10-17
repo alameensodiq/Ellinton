@@ -182,6 +182,9 @@ export default function AccountLimitsScreen() {
     profileCompletion.missing_fields.length === 0;
   const hasCompletedKyc1 = kycLevel >= 1;
   const hasCompletedKyc2 = kycLevel >= 2;
+  const hasVerifiedBvn =
+    user?.bvn_verified === true;
+  const hasVerifiedNin = user?.nin_verified === true;
 
   useEffect(() => {
     dispatch(fetchProfileCompletion())
@@ -215,18 +218,39 @@ export default function AccountLimitsScreen() {
   const [identificationNumber, setIdentificationNumber] = useState("");
   const [uploadingGovtId, setUploadingGovtId] = useState(false);
 
-  const [utilityBillDoc] = useState<string | null>(null); // kept for status calc only
-  const [govtIdDoc] = useState<string | null>(null);      // kept for status calc only
+  // Keep a local record after an upload so the card reflects the submission
+  // immediately, even before the refreshed profile reaches the device.
+  const [utilityBillDoc, setUtilityBillDoc] = useState<string | null>(null);
+  const [govtIdDoc, setGovtIdDoc] = useState<string | null>(null);
+
+  const hasUploadedProofOfAddress = Boolean(
+    user?.utility_bill_provided ||
+    (user as any)?.proof_of_address_provided ||
+    (user as any)?.proof_of_address ||
+    utilityBillDoc
+  );
+  const hasUploadedGovernmentId = Boolean(
+    (user as any)?.government_id_provided ||
+    (user as any)?.government_id ||
+    (user as any)?.government_id_type ||
+    govtIdDoc
+  );
+
+  const tierCompletion = {
+    1: hasVerifiedBvn,
+    2: hasVerifiedNin && hasCompletedKyc2,
+    3: isProfileComplete && hasUploadedProofOfAddress && hasUploadedGovernmentId,
+  } as const;
 
   const utilityStatus: "COMPLETED" | "PENDING REVIEW" | "REQUIRED" =
-    user?.utility_bill_provided || kycLevel >= 3
+    hasUploadedProofOfAddress
       ? "COMPLETED"
       : utilityBillDoc
         ? "PENDING REVIEW"
         : "REQUIRED";
 
   const govtIdStatus: "COMPLETED" | "PENDING REVIEW" | "REQUIRED" =
-    kycLevel >= 3
+    hasUploadedGovernmentId
       ? "COMPLETED"
       : govtIdDoc
         ? "PENDING REVIEW"
@@ -279,7 +303,11 @@ export default function AccountLimitsScreen() {
         proof_of_address: proofBase64,
       })).unwrap();
       setUtilityModalVisible(false);
+      setUtilityBillDoc(proofFileName || "uploaded");
       setProofBase64(null); setProofFileName(null);
+      await dispatch(getUserProfile()).unwrap().catch((error) => {
+        console.warn("Unable to refresh profile after proof-of-address upload:", error);
+      });
       showFb("success", "Submitted", "Proof of address submitted for compliance review.");
     } catch (err: any) {
       setUtilityModalVisible(false);
@@ -300,7 +328,11 @@ export default function AccountLimitsScreen() {
         government_id: govtIdBase64,
       })).unwrap();
       setGovtIdModalVisible(false);
+      setGovtIdDoc(govtIdFileName || "uploaded");
       setGovtIdBase64(null); setGovtIdFileName(null); setIdentificationNumber("");
+      await dispatch(getUserProfile()).unwrap().catch((error) => {
+        console.warn("Unable to refresh profile after Government ID upload:", error);
+      });
       showFb("success", "Submitted", "Government ID submitted for compliance review.");
     } catch (err: any) {
       setGovtIdModalVisible(false);
@@ -357,18 +389,18 @@ export default function AccountLimitsScreen() {
       const formData: any = {
         sessionToken,
         applicantData: {
-          // firstName: user?.first_name || user?.firstName || "",
-          // middleName: user?.middle_name || user?.middleName || "",
-          // lastName: user?.last_name || user?.lastName || "",
-          // gender: user?.gender || "",
-          // phoneNumber: user?.phone || "",
-          // email: user?.email || "",
-          firstName: "Samson",
+          firstName: user?.first_name || user?.firstName || "",
           middleName: user?.middle_name || user?.middleName || "",
-          lastName: "Jabo",
+          lastName: user?.last_name || user?.lastName || "",
           gender: user?.gender || "",
-          phoneNumber: "+2348000000001",
+          phoneNumber: user?.phone || "",
           email: user?.email || "",
+          // firstName: "Samson",
+          // middleName: user?.middle_name || user?.middleName || "",
+          // lastName: "Jabo",
+          // gender: user?.gender || "",
+          // phoneNumber: "+2348000000001",
+          // email: user?.email || "",
         },
         identityData: { idType: "BVN", idNumber: String(rawBvn) },
         addressData: { address: user?.address_1 || "", city: user?.city || "", lga: user?.local_government || "" },
@@ -401,7 +433,7 @@ export default function AccountLimitsScreen() {
     active: boolean;
     requirements: React.ReactNode;
   }) => {
-    const isCompleted = kycLevel >= tier;
+    const isCompleted = tierCompletion[tier as keyof typeof tierCompletion] ?? false;
     const isDark = tier < 3;
 
     return (
@@ -607,7 +639,7 @@ export default function AccountLimitsScreen() {
                 label="BVN Liveness Check"
                 sublabel="Facial liveness match"
                 pill={
-                  (user?.facial_verification_status === "verified" || user?.bvn_verified)
+                  hasVerifiedBvn
                     ? <StatusPill status="COMPLETED" />
                     : <StatusPill status="VERIFY" onPress={() => handleLaunchBVNLiveness()} />
                 }
@@ -630,14 +662,20 @@ export default function AccountLimitsScreen() {
                 dark
                 label="Tier 1 Profile"
                 sublabel="BVN verification"
-                pill={<StatusPill status="COMPLETED" />}
+                pill={
+                  hasVerifiedBvn ? (
+                    <StatusPill status="COMPLETED" />
+                  ) : (
+                    <StatusPill status="VERIFY" onPress={() => handleLaunchBVNLiveness()} />
+                  )
+                }
               />
               <ReqRow
                 dark
                 label="National Identity Number (NIN / vNIN)"
                 sublabel="11-digit NIN or 16-char vNIN"
                 pill={
-                  kycLevel >= 2 ? (
+                  hasVerifiedNin && hasCompletedKyc2 ? (
                     <StatusPill status="COMPLETED" />
                   ) : (
                     <StatusPill status="VERIFY" onPress={() => router.push("/(root)/kyc")} />

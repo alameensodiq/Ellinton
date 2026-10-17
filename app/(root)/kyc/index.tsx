@@ -14,9 +14,11 @@ import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import TextInputField from "@/app/components/inputs/TextInputField";
 import Loading from "@/app/components/Loading";
+import SuccessModal from "@/app/components/SuccessModal";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/app/lib/store";
 import { verifyNin } from "@/app/lib/thunks/kycThunks";
+import { getUserProfile } from "@/app/lib/thunks/authThunks";
 
 const NINIdentityScreen = () => {
   const router = useRouter();
@@ -25,6 +27,7 @@ const NINIdentityScreen = () => {
   const [nin, setNin] = useState("");
   const [ninError, setNinError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
 
   const validateNIN = (value: string) => /^\d{11}$/.test(value);
@@ -40,7 +43,11 @@ const NINIdentityScreen = () => {
       const result = await dispatch(verifyNin({ nin })).unwrap();
 
       if (result.nin_verified) {
-        router.push({ pathname: "/(root)/kyc/next-of-kin", params: { nin } });
+        // Refresh the stored user details before showing the updated tier status.
+        await dispatch(getUserProfile()).unwrap().catch((error) => {
+          console.warn("Unable to refresh profile after NIN verification:", error);
+        });
+        setShowSuccess(true);
       } else {
         setNinError(
           "NIN verification failed. Please check the number and try again."
@@ -114,6 +121,15 @@ const NINIdentityScreen = () => {
       </TouchableWithoutFeedback>
 
       <Loading visible={isLoading} />
+      <SuccessModal
+        visible={showSuccess}
+        title="NIN Verified"
+        message="Your NIN has been verified successfully. You can now view your updated account limits."
+        onDismiss={() => {
+          setShowSuccess(false);
+          router.replace("/(root)/accounts/account-limits" as any);
+        }}
+      />
     </>
   );
 };

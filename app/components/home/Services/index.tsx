@@ -25,12 +25,12 @@ export default function ServicesSection() {
     if (item.id === "9") { router.push("/(root)/loans"); return true; }
 
     // Savings/Wealth Management routes
-    if (item.id === "12") { router.push({ pathname: "/(root)/savings", params: { type: "basic" } }); return true; }
-    if (item.id === "13") { router.push({ pathname: "/(root)/savings", params: { type: "target" } }); return true; }
-    if (item.id === "14") { router.push({ pathname: "/(root)/savings", params: { type: "group" } }); return true; }
-    if (item.id === "15") { router.push({ pathname: "/(root)/savings", params: { type: "fixed" } }); return true; }
+    // if (item.id === "12") { router.push({ pathname: "/(root)/savings", params: { type: "basic" } }); return true; }
+    // if (item.id === "13") { router.push({ pathname: "/(root)/savings", params: { type: "target" } }); return true; }
+    // if (item.id === "14") { router.push({ pathname: "/(root)/savings", params: { type: "group" } }); return true; }
+    // if (item.id === "15") { router.push({ pathname: "/(root)/savings", params: { type: "fixed" } }); return true; }
 
-    if (item.id === "17") { router.push("/(root)/gold/dashboard"); return true; }
+    // if (item.id === "17") { router.push("/(root)/gold/dashboard"); return true; }
 
     // If it didn't hit any of the IDs above, it's a "Coming Soon" item
     return false;
