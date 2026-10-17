@@ -137,7 +137,7 @@ const HomeScreen = () => {
             title="Complete your KYC verification"
             description="To access all features it’s essential to verify your identity."
             icon={images.landing_kyc_icon}
-            onPress={() => router.push("/(root)/kyc")}
+            onPress={() => router.push("/(root)/accounts/account-limits")}
           />
         )}
         {showKycBanner2 && (
@@ -145,7 +145,7 @@ const HomeScreen = () => {
             title="Complete your KYC verification"
             description="To access all features it’s essential to verify your identity."
             icon={images.landing_kyc_icon}
-            onPress={() => router.push("/(root)/kyc/utility-bills")}
+            onPress={() => router.push("/(root)/accounts/account-limits")}
           />
         )}
         <View className="mb-10">

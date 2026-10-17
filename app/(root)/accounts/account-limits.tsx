@@ -234,20 +234,21 @@ export default function AccountLimitsScreen() {
     utilityBillDoc
   );
   const hasUploadedGovernmentId = Boolean(
+    (user as any)?.valid_id_provided ||
     (user as any)?.government_id_provided ||
     (user as any)?.government_id ||
     (user as any)?.government_id_type ||
     govtIdDoc
   );
+  const hasProvidedTier3Document =
+    hasUploadedProofOfAddress || hasUploadedGovernmentId;
 
   const tierCompletion = {
     1: hasCompletedTier1,
     2: hasCompletedTier2,
     3:
       kycLevel >= 3 &&
-      canUploadTier3Documents &&
-      hasUploadedProofOfAddress &&
-      hasUploadedGovernmentId,
+      hasProvidedTier3Document,
   } as const;
 
   const utilityStatus: "COMPLETED" | "PENDING REVIEW" | "REQUIRED" =
@@ -285,7 +286,7 @@ export default function AccountLimitsScreen() {
     }
 
     if (!isProfileComplete) {
-      router.push("/(auth)/profile-update");
+      router.push("/(root)/accounts/profile-info");
       return;
     }
 
@@ -321,6 +322,12 @@ export default function AccountLimitsScreen() {
   };
 
   const handleSubmitUtility = async () => {
+    if (!canUploadTier3Documents) {
+      setUtilityModalVisible(false);
+      handleTier3UploadPress("utility");
+      return;
+    }
+
     if (!proofBase64) { showFb("info", "Validation", "Please select a proof of address document."); return; }
     setUploadingUtility(true);
     try {
@@ -345,6 +352,12 @@ export default function AccountLimitsScreen() {
   };
 
   const handleSubmitGovtId = async () => {
+    if (!canUploadTier3Documents) {
+      setGovtIdModalVisible(false);
+      handleTier3UploadPress("govtid");
+      return;
+    }
+
     if (!govtIdBase64) { showFb("info", "Validation", "Please select a photo of your Government ID."); return; }
     setUploadingGovtId(true);
     try {
@@ -772,7 +785,6 @@ export default function AccountLimitsScreen() {
             onPress={() => {
               // debug: log upgrade click and navigate
               console.log("Upgrade CTA clicked - kycLevel:", kycLevel);
-              showFb("info", "Navigation", `Attempting to navigate for kycLevel ${kycLevel}`);
               if (kycLevel === 0 || kycLevel === 1) handleTier2VerificationPress();
               else handleTier3UploadPress("utility");
             }}

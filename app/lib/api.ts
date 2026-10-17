@@ -19,7 +19,7 @@ const UPDATE_RESIDENTIAL_ENDPOINT = () =>
 const UPDATE_NEXTOFKIN_ENDPOINT = () =>
   `${BASE_URL}v3/users/profile/next-of-kin`;
 const UPDATE_FINANCIAL_ENDPOINT = () =>
-  `${BASE_URL}v3/users/profile/financial`;
+  `${BASE_URL}v3/users/profile/occupation-financial`;
 const NIN_ENDPOINT = () =>
   `${BASE_URL}v3/onboarding/nin`;
 const INDUSTRIES_ENDPOINT = () =>

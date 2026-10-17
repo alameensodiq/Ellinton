@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Header from "@/app/components/header-back";
+import ErrorModal from "@/app/components/ErrorModal";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { fetchAccountInfo, updateNotificationPreference } from "@/app/lib/thunks/accountThunks";
@@ -28,6 +29,7 @@ export default function NotificationPreferencesScreen() {
   const accountInfo = useAppSelector((state) => state.accounts.accountInfo);
   const [preference, setPreference] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     dispatch(fetchAccountInfo());
@@ -53,7 +55,7 @@ export default function NotificationPreferencesScreen() {
       await dispatch(updateNotificationPreference(value)).unwrap();
     } catch (error) {
       setPreference(previousPreference);
-      Alert.alert("Unable to update alerts", typeof error === "string" ? error : "Please try again.");
+      setErrorMessage(typeof error === "string" ? error : "Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -99,6 +101,12 @@ export default function NotificationPreferencesScreen() {
           </Text>
         </View>
       </ScrollView>
+      <ErrorModal
+        visible={Boolean(errorMessage)}
+        title="Unable to update alerts"
+        message={errorMessage}
+        onDismiss={() => setErrorMessage("")}
+      />
     </SafeAreaView>
   );
 }
