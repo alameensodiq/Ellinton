@@ -242,24 +242,23 @@ export default function AccountLimitsScreen() {
   );
   const hasProvidedTier3Document =
     hasUploadedProofOfAddress || hasUploadedGovernmentId;
+  const hasCompletedTier3 = kycLevel >= 3 && hasProvidedTier3Document;
 
   const tierCompletion = {
     1: hasCompletedTier1,
     2: hasCompletedTier2,
-    3:
-      kycLevel >= 3 &&
-      hasProvidedTier3Document,
+    3: hasCompletedTier3,
   } as const;
 
   const utilityStatus: "COMPLETED" | "PENDING REVIEW" | "REQUIRED" =
-    hasUploadedProofOfAddress
+    hasCompletedTier3 || hasUploadedProofOfAddress
       ? "COMPLETED"
       : utilityBillDoc
         ? "PENDING REVIEW"
         : "REQUIRED";
 
   const govtIdStatus: "COMPLETED" | "PENDING REVIEW" | "REQUIRED" =
-    hasUploadedGovernmentId
+    hasCompletedTier3 || hasUploadedGovernmentId
       ? "COMPLETED"
       : govtIdDoc
         ? "PENDING REVIEW"
