@@ -180,11 +180,15 @@ export default function AccountLimitsScreen() {
     profileCompletion?.completion_percentage === 100 &&
     Array.isArray(profileCompletion.missing_fields) &&
     profileCompletion.missing_fields.length === 0;
-  const hasCompletedKyc1 = kycLevel >= 1;
-  const hasCompletedKyc2 = kycLevel >= 2;
   const hasVerifiedBvn =
     user?.bvn_verified === true;
   const hasVerifiedNin = user?.nin_verified === true;
+  // A tier is complete only after its verification steps and corresponding
+  // server KYC level have both been confirmed.
+  const hasCompletedTier1 = kycLevel >= 1 && hasVerifiedBvn;
+  const hasCompletedTier2 = kycLevel >= 2 && hasCompletedTier1 && hasVerifiedNin;
+  const canUploadTier3Documents =
+    hasCompletedTier1 && hasCompletedTier2 && isProfileComplete;
 
   useEffect(() => {
     dispatch(fetchProfileCompletion())
@@ -237,9 +241,13 @@ export default function AccountLimitsScreen() {
   );
 
   const tierCompletion = {
-    1: hasVerifiedBvn,
-    2: hasVerifiedNin && hasCompletedKyc2,
-    3: isProfileComplete && hasUploadedProofOfAddress && hasUploadedGovernmentId,
+    1: hasCompletedTier1,
+    2: hasCompletedTier2,
+    3:
+      kycLevel >= 3 &&
+      canUploadTier3Documents &&
+      hasUploadedProofOfAddress &&
+      hasUploadedGovernmentId,
   } as const;
 
   const utilityStatus: "COMPLETED" | "PENDING REVIEW" | "REQUIRED" =
@@ -256,11 +264,32 @@ export default function AccountLimitsScreen() {
         ? "PENDING REVIEW"
         : "REQUIRED";
 
-  const handleTier3UploadPress = (type: "utility" | "govtid") => {
-    if (!hasCompletedKyc1 || !hasCompletedKyc2 || !isProfileComplete) {
-      router.push("/(root)/kyc");
+  const handleTier2VerificationPress = () => {
+    if (!hasCompletedTier1) {
+      handleLaunchBVNLiveness();
       return;
     }
+
+    router.push("/(root)/kyc");
+  };
+
+  const handleTier3UploadPress = (type: "utility" | "govtid") => {
+    if (!hasCompletedTier1) {
+      handleTier2VerificationPress();
+      return;
+    }
+
+    if (!hasCompletedTier2) {
+      handleTier2VerificationPress();
+      return;
+    }
+
+    if (!isProfileComplete) {
+      router.push("/(auth)/profile-update");
+      return;
+    }
+
+
     if (type === "utility") setUtilityModalVisible(true);
     else setGovtIdModalVisible(true);
   };
@@ -389,18 +418,18 @@ export default function AccountLimitsScreen() {
       const formData: any = {
         sessionToken,
         applicantData: {
-          firstName: user?.first_name || user?.firstName || "",
-          middleName: user?.middle_name || user?.middleName || "",
-          lastName: user?.last_name || user?.lastName || "",
-          gender: user?.gender || "",
-          phoneNumber: user?.phone || "",
-          email: user?.email || "",
-          // firstName: "Samson",
+          // firstName: user?.first_name || user?.firstName || "",
           // middleName: user?.middle_name || user?.middleName || "",
-          // lastName: "Jabo",
+          // lastName: user?.last_name || user?.lastName || "",
           // gender: user?.gender || "",
-          // phoneNumber: "+2348000000001",
+          // phoneNumber: user?.phone || "",
           // email: user?.email || "",
+          firstName: "Samson",
+          middleName: user?.middle_name || user?.middleName || "",
+          lastName: "Jabo",
+          gender: user?.gender || "",
+          phoneNumber: "+2348000000001",
+          email: user?.email || "",
         },
         identityData: { idType: "BVN", idNumber: String(rawBvn) },
         addressData: { address: user?.address_1 || "", city: user?.city || "", lga: user?.local_government || "" },
@@ -663,10 +692,10 @@ export default function AccountLimitsScreen() {
                 label="Tier 1 Profile"
                 sublabel="BVN verification"
                 pill={
-                  hasVerifiedBvn ? (
+                  hasCompletedTier1 ? (
                     <StatusPill status="COMPLETED" />
                   ) : (
-                    <StatusPill status="VERIFY" onPress={() => handleLaunchBVNLiveness()} />
+                    <StatusPill status="REQUIRED" />
                   )
                 }
               />
@@ -675,10 +704,10 @@ export default function AccountLimitsScreen() {
                 label="National Identity Number (NIN / vNIN)"
                 sublabel="11-digit NIN or 16-char vNIN"
                 pill={
-                  hasVerifiedNin && hasCompletedKyc2 ? (
+                  hasCompletedTier2 ? (
                     <StatusPill status="COMPLETED" />
                   ) : (
-                    <StatusPill status="VERIFY" onPress={() => router.push("/(root)/kyc")} />
+                    <StatusPill status="VERIFY" onPress={handleTier2VerificationPress} />
                   )
                 }
               />
@@ -744,7 +773,7 @@ export default function AccountLimitsScreen() {
               // debug: log upgrade click and navigate
               console.log("Upgrade CTA clicked - kycLevel:", kycLevel);
               showFb("info", "Navigation", `Attempting to navigate for kycLevel ${kycLevel}`);
-              if (kycLevel === 0 || kycLevel === 1) router.push("/(root)/kyc");
+              if (kycLevel === 0 || kycLevel === 1) handleTier2VerificationPress();
               else handleTier3UploadPress("utility");
             }}
             style={{ backgroundColor: C.bgDark }}

@@ -23,6 +23,7 @@ import {
   resendDeviceOtp,
   resendUserOtp
 } from "@/app/lib/thunks/authThunks";
+import { logout } from "@/app/lib/slices/authSlice";
 import CustomText from "@/app/components/CustomText";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
@@ -249,6 +250,15 @@ const DeviceOtpScreen = () => {
 
   const canResend = remainingTime === 0;
 
+  const handleClose = async () => {
+    // This screen is reached with router.replace(), so Login is no longer in
+    // the navigation history. Clear this incomplete sign-in before navigating
+    // there, otherwise AuthWrapper immediately sends the user back here.
+    await AsyncStorage.multiRemove(["authToken", "data"]);
+    dispatch(logout());
+    router.replace("/(auth)/login");
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-primary-100 px-6">
       <KeyboardAvoidingView
@@ -261,7 +271,7 @@ const DeviceOtpScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           <View className="flex-row justify-start items-center pt-4 pb-6">
-            <TouchableOpacity onPress={() => router.back()}>
+            <TouchableOpacity onPress={() => void handleClose()}>
               <Ionicons name="close" size={30} color="#fff" />
             </TouchableOpacity>
           </View>
