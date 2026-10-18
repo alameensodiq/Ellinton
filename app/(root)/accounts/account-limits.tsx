@@ -19,7 +19,8 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { fetchProfileCompletion, getUserProfile, submitDocUpload, GovernmentIdType, ProofOfAddressType, type ProfileCompletion } from "@/app/lib/thunks/authThunks";
+import { prepareImageForUpload } from "@/app/lib/imageUpload";
+import { fetchProfileCompletion, getUserProfile, submitDocUpload, submitGovernmentId, submitProofOfAddress, GovernmentIdType, ProofOfAddressType, type ProfileCompletion } from "@/app/lib/thunks/authThunks";
 
 // ─── App Colors ──────────────────────────────────────────────────────────────
 const C = {
@@ -35,6 +36,10 @@ const C = {
   textSub: "#7A7B5A",
   textMuted: "#9A9B7A",
 };
+
+// The request body is encrypted, which adds overhead to the base64 document.
+// Keep the image comfortably below typical API gateway request limits.
+const MAX_TIER3_DOCUMENT_BYTES = 300 * 1024;
 
 // ─── Status Pill ─────────────────────────────────────────────────────────────
 function StatusPill({
@@ -176,10 +181,10 @@ export default function AccountLimitsScreen() {
   const hasAccount = Boolean(user?.account_number);
   const kycLevel = hasAccount ? (user?.kyc_level || 1) : 0;
 
+  const missingProfileFields = profileCompletion?.missing_fields ?? [];
   const isProfileComplete =
     profileCompletion?.completion_percentage === 100 &&
-    Array.isArray(profileCompletion.missing_fields) &&
-    profileCompletion.missing_fields.length === 0;
+    missingProfileFields.length === 0;
   const hasVerifiedBvn =
     user?.bvn_verified === true;
   const hasVerifiedNin = user?.nin_verified === true;
@@ -194,9 +199,11 @@ export default function AccountLimitsScreen() {
     dispatch(fetchProfileCompletion())
       .unwrap()
       .then(setProfileCompletion)
-      .catch((error) => console.warn("Unable to load profile completion:", error));
-  }, [dispatch]);
+      .catch((error) => {
 
+      });
+  }, [dispatch]);
+  console.log(profileCompletion)
   // ── Feedback modal state
   type FBType = "success" | "error" | "info";
   const [fb, setFb] = useState<{ visible: boolean; type: FBType; title: string; msg: string }>(
@@ -214,6 +221,7 @@ export default function AccountLimitsScreen() {
   const [proofBase64, setProofBase64] = useState<string | null>(null);
   const [proofFileName, setProofFileName] = useState<string | null>(null);
   const [uploadingUtility, setUploadingUtility] = useState(false);
+  const [submittingTier3Upgrade, setSubmittingTier3Upgrade] = useState(false);
 
   // Government ID
   const [govtIdType, setGovtIdType] = useState<GovernmentIdType>(GovernmentIdType.NIN);
@@ -221,28 +229,20 @@ export default function AccountLimitsScreen() {
   const [govtIdFileName, setGovtIdFileName] = useState<string | null>(null);
   const [identificationNumber, setIdentificationNumber] = useState("");
   const [uploadingGovtId, setUploadingGovtId] = useState(false);
+  const isNinId =
+    govtIdType === GovernmentIdType.NIN ||
+    govtIdType === GovernmentIdType.NATIONAL_ID;
 
-  // Keep a local record after an upload so the card reflects the submission
-  // immediately, even before the refreshed profile reaches the device.
-  const [utilityBillDoc, setUtilityBillDoc] = useState<string | null>(null);
-  const [govtIdDoc, setGovtIdDoc] = useState<string | null>(null);
-
-  const hasUploadedProofOfAddress = Boolean(
-    user?.utility_bill_provided ||
-    (user as any)?.proof_of_address_provided ||
-    (user as any)?.proof_of_address ||
-    utilityBillDoc
-  );
-  const hasUploadedGovernmentId = Boolean(
-    (user as any)?.valid_id_provided ||
-    (user as any)?.government_id_provided ||
-    (user as any)?.government_id ||
-    (user as any)?.government_id_type ||
-    govtIdDoc
-  );
-  const hasProvidedTier3Document =
-    hasUploadedProofOfAddress || hasUploadedGovernmentId;
-  const hasCompletedTier3 = kycLevel >= 3 && hasProvidedTier3Document;
+  // Document status comes from the latest user profile returned by the API.
+  // These verification fields are the source of truth for Tier 3 documents.
+  const isProofOfAddressVerified = (user as any)?.proof_of_address_verified === true;
+  const isGovernmentIdVerified = (user as any)?.goverment_id_verified === true;
+  const hasCompletedTier3 =
+    kycLevel >= 3 && isProofOfAddressVerified && isGovernmentIdVerified;
+  const canSubmitTier3Upgrade =
+    canUploadTier3Documents &&
+    isProofOfAddressVerified &&
+    isGovernmentIdVerified;
 
   const tierCompletion = {
     1: hasCompletedTier1,
@@ -251,18 +251,14 @@ export default function AccountLimitsScreen() {
   } as const;
 
   const utilityStatus: "COMPLETED" | "PENDING REVIEW" | "REQUIRED" =
-    hasCompletedTier3 || hasUploadedProofOfAddress
+    isProofOfAddressVerified
       ? "COMPLETED"
-      : utilityBillDoc
-        ? "PENDING REVIEW"
-        : "REQUIRED";
+      : "REQUIRED";
 
   const govtIdStatus: "COMPLETED" | "PENDING REVIEW" | "REQUIRED" =
-    hasCompletedTier3 || hasUploadedGovernmentId
+    isGovernmentIdVerified
       ? "COMPLETED"
-      : govtIdDoc
-        ? "PENDING REVIEW"
-        : "REQUIRED";
+      : "REQUIRED";
 
   const handleTier2VerificationPress = () => {
     if (!hasCompletedTier1) {
@@ -315,12 +311,25 @@ export default function AccountLimitsScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: false,
-        quality: 0.7,
-        base64: true,
+        quality: 1,
+        base64: false,
       });
       if (!result.canceled && result.assets?.[0]) {
         const asset = result.assets[0];
-        const b64 = asset.base64 || "";
+        const preparedImage = await prepareImageForUpload(asset.uri, {
+          maxBytes: MAX_TIER3_DOCUMENT_BYTES,
+          startWidth: 1080,
+          minWidth: 600,
+          initialCompress: 0.65,
+          minCompress: 0.22,
+        });
+
+        if (preparedImage.size > MAX_TIER3_DOCUMENT_BYTES || !preparedImage.base64) {
+          showFb("info", "Image Too Large", "Please select a smaller or clearer image.");
+          return;
+        }
+
+        const b64 = preparedImage.base64;
         const name = asset.fileName || "document.jpg";
         if (target === "utility") { setProofBase64(b64); setProofFileName(name); }
         else { setGovtIdBase64(b64); setGovtIdFileName(name); }
@@ -340,7 +349,7 @@ export default function AccountLimitsScreen() {
     if (!proofBase64) { showFb("info", "Validation", "Please select a proof of address document."); return; }
     setUploadingUtility(true);
     try {
-      await dispatch(submitDocUpload({
+      await dispatch(submitProofOfAddress({
         address: user?.address_1 || undefined,
         city: user?.city || undefined,
         state: user?.state || undefined,
@@ -348,7 +357,6 @@ export default function AccountLimitsScreen() {
         proof_of_address: proofBase64,
       })).unwrap();
       setUtilityModalVisible(false);
-      setUtilityBillDoc(proofFileName || "uploaded");
       setProofBase64(null); setProofFileName(null);
       await dispatch(getUserProfile()).unwrap().catch((error) => {
         console.warn("Unable to refresh profile after proof-of-address upload:", error);
@@ -370,7 +378,7 @@ export default function AccountLimitsScreen() {
     if (!govtIdBase64) { showFb("info", "Validation", "Please select a photo of your Government ID."); return; }
     setUploadingGovtId(true);
     try {
-      await dispatch(submitDocUpload({
+      await dispatch(submitGovernmentId({
         address: user?.address_1 || undefined,
         city: user?.city || undefined,
         state: user?.state || undefined,
@@ -379,7 +387,6 @@ export default function AccountLimitsScreen() {
         government_id: govtIdBase64,
       })).unwrap();
       setGovtIdModalVisible(false);
-      setGovtIdDoc(govtIdFileName || "uploaded");
       setGovtIdBase64(null); setGovtIdFileName(null); setIdentificationNumber("");
       await dispatch(getUserProfile()).unwrap().catch((error) => {
         console.warn("Unable to refresh profile after Government ID upload:", error);
@@ -389,6 +396,28 @@ export default function AccountLimitsScreen() {
       setGovtIdModalVisible(false);
       showFb("error", "Submission Failed", typeof err === "string" ? err : "Failed to submit Government ID.");
     } finally { setUploadingGovtId(false); }
+  };
+
+  const handleTier3Upgrade = async () => {
+    if (!canSubmitTier3Upgrade || submittingTier3Upgrade) return;
+
+    setSubmittingTier3Upgrade(true);
+    try {
+      await dispatch(submitDocUpload()).unwrap();
+      await Promise.all([
+        dispatch(getUserProfile()).unwrap(),
+        dispatch(fetchProfileCompletion()).unwrap().then(setProfileCompletion),
+      ]);
+      showFb("success", "Tier 3 Submitted", "Your Tier 3 verification request has been submitted.");
+    } catch (error: any) {
+      showFb(
+        "error",
+        "Submission Failed",
+        typeof error === "string" ? error : error?.message || "Unable to submit your Tier 3 verification request."
+      );
+    } finally {
+      setSubmittingTier3Upgrade(false);
+    }
   };
 
   const handleLaunchBVNLiveness = async (providedBvn?: string) => {
@@ -791,21 +820,16 @@ export default function AccountLimitsScreen() {
         {/* Upgrade CTA */}
         {kycLevel < 3 && (
           <Pressable
-            onPress={() => {
-              // debug: log upgrade click and navigate
-              console.log("Upgrade CTA clicked - kycLevel:", kycLevel);
-              if (kycLevel === 0 || kycLevel === 1) handleTier2VerificationPress();
-              else handleTier3UploadPress("utility");
+            disabled={!canSubmitTier3Upgrade || submittingTier3Upgrade}
+            onPress={() => void handleTier3Upgrade()}
+            style={{
+              backgroundColor: C.bgDark,
+              opacity: canSubmitTier3Upgrade && !submittingTier3Upgrade ? 1 : 0.5,
             }}
-            style={{ backgroundColor: C.bgDark }}
             className="rounded-2xl py-4 items-center shadow-sm active:opacity-90 flex-row justify-center gap-2"
           >
             <Text className="text-white text-sm font-outfit-bold">
-              {kycLevel === 0
-                ? "Complete KYC to Activate Account"
-                : kycLevel === 1
-                  ? "Upgrade to Tier 2 — Enter NIN"
-                  : "Complete Tier 3 Verification"}
+              {submittingTier3Upgrade ? "Submitting Tier 3..." : "Complete Tier 3 Verification"}
             </Text>
             <Feather name="arrow-right" size={18} color="#FFFFFF" />
           </Pressable>
@@ -941,7 +965,12 @@ export default function AccountLimitsScreen() {
             {GOVT_ID_OPTIONS.map((opt) => (
               <Pressable
                 key={opt.value}
-                onPress={() => setGovtIdType(opt.value)}
+                onPress={() => {
+                  setGovtIdType(opt.value);
+                  if (opt.value === GovernmentIdType.NIN || opt.value === GovernmentIdType.NATIONAL_ID) {
+                    setIdentificationNumber((value) => value.replace(/\D/g, "").slice(0, 11));
+                  }
+                }}
                 style={{
                   flexDirection: "row", alignItems: "center", gap: 6,
                   backgroundColor: govtIdType === opt.value ? C.bgDark : C.white,
@@ -959,9 +988,15 @@ export default function AccountLimitsScreen() {
           <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 12, marginBottom: 6 }}>ID / Document Number</Text>
           <TextInput
             value={identificationNumber}
-            onChangeText={setIdentificationNumber}
+            onChangeText={(value) =>
+              setIdentificationNumber(
+                isNinId ? value.replace(/\D/g, "").slice(0, 11) : value
+              )
+            }
             placeholder={`Enter your ${GOVT_ID_OPTIONS.find(o => o.value === govtIdType)?.label || "ID"} number`}
             placeholderTextColor="#9A9B7A"
+            keyboardType={isNinId ? "numeric" : "default"}
+            maxLength={isNinId ? 11 : undefined}
             style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, color: C.textPrimary, fontFamily: "Outfit", fontSize: 13, marginBottom: 14 }}
           />
 

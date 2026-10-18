@@ -94,12 +94,12 @@ export default function NotificationPreferencesScreen() {
           })}
         </View>
 
-        <View style={{ backgroundColor: "rgba(251,205,88,0.12)", borderColor: "rgba(251,205,88,0.5)", borderWidth: 1 }} className="p-3 rounded-xl mb-5 flex-row items-center gap-2.5">
+        {/* <View style={{ backgroundColor: "rgba(251,205,88,0.12)", borderColor: "rgba(251,205,88,0.5)", borderWidth: 1 }} className="p-3 rounded-xl mb-5 flex-row items-center gap-2.5">
           {isSaving ? <ActivityIndicator size="small" color="#ca8a04" /> : <MaterialCommunityIcons name="information" size={18} color="#ca8a04" />}
           <Text style={{ color: "#78350f", fontSize: 11, fontFamily: "Outfit", lineHeight: 16, flex: 1 }}>
             Standard SMS notification charges of ₦6.50 per SMS may apply to SMS transaction alerts.
           </Text>
-        </View>
+        </View> */}
       </ScrollView>
       <ErrorModal
         visible={Boolean(errorMessage)}

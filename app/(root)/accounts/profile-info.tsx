@@ -155,7 +155,7 @@ function FeedbackModal({
             shadowRadius: 24,
             elevation: 10,
           }}
-          onPress={() => {}}
+          onPress={() => { }}
         >
           {/* Icon circle */}
           <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: pillBg, justifyContent: "center", alignItems: "center", marginBottom: 16 }}>
@@ -251,10 +251,10 @@ export default function ProfileInfoScreen() {
       const list: any[] = Array.isArray(result)
         ? result
         : Array.isArray(result?.data)
-        ? result.data
-        : Array.isArray(result?.data?.industries)
-        ? result.data.industries
-        : [];
+          ? result.data
+          : Array.isArray(result?.data?.industries)
+            ? result.data.industries
+            : [];
       setIndustries(list.map((item: any) => ({
         value: typeof item === "string" ? item : (item.name || item.value || item.id),
         label: typeof item === "string" ? item : (item.name || item.label || item.value),
@@ -604,7 +604,7 @@ export default function ProfileInfoScreen() {
           {activeTab === "residential" && (
             <View>
               {/* Proof of address status */}
-              <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-4 shadow-sm flex-row items-center justify-between mb-4">
+              {/* <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-4 shadow-sm flex-row items-center justify-between mb-4">
                 <View>
                   <Text style={{ color: C.textSub, fontSize: 11, fontFamily: "Outfit" }}>Proof of Address Status</Text>
                   <Text style={{ color: C.textPrimary, fontSize: 13, fontFamily: "OutfitBold", marginTop: 2 }}>Utility & Residential Validation</Text>
@@ -631,7 +631,7 @@ export default function ProfileInfoScreen() {
                     {proofStatus}
                   </Text>
                 </View>
-              </View>
+              </View> */}
 
               <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
                 <Field label="Street Address" value={address} onChangeText={setAddress} placeholder={user?.address_1 || "Enter your street address"} />

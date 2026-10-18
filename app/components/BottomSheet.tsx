@@ -102,31 +102,29 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
   return (
     <Modal transparent visible={visible} animationType="none">
-      <Pressable
-        onPress={onClose}
-        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
-      />
-      <Animated.View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          maxHeight: screenHeight * 1,
-          transform: [{ translateY: slideAnim }],
-          backgroundColor: "#3F401B",
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
-        }}
-      >
+      <View style={{ flex: 1 }}>
+        <Pressable
+          onPress={onClose}
+          style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, backgroundColor: "rgba(0,0,0,0.5)" }}
+        />
         <KeyboardAvoidingView
+          style={{ flex: 1, justifyContent: "flex-end" }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           keyboardVerticalOffset={0}
         >
-          <View
-            style={{ padding: 24 }}
-            onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+          <Animated.View
+            style={{
+              maxHeight: screenHeight * 0.9,
+              transform: [{ translateY: slideAnim }],
+              backgroundColor: "#3F401B",
+              borderTopLeftRadius: 30,
+              borderTopRightRadius: 30,
+            }}
           >
+            <View
+              style={{ padding: 24 }}
+              onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+            >
             <View style={{ marginBottom: 16 }}>
               {title && (
                 <CustomText
@@ -163,9 +161,10 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
             </ScrollView>
 
             {renderButtons()}
-          </View>
+            </View>
+          </Animated.View>
         </KeyboardAvoidingView>
-      </Animated.View>
+      </View>
     </Modal>
   );
 };

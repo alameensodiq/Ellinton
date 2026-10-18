@@ -36,6 +36,8 @@ import {
   UPDATE_FINANCIAL_ENDPOINT,
   INDUSTRIES_ENDPOINT,
   NIN_ENDPOINT,
+  DOCUPLOAD_ADDRESS_ENDPOINT,
+  DOCUPLOAD_GOVT_ENDPOINT,
   DOCUPLOAD_ENDPOINT,
   PROFILE_COMPLETION_ENDPOINT,
 } from "../api";
@@ -1893,36 +1895,74 @@ export const fetchProfileCompletion = createAsyncThunk<ProfileCompletion>(
   }
 );
 
-export const submitDocUpload = createAsyncThunk(
-  "auth/submitDocUpload",
+const postTier3Request = async (
+  endpoint: () => string,
+  payload: DocUploadPayload | undefined,
+  token: string | null
+) => {
+  const response = await safeFetch(endpoint(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    ...(payload ? { body: JSON.stringify(payload) } : {}),
+  });
+
+  const responseText = await response.text();
+  const data = parseResponseJson(responseText);
+  if (!response.ok) {
+    throw new Error(
+      data?.data?.message ||
+        data?.message ||
+        (response.status === 413
+          ? "Uploaded image is too large. Please choose a smaller image."
+          : undefined) ||
+        `Tier 3 request failed (${response.status})`
+    );
+  }
+
+  return data ?? responseText;
+};
+
+export const submitProofOfAddress = createAsyncThunk(
+  "auth/submitProofOfAddress",
   async (payload: DocUploadPayload, { rejectWithValue, getState }) => {
     try {
       const state = getState() as any;
-      const token = state.auth.token;
-
-      const response = await safeFetch(DOCUPLOAD_ENDPOINT(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(
-          data?.data?.message ||
-          data?.message ||
-          `Document upload failed (${response.status})`
-        );
-      }
-
-      return data;
+      return await postTier3Request(DOCUPLOAD_ADDRESS_ENDPOINT, payload, state.auth.token);
     } catch (error: any) {
       return rejectWithValue(
-        error.data?.message || error.message || "Document upload error"
+        error.data?.message || error.message || "Proof of address upload error"
+      );
+    }
+  }
+);
+
+export const submitGovernmentId = createAsyncThunk(
+  "auth/submitGovernmentId",
+  async (payload: DocUploadPayload, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      return await postTier3Request(DOCUPLOAD_GOVT_ENDPOINT, payload, state.auth.token);
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Government ID upload error"
+      );
+    }
+  }
+);
+
+// Final Tier 3 request: this endpoint intentionally accepts no request body.
+export const submitDocUpload = createAsyncThunk(
+  "auth/submitTier3Upgrade",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      return await postTier3Request(DOCUPLOAD_ENDPOINT, undefined, state.auth.token);
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Tier 3 verification request failed"
       );
     }
   }

@@ -26,6 +26,10 @@ const INDUSTRIES_ENDPOINT = () =>
   `${BASE_URL}v3/users/profile/industries`;
 const BVN_ENDPOINT = () =>
   `${BASE_URL}v3/onboarding/bvn-liveness`;
+const DOCUPLOAD_ADDRESS_ENDPOINT = () =>
+  `${BASE_URL}v3/onboarding/tier-three/proof-of-address`;
+const DOCUPLOAD_GOVT_ENDPOINT = () =>
+  `${BASE_URL}v3/onboarding/tier-three/government-id`;
 const DOCUPLOAD_ENDPOINT = () =>
   `${BASE_URL}v3/onboarding/tier-three`;
 const SESSIONTOKEN_ENDPOINT = () =>
@@ -279,6 +283,8 @@ export {
   NIN_ENDPOINT,
   INDUSTRIES_ENDPOINT,
   BVN_ENDPOINT,
+  DOCUPLOAD_ADDRESS_ENDPOINT,
+  DOCUPLOAD_GOVT_ENDPOINT,
   DOCUPLOAD_ENDPOINT,
   SESSIONTOKEN_ENDPOINT,
   PROFILE_COMPLETION_ENDPOINT,

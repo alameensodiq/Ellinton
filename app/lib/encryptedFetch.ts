@@ -87,6 +87,12 @@ class EncryptedFetch {
     const clonedResponse = response.clone();
     let responseData;
 
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      console.warn(`Received non-JSON response (${response.status})`);
+      return response;
+    }
+
     try {
       responseData = await clonedResponse.json();
       console.log("\n📥 RAW RESPONSE BODY:", JSON.stringify(responseData, null, 2));
