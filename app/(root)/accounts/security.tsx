@@ -58,6 +58,9 @@ export default function SecurityScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const requiresTransactionPinSetup = useAppSelector(
+    (state) => state.auth.requiresTransactionPinSetup
+  );
 
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_required ?? false);
   const [loginBiometric, setLoginBiometric] = useState(true);
@@ -148,6 +151,15 @@ export default function SecurityScreen() {
     ]);
   };
 
+  const handleCreateTransactionPin = () => {
+    if (!user?.id) {
+      Alert.alert("Transaction PIN", "Your account details are unavailable. Please sign in again.");
+      return;
+    }
+
+    router.push("/(root)/accounts/create-transaction-pin" as any);
+  };
+
   const SectionLabel = ({ label }: { label: string }) => (
     <Text style={{ color: "#D1D1D1", fontSize: 11, fontFamily: "OutfitBold", letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 8, marginLeft: 4, marginTop: 4 }}>
       {label}
@@ -199,6 +211,19 @@ export default function SecurityScreen() {
         {/* SECTION 1: PASSCODE & PIN */}
         <SectionLabel label="Passcode & PIN" />
         <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl mb-5 shadow-sm overflow-hidden">
+          {requiresTransactionPinSetup && (
+            <>
+              <NavRow
+                icon="numeric"
+                iconBg="#EEEEE4"
+                iconColor={C.bgMid}
+                title="Create Transaction PIN"
+                subtitle="Set your 4-digit transfer approval PIN"
+                onPress={handleCreateTransactionPin}
+              />
+              <Divider />
+            </>
+          )}
           <NavRow icon="lock-reset" iconBg="#EEEEE4" iconColor={C.bgMid} title="Change App Passcode" subtitle="Update your 6-digit login passcode" onPress={() => router.push("/(root)/account-settings/change-passcode")} />
           <Divider />
           <NavRow icon="numeric" iconBg="#EEEEE4" iconColor={C.bgMid} title="Change Transaction PIN" subtitle="Update 4-digit transfer approval PIN" onPress={() => router.push("/(root)/account-settings/change-transaction-pin")} />

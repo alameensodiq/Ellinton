@@ -285,7 +285,17 @@ export default function AccountLimitsScreen() {
     }
 
     if (!isProfileComplete) {
-      router.push("/(root)/accounts/profile-info");
+      const missingFields = profileCompletion?.missing_fields ?? [];
+      const formattedFields = missingFields
+        .map((field) => field.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()))
+        .join(", ");
+      showFb(
+        "info",
+        "Complete Profile First",
+        formattedFields
+          ? `Please complete: ${formattedFields}.`
+          : "Please complete your profile information before uploading a Tier 3 document."
+      );
       return;
     }
 
