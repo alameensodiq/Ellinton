@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Image, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -7,6 +7,8 @@ import CustomText from "@/app/components/CustomText";
 import Button from "@/app/components/Button";
 import ConfirmationModal from "@/app/components/ConfirmationModal";
 import images from "@/app/assets/images";
+import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
+import { fetchDeliveryQuote } from "@/app/lib/thunks/cardsThunks";
 
 
 export default function Review() {
@@ -22,6 +24,7 @@ export default function Review() {
     selectedColor,
   } = params;
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   const toString = (val: string | string[]) =>
     Array.isArray(val) ? val[0] || "" : val || "";
@@ -34,8 +37,39 @@ export default function Review() {
   const cityStr = toString(city);
   const address1Str = toString(address1);
   const selectedColorStr = toString(selectedColor);
+  const deliveryAddress = [address1Str, cityStr, stateStr, "Nigeria"]
+    .filter(Boolean)
+    .join(", ");
 
   const [showModal, setShowModal] = useState(false);
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(null);
+  const [isFetchingDeliveryFee, setIsFetchingDeliveryFee] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const getDeliveryQuote = async () => {
+      if (!deliveryAddress) {
+        if (isMounted) setIsFetchingDeliveryFee(false);
+        return;
+      }
+
+      try {
+        const quote = await dispatch(fetchDeliveryQuote(deliveryAddress)).unwrap();
+        if (isMounted) setDeliveryFee(quote.deliveryFee);
+      } catch (error) {
+        console.log("Failed to fetch delivery quote:", error);
+      } finally {
+        if (isMounted) setIsFetchingDeliveryFee(false);
+      }
+    };
+
+    getDeliveryQuote();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [deliveryAddress, dispatch]);
 
   const PhysicalCard1 = images.physical_card_1;
   const PhysicalCard2 = images.physical_card_2;
@@ -102,11 +136,25 @@ export default function Review() {
           <CustomText size="lg" className="mt-4 mb-4">
             One Time Fee
           </CustomText>
-          <View className=" bg-primary-400 p-6 rounded-xl flex-row justify-between mb-10">
-            <CustomText className="w-32" size="sm">
-              Card Processing Fee & Shipping
-            </CustomText>
-            <CustomText>₦2,000</CustomText>
+          <View className="bg-primary-400 p-6 rounded-xl mb-10">
+            <View className="flex-row justify-between border-b border-primary-300 pb-4 mb-4">
+              <CustomText className="w-32" size="sm">
+                Card Processing Fee
+              </CustomText>
+              <CustomText>₦2,000</CustomText>
+            </View>
+            <View className="flex-row justify-between">
+              <CustomText className="w-32" size="sm">
+                Delivery Fee
+              </CustomText>
+              <CustomText>
+                {isFetchingDeliveryFee
+                  ? "Calculating..."
+                  : deliveryFee !== null
+                  ? `₦${deliveryFee.toLocaleString()}`
+                  : "Unavailable"}
+              </CustomText>
+            </View>
           </View>
           <Button
             title="Pay"

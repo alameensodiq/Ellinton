@@ -20,6 +20,32 @@ interface PreparedImageUpload {
 }
 
 const DEFAULT_DATA_URI_PREFIX = "data:image/jpeg;base64,";
+const DOCUMENT_DATA_URI_REGEX =
+  /^data:(image\/jpeg|image\/png|application\/pdf);base64,([A-Za-z0-9+/]+={0,2})$/;
+
+export const isValidDocumentDataUri = (value?: string | null) => {
+  if (!value || typeof value !== "string") return false;
+  return DOCUMENT_DATA_URI_REGEX.test(value.trim());
+};
+
+export const normalizeDataUri = (value: string, mimeType = "image/jpeg") => {
+  if (!value) return value;
+
+  const trimmedValue = value.trim();
+  if (isValidDocumentDataUri(trimmedValue)) return trimmedValue;
+
+  const base64Only = trimmedValue
+    .replace(/^data:.*;base64,/, "")
+    .replace(/\s+/g, "")
+    .replace(/[\r\n]+/g, "");
+
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(base64Only)) return "";
+
+  const normalizedMime =
+    mimeType === "image/png" || mimeType === "application/pdf" ? mimeType : "image/jpeg";
+
+  return `data:${normalizedMime};base64,${base64Only}`;
+};
 
 const estimateBase64Length = (byteLength: number) =>
   Math.ceil(byteLength / 3) * 4;

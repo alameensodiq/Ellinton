@@ -37,6 +37,9 @@ export default function ConfirmCablePayment() {
     packageId,
     packageName,
     packageSlug,
+    customerFirstName,
+    customerLastName,
+    customerName,
   } = params;
 
   const rawAmount = Array.isArray(amount)
@@ -57,6 +60,15 @@ export default function ConfirmCablePayment() {
   const packageSlugStr = Array.isArray(packageSlug)
     ? packageSlug[0]
     : packageSlug || "";
+  const customerFirstNameStr = Array.isArray(customerFirstName)
+    ? customerFirstName[0]
+    : customerFirstName || "";
+  const customerLastNameStr = Array.isArray(customerLastName)
+    ? customerLastName[0]
+    : customerLastName || "";
+  const customerNameStr = Array.isArray(customerName)
+    ? customerName[0]
+    : customerName || "";
 
   const fee = 0;
   const totalDebit = Number(rawAmount) + fee;
@@ -186,8 +198,8 @@ export default function ConfirmCablePayment() {
       console.log("Biometric payment process error:", err);
       setError(
         err?.message ||
-          (typeof err === "string" ? err : null) ||
-          "Service not available at this time, please try again later"
+        (typeof err === "string" ? err : null) ||
+        "Service not available at this time, please try again later"
       );
       Vibration.vibrate(400);
     } finally {
@@ -213,6 +225,30 @@ export default function ConfirmCablePayment() {
           phone={accountIdStr}
           icon={svgIcons.chip}
         />
+
+        <View className="mb-4 rounded-xl bg-primary-400 p-4">
+          <Text className="mb-3 text-base font-bold text-white">
+            Confirm customer details
+          </Text>
+          <View className="flex-row items-center justify-between border-b border-primary-300 py-2">
+            <Text className="text-xs text-accent-200">Customer Name</Text>
+            <Text className="text-sm font-semibold text-white">
+              {customerNameStr || "Not provided"}
+            </Text>
+          </View>
+          <View className="flex-row items-center justify-between border-b border-primary-300 py-2">
+            <Text className="text-xs text-accent-200">First Name</Text>
+            <Text className="text-sm font-semibold text-white">
+              {customerFirstNameStr || "Not provided"}
+            </Text>
+          </View>
+          <View className="flex-row items-center justify-between pt-2">
+            <Text className="text-xs text-accent-200">Last Name</Text>
+            <Text className="text-sm font-semibold text-white">
+              {customerLastNameStr || "Not provided"}
+            </Text>
+          </View>
+        </View>
 
         <TransferSummaryCard
           amount={rawAmount}

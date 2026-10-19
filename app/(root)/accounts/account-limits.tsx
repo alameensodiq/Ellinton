@@ -7,6 +7,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -19,7 +20,9 @@ import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { prepareImageForUpload } from "@/app/lib/imageUpload";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
+import { isValidDocumentDataUri, normalizeDataUri, prepareImageForUpload } from "@/app/lib/imageUpload";
 import { fetchProfileCompletion, getUserProfile, submitDocUpload, submitGovernmentId, submitProofOfAddress, GovernmentIdType, ProofOfAddressType, type ProfileCompletion } from "@/app/lib/thunks/authThunks";
 
 // ─── App Colors ──────────────────────────────────────────────────────────────
@@ -300,8 +303,17 @@ export default function AccountLimitsScreen() {
     else setGovtIdModalVisible(true);
   };
 
-  // Pick image or document and return base64
-  const handlePickFile = async (target: "utility" | "govtid") => {
+  const saveSelectedDocument = (target: "utility" | "govtid", dataUri: string, name: string) => {
+    if (target === "utility") {
+      setProofBase64(dataUri);
+      setProofFileName(name);
+    } else {
+      setGovtIdBase64(dataUri);
+      setGovtIdFileName(name);
+    }
+  };
+
+  const handlePickImage = async (target: "utility" | "govtid") => {
     try {
       if (Platform.OS === "ios") {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -329,14 +341,78 @@ export default function AccountLimitsScreen() {
           return;
         }
 
-        const b64 = preparedImage.base64;
-        const name = asset.fileName || "document.jpg";
-        if (target === "utility") { setProofBase64(b64); setProofFileName(name); }
-        else { setGovtIdBase64(b64); setGovtIdFileName(name); }
+        const dataUri = normalizeDataUri(
+          preparedImage.base64,
+          asset.mimeType || "image/jpeg"
+        );
+        saveSelectedDocument(target, dataUri, asset.fileName || "document.jpg");
       }
     } catch {
       showFb("error", "Upload Error", "Could not select the document.");
     }
+  };
+
+  const handlePickDeviceFile = async (target: "utility" | "govtid") => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["image/jpeg", "image/png", "application/pdf"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const asset = result.assets[0];
+      const isPdf =
+        asset.mimeType === "application/pdf" ||
+        asset.name.toLowerCase().endsWith(".pdf");
+
+      if (!isPdf) {
+        const preparedImage = await prepareImageForUpload(asset.uri, {
+          maxBytes: MAX_TIER3_DOCUMENT_BYTES,
+          startWidth: 1080,
+          minWidth: 600,
+          initialCompress: 0.65,
+          minCompress: 0.22,
+        });
+        if (preparedImage.size > MAX_TIER3_DOCUMENT_BYTES || !preparedImage.base64) {
+          showFb("info", "Image Too Large", "Please select a smaller or clearer image.");
+          return;
+        }
+        saveSelectedDocument(
+          target,
+          normalizeDataUri(preparedImage.base64, asset.mimeType || "image/jpeg"),
+          asset.name
+        );
+        return;
+      }
+
+      const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+      const size = (fileInfo as { size?: number }).size ?? asset.size ?? 0;
+      if (size > MAX_TIER3_DOCUMENT_BYTES) {
+        showFb("info", "PDF Too Large", "Please select a PDF smaller than 300 KB.");
+        return;
+      }
+
+      const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: "base64" });
+      const dataUri = normalizeDataUri(base64, "application/pdf");
+      if (!dataUri || !isValidDocumentDataUri(dataUri)) {
+        showFb("error", "Upload Error", "The selected PDF could not be read.");
+        return;
+      }
+      saveSelectedDocument(target, dataUri, asset.name);
+    } catch {
+      showFb("error", "Upload Error", "Could not select the document.");
+    }
+  };
+
+  // Images are picked from the photo library; PDFs and files are picked from
+  // the device's document provider.
+  const handlePickFile = (target: "utility" | "govtid") => {
+    Alert.alert("Choose document", "Select an image from your gallery or a JPEG, PNG, or PDF from your files.", [
+      { text: "Gallery", onPress: () => void handlePickImage(target) },
+      { text: "Files", onPress: () => void handlePickDeviceFile(target) },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   const handleSubmitUtility = async () => {
@@ -346,13 +422,33 @@ export default function AccountLimitsScreen() {
       return;
     }
 
-    if (!proofBase64) { showFb("info", "Validation", "Please select a proof of address document."); return; }
+    if (!proofBase64 || !isValidDocumentDataUri(proofBase64)) {
+      showFb("info", "Validation", "Please select a valid proof of address document in JPEG, PNG or PDF format.");
+      return;
+    }
+
+    // The proof-of-address endpoint requires the residential address details
+    // alongside the document. The profile API stores the street address as
+    // `address_1`, while this endpoint expects it as `address`.
+    const address = String(user?.address ?? user?.address_1 ?? "").trim();
+    const city = String(user?.city ?? "").trim();
+    const state = String(user?.state ?? "").trim();
+
+    if (!address || !city || !state) {
+      showFb(
+        "info",
+        "Complete Residential Address",
+        "Please add your address, city, and state in your profile before submitting proof of address."
+      );
+      return;
+    }
+
     setUploadingUtility(true);
     try {
       await dispatch(submitProofOfAddress({
-        address: user?.address_1 || undefined,
-        city: user?.city || undefined,
-        state: user?.state || undefined,
+        address,
+        city,
+        state,
         proof_of_address_type: proofType,
         proof_of_address: proofBase64,
       })).unwrap();
@@ -375,13 +471,13 @@ export default function AccountLimitsScreen() {
       return;
     }
 
-    if (!govtIdBase64) { showFb("info", "Validation", "Please select a photo of your Government ID."); return; }
+    if (!govtIdBase64 || !isValidDocumentDataUri(govtIdBase64)) {
+      showFb("info", "Validation", "Please select a valid Government ID document in JPEG, PNG or PDF format.");
+      return;
+    }
     setUploadingGovtId(true);
     try {
       await dispatch(submitGovernmentId({
-        address: user?.address_1 || undefined,
-        city: user?.city || undefined,
-        state: user?.state || undefined,
         government_id_type: govtIdType,
         identification_number: identificationNumber.trim() || undefined,
         government_id: govtIdBase64,

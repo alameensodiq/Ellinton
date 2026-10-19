@@ -76,7 +76,7 @@ export default function CablePayment() {
     setAmount("");
     setAccountId("");
 
-    dispatch(getBillerProviders({ type: "cable" })).catch(() => {});
+    dispatch(getBillerProviders({ type: "cable" })).catch(() => { });
   }, [dispatch]);
 
   useFocusEffect(
@@ -91,7 +91,7 @@ export default function CablePayment() {
       dispatch(clearPackages());
       setSelectedProduct("");
       setAmount("");
-      dispatch(getPackages({ slug: selectedService })).catch(() => {});
+      dispatch(getPackages({ slug: selectedService })).catch(() => { });
     }
   }, [selectedService, dispatch]);
 
@@ -106,6 +106,8 @@ export default function CablePayment() {
     () => safePackages.find((p) => p.slug === selectedProduct),
     [safePackages, selectedProduct]
   );
+
+  console.log(selectedPackageData)
 
   useEffect(() => {
     if (selectedPackageData?.amount) {
@@ -127,13 +129,15 @@ export default function CablePayment() {
       setIsLoading(true);
       setError(null);
 
-      await dispatch(
+      const validationResult = await dispatch(
         validateBillCustomer({
           customerId: accountId,
           productName: selectedPackageData.slug,
           billerSlug: selectedProviderData.slug
         })
       ).unwrap();
+
+      console.log("validateBillCustomer result:", validationResult);
 
       router.push({
         pathname: "/(root)/cable-and-payment/confirm",
@@ -147,7 +151,10 @@ export default function CablePayment() {
           providerSlug: selectedProviderData.slug,
           packageId: String(selectedPackageData.id),
           packageName: selectedPackageData.name,
-          packageSlug: selectedPackageData.slug
+          packageSlug: selectedPackageData.slug,
+          customerFirstName: validationResult?.customer?.firstName || "",
+          customerLastName: validationResult?.customer?.lastName || "",
+          customerName: validationResult?.customer?.customerName || ""
         }
       });
     } catch (err: any) {

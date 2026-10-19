@@ -94,6 +94,8 @@ export default function CurrentUser() {
             ? { email: userIdentifier.toLowerCase(), passcode: savedPin, device_id: deviceId }
             : { phone: userIdentifier, passcode: savedPin, device_id: deviceId };
 
+            console.log(payload)
+
           await dispatch(loginUser(payload)).unwrap();
 
           const token = await registerForPushNotificationsAsync();

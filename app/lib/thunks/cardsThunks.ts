@@ -3,6 +3,7 @@ import {
   CARD_INITIATE_PAYMENT_ENDPOINT,
   CARD_FETCH_PHYSICAL_ENDPOINT,
   CARD_REQUEST_PHYSICAL_ENDPOINT,
+  CARD_DELIVERY_QUOTE_ENDPOINT
 } from "../api";
 import { encryptedFetch } from "../encryptedFetch";
 import { encryptionClient } from "../encrption.client";
@@ -15,20 +16,20 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   const method = options.method?.toLowerCase() || "get";
   const headers = (options.headers as Record<string, string>) || {};
   const body = options.body ? JSON.parse(options.body as string) : undefined;
-  
+
   const hasAuthToken = headers.Authorization && headers.Authorization.startsWith('Bearer ');
-  
+
   let enhancedHeaders = { ...headers };
-  
+
   if (hasAuthToken) {
     const timestamp = Date.now().toString();
     const nonce = generateNonce();
     const deviceId = await getDeviceId();
-    
+
     // IMPORTANT: Extract ONLY the pathname, not the full URL
     const urlObj = new URL(url);
     const path = urlObj.pathname; // This should be like "/api/v1/virtual-cards"
-    
+
     // console.log("📡 Request details:", {
     //   fullUrl: url,
     //   path,
@@ -36,7 +37,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
     //   hasBody: !!body,
     //   deviceId
     // });
-    
+
     // Generate signature
     const { signature } = await generateSignature(
       method,
@@ -46,7 +47,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       timestamp,
       deviceId
     );
-    
+
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {
       ...headers,
@@ -55,7 +56,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       'x-signature': signature,
       'x-device-id': deviceId,  // ← THIS WAS MISSING - ADD THIS LINE
     };
-    
+
     // console.log("🔐 Added signature headers:", {
     //   timestamp,
     //   noncePreview: nonce.substring(0, 10) + "...",
@@ -65,7 +66,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   } else {
     // console.log("🔓 No auth token, skipping signature");
   }
-  
+
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
@@ -163,6 +164,13 @@ export interface RequestPhysicalResponse {
   card: RequestedCard;
 }
 
+export interface DeliveryQuoteResponse {
+  deliveryFee: number;
+  distanceKm: number;
+  durationMinutes: number;
+  resolvedAddress: string;
+}
+
 interface ApiResponse<T = any> {
   status: string;
   success: boolean;
@@ -198,18 +206,18 @@ export const initiateCardPayment = createAsyncThunk<
         },
         body: JSON.stringify(payload),
       });
-      
+
       const data = await response.json() as ApiResponse<InitiatePaymentResponse>;
-      
+
       if (!response.ok) {
         const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            data?.message ||
-            `Payment initiation failed (${response.status})`
+          data?.message ||
+          `Payment initiation failed (${response.status})`
         );
       }
-      
+
       if (!data.success || !data.data) {
         return rejectWithValue(data.message || "Payment initiation failed");
       }
@@ -236,9 +244,8 @@ export const fetchPhysicalCards = createAsyncThunk<
       if (payload.status) {
         params.append("status", payload.status);
       }
-      const url = `${CARD_FETCH_PHYSICAL_ENDPOINT}${
-        params.toString() ? `?${params.toString()}` : ""
-      }`;
+      const url = `${CARD_FETCH_PHYSICAL_ENDPOINT}${params.toString() ? `?${params.toString()}` : ""
+        }`;
       const response = await safeFetch(url, {
         method: "GET",
         headers: {
@@ -246,18 +253,18 @@ export const fetchPhysicalCards = createAsyncThunk<
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       const data = await response.json() as ApiResponse<PhysicalCard[]>;
-      
+
       if (!response.ok) {
         const errorData = data as unknown as ErrorResponse;
         return rejectWithValue(
           errorData?.data?.message ||
-            data?.message ||
-            `Physical cards fetch failed (${response.status})`
+          data?.message ||
+          `Physical cards fetch failed (${response.status})`
         );
       }
-      
+
       if (!data.data) {
         return rejectWithValue("Invalid response structure");
       }
@@ -302,19 +309,19 @@ export const requestPhysicalCard = createAsyncThunk<
       console.log("requestPhysicalCard response headers:", [
         ...response.headers.entries(),
       ]);
-      
+
       const data = await response.json() as ApiResponse<RequestPhysicalResponse>;
-      
+
       if (!response.ok) {
         const errorData = data as unknown as ErrorResponse;
         console.log("requestPhysicalCard error data:", errorData);
         return rejectWithValue(
           errorData?.data?.message ||
-            data?.message ||
-            `Physical card request failed (${response.status})`
+          data?.message ||
+          `Physical card request failed (${response.status})`
         );
       }
-      
+
       console.log("requestPhysicalCard success data:", data);
       if (!data.success || !data.data) {
         return rejectWithValue(data.message || "Physical card request failed");
@@ -324,6 +331,47 @@ export const requestPhysicalCard = createAsyncThunk<
       console.log("requestPhysicalCard catch error:", error);
       return rejectWithValue(
         error.data?.message || error.message || "Physical card request error"
+      );
+    }
+  }
+);
+
+export const fetchDeliveryQuote = createAsyncThunk<
+  DeliveryQuoteResponse,
+  string
+>(
+  "cards/fetchDeliveryQuote",
+  async (address: string, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(CARD_DELIVERY_QUOTE_ENDPOINT(address), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json() as ApiResponse<DeliveryQuoteResponse>;
+
+      if (!response.ok) {
+        const errorData = data as unknown as ErrorResponse;
+        return rejectWithValue(
+          errorData?.data?.message ||
+          data?.message ||
+          `Delivery quote fetch failed (${response.status})`
+        );
+      }
+
+      if (!data.success || !data.data) {
+        return rejectWithValue(data.message || "Delivery quote fetch failed");
+      }
+      return data.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Delivery quote fetch error"
       );
     }
   }

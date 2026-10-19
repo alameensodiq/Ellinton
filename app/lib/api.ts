@@ -101,6 +101,7 @@ export const FETCH_SINGLE_ACCOUNT_TRANSACTION = (reference: string) =>
 const CARD_INITIATE_PAYMENT_ENDPOINT = `${BASE_URL}v2/cards/initiate-payment`;
 const CARD_FETCH_PHYSICAL_ENDPOINT = `${BASE_URL}v2/cards/physical-cards`;
 const CARD_REQUEST_PHYSICAL_ENDPOINT = `${BASE_URL}v2/cards/physical-cards/request`;
+const CARD_DELIVERY_QUOTE_ENDPOINT = (address: string) => `${BASE_URL}v2/cards/physical-cards/delivery-quote?address=${encodeURIComponent(address)}`;
 
 //bills
 const BILLS_DATA_OPTIONS_ENDPOINT = `${BASE_URL}v2/bills/data/options`;
@@ -288,5 +289,6 @@ export {
   DOCUPLOAD_ENDPOINT,
   SESSIONTOKEN_ENDPOINT,
   PROFILE_COMPLETION_ENDPOINT,
-  ONBOARDING_ENDPOINT
+  ONBOARDING_ENDPOINT,
+  CARD_DELIVERY_QUOTE_ENDPOINT
 };
