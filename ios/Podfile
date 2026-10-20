@@ -23,6 +23,9 @@ prepare_react_native_project!
 
 target 'EllingtonPersonalBanking' do
   use_modular_headers!
+  # QoreIDSDK 2.0.3 ships a malformed Swift interface that fails under EAS Xcode.
+  # Keep the compatible 2.0.1 binary until QoreID publishes a corrected release.
+  pod 'QoreIDSDK', '2.0.1'
   $RNFirebaseAsStaticFramework = true
 # @generated begin AppsFlyer Strict Mode - expo prebuild (DO NOT MODIFY) sync-b29372208dd0dbd1274e957795cd756926086c3a
 $RNAppsFlyerStrictMode=false

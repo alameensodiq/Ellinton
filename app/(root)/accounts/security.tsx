@@ -58,9 +58,7 @@ export default function SecurityScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
-  const requiresTransactionPinSetup = useAppSelector(
-    (state) => state.auth.requiresTransactionPinSetup
-  );
+  const requiresTransactionPinSetup = user?.has_transaction_pin === false;
 
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_required ?? false);
   const [loginBiometric, setLoginBiometric] = useState(true);

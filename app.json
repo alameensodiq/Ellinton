@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "178",
+      "buildNumber": "184",
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -21,6 +21,8 @@
         "NSFaceIDUsageDescription": "Allow Ellington Personal Banking to use Face ID for fast and secure login and transaction authorization.",
         "NSUserTrackingUsageDescription": "This identifier will be used to deliver more relevant ads and measure campaign performance.",
         "NSCameraUsageDescription": "This app requires access to your camera to scan QR codes and capture verification documents.",
+        "NSLocationWhenInUseUsageDescription": "This app uses your location while you are using address verification services to confirm your address accurately.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses your location for address verification, including when verification needs to continue while the app is not open.",
         "NSContactsUsageDescription": "This app requires access to your contacts to easily select recipients for transfers.",
         "NSPhotoLibraryUsageDescription": "This app requires access to your photo library to select images for document verification.",
         "NSPhotoLibraryAddUsageDescription": "This app requires access to save verification documents to your photo library.",

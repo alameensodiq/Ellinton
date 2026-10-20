@@ -371,6 +371,29 @@ export default function ProfileInfoScreen() {
     } finally { setSavingPersonal(false); }
   };
 
+  const handleSaveContact = async () => {
+    const raw: Record<string, string> = {
+      email: upEmail.trim(),
+      alternate_phone: upAltPhone.trim(),
+    };
+    const payload = Object.fromEntries(Object.entries(raw).filter(([, value]) => !!value));
+    if (Object.keys(payload).length === 0) {
+      showModal("info", "Nothing to Update", "Enter an email address or alternate phone number.");
+      return;
+    }
+
+    setSavingPersonal(true);
+    try {
+      await dispatch(updatePersonalProfile(payload)).unwrap();
+      await dispatch(getUserProfile());
+      setUpEmail("");
+      setUpAltPhone("");
+      showModal("success", "Contact Details Updated", "Your email and alternate phone number have been updated.");
+    } catch (err: any) {
+      showModal("error", "Update Failed", typeof err === "string" ? err : "Failed to update contact details.");
+    } finally { setSavingPersonal(false); }
+  };
+
   const proofStatus: "Verified" | "Pending" | "Unverified" =
     user?.utility_bill_provided || (user?.kyc_level && user.kyc_level >= 3) ? "Verified" : "Pending";
 
@@ -379,7 +402,7 @@ export default function ProfileInfoScreen() {
 
   const tabs: { key: TabType; label: string; icon: string }[] = [
     { key: "personal", label: "Personal", icon: "account-box-outline" },
-    { key: "update_personal", label: "Update Personal Info", icon: "account-edit-outline" },
+    // { key: "update_personal", label: "Update Personal Info", icon: "account-edit-outline" },
     { key: "residential", label: "Residential", icon: "home-outline" },
     { key: "employment", label: "Employment", icon: "briefcase-outline" },
     { key: "next_of_kin", label: "Next of Kin", icon: "account-group-outline" },
@@ -465,11 +488,11 @@ export default function ProfileInfoScreen() {
               {/* Info card */}
               <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
                 {[
-                  { label: "First Name", value: user?.first_name || (user?.full_name ? user.full_name.split(" ")[0] : "Oluwademilade") },
+                  { label: "First Name", value: user?.first_name },
                   { label: "Middle Name", value: user?.middle_name || "—" },
-                  { label: "Last Name", value: user?.last_name || (user?.full_name ? user.full_name.split(" ")[1] : "Awoyomi") },
-                  { label: "Date of Birth", value: user?.date_of_birth || "14 Oct 1996" },
-                  { label: "Gender", value: user?.gender || "Male" },
+                  { label: "Last Name", value: user?.last_name },
+                  { label: "Date of Birth", value: user?.date_of_birth },
+                  { label: "Gender", value: user?.gender },
                 ].map((row, i, arr) => (
                   <View
                     key={row.label}
@@ -566,6 +589,15 @@ export default function ProfileInfoScreen() {
                   </View>
                 )}
               </View>
+
+              <View
+                style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }}
+                className="rounded-2xl p-5 shadow-sm mt-4"
+              >
+                <Field label="Email Address" value={upEmail} onChangeText={setUpEmail} placeholder={user?.email || "Enter email address"} keyboardType="email-address" />
+                <Field label="Alternate Phone" value={upAltPhone} onChangeText={setUpAltPhone} placeholder={(user as any)?.alternate_phone || "e.g. 08012345678"} keyboardType="phone-pad" />
+                <SaveButton onPress={handleSaveContact} saving={savingPersonal} label="Update Email or Alternate Phone" />
+              </View>
             </View>
           )}
 
@@ -580,6 +612,7 @@ export default function ProfileInfoScreen() {
                 options={GENDER_OPTIONS}
                 selectedValue={upGender}
                 onSelect={setUpGender}
+                variant="light"
               />
               <View style={{ marginTop: 16 }}>
                 <Dropdown
@@ -588,6 +621,7 @@ export default function ProfileInfoScreen() {
                   options={MARITAL_STATUS_OPTIONS}
                   selectedValue={upMarital}
                   onSelect={setUpMarital}
+                  variant="light"
                 />
               </View>
               <View style={{ marginTop: 16 }}>
@@ -654,6 +688,7 @@ export default function ProfileInfoScreen() {
                 options={EMPLOYMENT_STATUS_OPTIONS}
                 selectedValue={employmentStatus}
                 onSelect={setEmploymentStatus}
+                variant="light"
               />
               <View style={{ marginTop: 16 }}>
                 <Dropdown
@@ -662,6 +697,7 @@ export default function ProfileInfoScreen() {
                   options={industries.length > 0 ? industries : [{ value: "", label: "No industries loaded" }]}
                   selectedValue={industry}
                   onSelect={setIndustry}
+                  variant="light"
                 />
               </View>
               <View style={{ marginTop: 16 }}>
@@ -673,6 +709,7 @@ export default function ProfileInfoScreen() {
                 options={INCOME_RANGE_OPTIONS}
                 selectedValue={incomeRange}
                 onSelect={setIncomeRange}
+                variant="light"
               />
               <SaveButton onPress={handleSaveEmployment} saving={savingEmployment} label="Save Employment Details" />
             </View>
@@ -690,6 +727,7 @@ export default function ProfileInfoScreen() {
                 options={NOK_RELATIONSHIP_OPTIONS}
                 selectedValue={nokRelationship}
                 onSelect={setNokRelationship}
+                variant="light"
               />
               <View style={{ marginTop: 16 }}>
                 <Field label="Phone Number" value={nokPhone} onChangeText={setNokPhone} placeholder="e.g. 08012345678" keyboardType="phone-pad" />

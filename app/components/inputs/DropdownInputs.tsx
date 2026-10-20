@@ -29,6 +29,7 @@ export interface DropdownProps {
   searchable?: boolean;
   searchPlaceholder?: string;
   disabled?: boolean;
+  variant?: "dark" | "light";
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
@@ -41,6 +42,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
   searchable = false,
   searchPlaceholder = "Search...",
   disabled = false,
+  variant = "dark",
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,18 +96,38 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
   return (
     <View className="mb-6">
-      {label ? <Text className="text-white text-md mb-3">{label}</Text> : null}
+      {label ? (
+        <Text
+          className={
+            variant === "light"
+              ? "text-[#2A2B0F] text-md mb-1.5"
+              : "text-white text-md mb-3"
+          }
+        >
+          {label}
+        </Text>
+      ) : null}
 
       <Pressable
         onPress={handlePress}
         disabled={disabled}
-        className={`flex-row items-center justify-between bg-primary-400 rounded-xl p-4 py-6 border-2 ${
-          disabled ? "opacity-50 bg-primary-300" : ""
-        } ${error ? "border-red-500" : "border-primary-100"}`}
+        className={`flex-row items-center justify-between rounded-xl px-4 border ${
+          variant === "light"
+            ? "bg-[#FAFAF5] py-3 border-[#E8E5DC]"
+            : "bg-primary-400 p-4 py-6 border-2 border-primary-100"
+        } ${
+          disabled ? "opacity-50" : ""
+        } ${error ? "border-red-500" : variant === "dark" ? "border-primary-100" : ""}`}
       >
         <Text
           className={`text-base flex-1 mr-2 ${
-            selectedOption ? "text-white" : "text-accent-100"
+            selectedOption
+              ? variant === "light"
+                ? "text-[#2A2B0F]"
+                : "text-white"
+              : variant === "light"
+                ? "text-[#9A9B7A]"
+                : "text-accent-100"
           }`}
           numberOfLines={1}
         >
@@ -124,7 +146,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
           <Ionicons
             name="chevron-down"
             size={20}
-            color="#fff"
+            color={variant === "light" ? "#2A2B0F" : "#fff"}
           />
         </View>
       </Pressable>
@@ -201,4 +223,3 @@ export const Dropdown: React.FC<DropdownProps> = ({
     </View>
   );
 };
-
