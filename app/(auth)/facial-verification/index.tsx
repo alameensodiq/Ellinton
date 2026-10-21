@@ -147,12 +147,14 @@ const FacialVerificationScreen = () => {
   };
 
   const onQoreResult = async (data: any) => {
-    console.debug("QoreId result:", data);
+    console.log("[FacialVerificationScreen] QoreId result:", data);
     if (data?.event === "ERROR_RESULT") {
       presentError(data?.message || "Facial verification failed");
       return;
     }
-    if (data?.event === "SUCCESS_RESULT") {
+    // SUCCESS_RESULT = verified, SESSION_RESULT = submitted/pending review.
+    // Both are terminal for the liveness flow, so continue to the next step.
+    if (data?.event === "SUCCESS_RESULT" || data?.event === "SESSION_RESULT") {
       try {
         router.push({ pathname: "/(auth)/transacion-pin", params: { userId: resolvedUserId } });
       } catch (e) {

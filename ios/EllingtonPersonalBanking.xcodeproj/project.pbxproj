@@ -10,7 +10,7 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		2854F5ED4566B6ABA2FF8168 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A4E36E315B27FA559C75FAF /* ExpoModulesProvider.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		4F61AA45E2D382F5DD4D80ED /* libPods-EllingtonPersonalBanking.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7F91A05883CF96CAD32A364B /* libPods-EllingtonPersonalBanking.a */; };
+		48C6B46F0EA836156641790D /* Pods_EllingtonPersonalBanking.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10273982AF551D426BBD4876 /* Pods_EllingtonPersonalBanking.framework */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		C5B88B19D11A6084504B18CA /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = EF8B9971124707291A3FC7FF /* GoogleService-Info.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
@@ -18,13 +18,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		10273982AF551D426BBD4876 /* Pods_EllingtonPersonalBanking.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_EllingtonPersonalBanking.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07F961A680F5B00A75B9A /* EllingtonPersonalBanking.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EllingtonPersonalBanking.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = EllingtonPersonalBanking/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = EllingtonPersonalBanking/Info.plist; sourceTree = "<group>"; };
 		3A4E36E315B27FA559C75FAF /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-EllingtonPersonalBanking/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		3D86686D1E7DEBE6EAF39DD8 /* Pods-EllingtonPersonalBanking.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EllingtonPersonalBanking.debug.xcconfig"; path = "Target Support Files/Pods-EllingtonPersonalBanking/Pods-EllingtonPersonalBanking.debug.xcconfig"; sourceTree = "<group>"; };
 		52DBE10E3F60F631EB7EF128 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = EllingtonPersonalBanking/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		7F91A05883CF96CAD32A364B /* libPods-EllingtonPersonalBanking.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-EllingtonPersonalBanking.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = EllingtonPersonalBanking/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		DF34E233CF9A40B7AC863497 /* Pods-EllingtonPersonalBanking.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-EllingtonPersonalBanking.release.xcconfig"; path = "Target Support Files/Pods-EllingtonPersonalBanking/Pods-EllingtonPersonalBanking.release.xcconfig"; sourceTree = "<group>"; };
@@ -39,7 +39,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4F61AA45E2D382F5DD4D80ED /* libPods-EllingtonPersonalBanking.a in Frameworks */,
+				48C6B46F0EA836156641790D /* Pods_EllingtonPersonalBanking.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,7 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				7F91A05883CF96CAD32A364B /* libPods-EllingtonPersonalBanking.a */,
+				10273982AF551D426BBD4876 /* Pods_EllingtonPersonalBanking.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -293,12 +293,16 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-EllingtonPersonalBanking/Pods-EllingtonPersonalBanking-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/QoreIDSDK/QoreIDSDK.framework/QoreIDSDK",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/QoreIDSDKDependencies/FaceTecSDK.framework/FaceTecSDK",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ReactNativeDependencies/ReactNativeDependencies.framework/ReactNativeDependencies",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/QoreIDSDK.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/FaceTecSDK.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ReactNativeDependencies.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
@@ -431,7 +435,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.ellingtonmfb.app;
-				PRODUCT_NAME = "EllingtonPersonalBanking";
+				PRODUCT_NAME = EllingtonPersonalBanking;
 				SWIFT_OBJC_BRIDGING_HEADER = "EllingtonPersonalBanking/EllingtonPersonalBanking-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -462,7 +466,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.ellingtonmfb.app;
-				PRODUCT_NAME = "EllingtonPersonalBanking";
+				PRODUCT_NAME = EllingtonPersonalBanking;
 				SWIFT_OBJC_BRIDGING_HEADER = "EllingtonPersonalBanking/EllingtonPersonalBanking-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -517,6 +521,19 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"${PODS_ROOT}/ReactCommon",
+					"${PODS_ROOT}/ReactCommon/react/nativemodule/core",
+					"${PODS_ROOT}/React-runtimeexecutor",
+					"${PODS_ROOT}/React-runtimeexecutor/platform/ios",
+					"${PODS_ROOT}/ReactCommon-Samples",
+					"${PODS_ROOT}/ReactCommon-Samples/platform/ios",
+					"${PODS_ROOT}/React-Fabric/react/renderer/components/view/platform/cxx",
+					"${PODS_ROOT}/React-NativeModulesApple",
+					"${PODS_ROOT}/React-graphics",
+					"${PODS_ROOT}/React-graphics/react/renderer/graphics/platform/ios",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
@@ -573,6 +590,19 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"${PODS_ROOT}/ReactCommon",
+					"${PODS_ROOT}/ReactCommon/react/nativemodule/core",
+					"${PODS_ROOT}/React-runtimeexecutor",
+					"${PODS_ROOT}/React-runtimeexecutor/platform/ios",
+					"${PODS_ROOT}/ReactCommon-Samples",
+					"${PODS_ROOT}/ReactCommon-Samples/platform/ios",
+					"${PODS_ROOT}/React-Fabric/react/renderer/components/view/platform/cxx",
+					"${PODS_ROOT}/React-NativeModulesApple",
+					"${PODS_ROOT}/React-graphics",
+					"${PODS_ROOT}/React-graphics/react/renderer/graphics/platform/ios",
+				);
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,

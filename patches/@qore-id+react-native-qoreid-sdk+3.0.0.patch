@@ -7,8 +7,7 @@ index 0000000..0d259dd
 +o/classes
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/.transforms/1739a47b195637dcfd03e7b17dab2131/transformed/classes/classes_dex/classes.dex b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/.transforms/1739a47b195637dcfd03e7b17dab2131/transformed/classes/classes_dex/classes.dex
 new file mode 100644
-index 0000000..172fcb3
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/.transforms/1739a47b195637dcfd03e7b17dab2131/transformed/classes/classes_dex/classes.dex differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/.transforms/add138b5f15082642648410a6e5dc59c/results.bin b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/.transforms/add138b5f15082642648410a6e5dc59c/results.bin
 new file mode 100644
 index 0000000..0d259dd
@@ -18,8 +17,7 @@ index 0000000..0d259dd
 +o/classes
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/.transforms/add138b5f15082642648410a6e5dc59c/transformed/classes/classes_dex/classes.dex b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/.transforms/add138b5f15082642648410a6e5dc59c/transformed/classes/classes_dex/classes.dex
 new file mode 100644
-index 0000000..a9eb312
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/.transforms/add138b5f15082642648410a6e5dc59c/transformed/classes/classes_dex/classes.dex differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/generated/source/buildConfig/debug/com/qoreid/reactnativeqoreidsdk/BuildConfig.java b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/generated/source/buildConfig/debug/com/qoreid/reactnativeqoreidsdk/BuildConfig.java
 new file mode 100644
 index 0000000..e12e667
@@ -636,12 +634,10 @@ index 0000000..9e26dfe
 \ No newline at end of file
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar
 new file mode 100644
-index 0000000..2fee8a4
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/compile_library_classes_jar/debug/bundleLibCompileToJarDebug/classes.jar differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar
 new file mode 100644
-index 0000000..580b41d
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/compile_symbol_list/debug/generateDebugRFile/R.txt
 new file mode 100644
 index 0000000..e69de29
@@ -690,16 +686,13 @@ index 0000000..55c337c
 \ No newline at end of file
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/qore-id_react-native-qoreid-sdk_debug.kotlin_module b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/qore-id_react-native-qoreid-sdk_debug.kotlin_module
 new file mode 100644
-index 0000000..9dbc290
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/java_res/debug/processDebugJavaRes/out/META-INF/qore-id_react-native-qoreid-sdk_debug.kotlin_module differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/qoreid/reactnativeqoreidsdk/BuildConfig.class b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/qoreid/reactnativeqoreidsdk/BuildConfig.class
 new file mode 100644
-index 0000000..2ac4807
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/qoreid/reactnativeqoreidsdk/BuildConfig.class differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/qoreid/reactnativeqoreidsdk/NativeRNQoreIdSdkSpec.class b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/qoreid/reactnativeqoreidsdk/NativeRNQoreIdSdkSpec.class
 new file mode 100644
-index 0000000..6e90415
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes/com/qoreid/reactnativeqoreidsdk/NativeRNQoreIdSdkSpec.class differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/local_only_symbol_list/debug/parseDebugLocalResources/R-def.txt
 new file mode 100644
 index 0000000..78ac5b8
@@ -753,8 +746,7 @@ index 0000000..08f4ebe
 \ No newline at end of file
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar
 new file mode 100644
-index 0000000..a1d2252
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/runtime_library_classes_jar/debug/bundleLibRuntimeToJarDebug/classes.jar differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/intermediates/symbol_list_with_package_name/debug/generateDebugRFile/package-aware-r.txt
 new file mode 100644
 index 0000000..d1b908c
@@ -764,256 +756,193 @@ index 0000000..d1b908c
 +com.qoreid.reactnativeqoreidsdk
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab
 new file mode 100644
-index 0000000..e88a7d6
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream
 new file mode 100644
-index 0000000..9ce5a6e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len
 new file mode 100644
-index 0000000..90fb13e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len
 new file mode 100644
-index 0000000..01bdaa1
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at
 new file mode 100644
-index 0000000..c135183
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i
 new file mode 100644
-index 0000000..84516d7
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/inputs/source-to-output.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab
 new file mode 100644
-index 0000000..1e652ba
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream
 new file mode 100644
-index 0000000..630856c
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len
 new file mode 100644
-index 0000000..42df8b9
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len
 new file mode 100644
-index 0000000..a9f80ae
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at
 new file mode 100644
-index 0000000..3737e13
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i
 new file mode 100644
-index 0000000..21f1c6e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-attributes.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab
 new file mode 100644
-index 0000000..e8b1f6d
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream
 new file mode 100644
-index 0000000..630856c
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len
 new file mode 100644
-index 0000000..42df8b9
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len
 new file mode 100644
-index 0000000..a9f80ae
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at
 new file mode 100644
-index 0000000..a63bc08
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i
 new file mode 100644
-index 0000000..21f1c6e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/class-fq-name-to-source.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab
 new file mode 100644
-index 0000000..541a4d9
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream
 new file mode 100644
-index 0000000..cd4af37
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len
 new file mode 100644
-index 0000000..55b698c
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len
 new file mode 100644
-index 0000000..2a17e6e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at
 new file mode 100644
-index 0000000..6a9b3fc
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i
 new file mode 100644
-index 0000000..0ea20a4
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/constants.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab
 new file mode 100644
-index 0000000..a53c725
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream
 new file mode 100644
-index 0000000..7b82497
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len
 new file mode 100644
-index 0000000..c0d898a
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len
 new file mode 100644
-index 0000000..ec8f944
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at
 new file mode 100644
-index 0000000..9a46d62
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i
 new file mode 100644
-index 0000000..71068a2
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/internal-name-to-source.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab
 new file mode 100644
-index 0000000..69eb865
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream
 new file mode 100644
-index 0000000..7adcd6e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len
 new file mode 100644
-index 0000000..fa43224
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len
 new file mode 100644
-index 0000000..93a595b
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at
 new file mode 100644
-index 0000000..4a5fca8
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i
 new file mode 100644
-index 0000000..c0e20a1
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/proto.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab
 new file mode 100644
-index 0000000..18398f5
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream
 new file mode 100644
-index 0000000..9ce5a6e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len
 new file mode 100644
-index 0000000..90fb13e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len
 new file mode 100644
-index 0000000..01bdaa1
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at
 new file mode 100644
-index 0000000..f5a71d3
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i
 new file mode 100644
-index 0000000..84516d7
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/source-to-classes.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab
 new file mode 100644
-index 0000000..d4fbeb4
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream
 new file mode 100644
-index 0000000..ca5e879
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len
 new file mode 100644
-index 0000000..36189d3
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len
 new file mode 100644
-index 0000000..01bdaa1
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at
 new file mode 100644
-index 0000000..0d91412
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i
 new file mode 100644
-index 0000000..68cf5e4
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/subtypes.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab
 new file mode 100644
-index 0000000..f2e5733
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream
 new file mode 100644
-index 0000000..d4d4e5d
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len
 new file mode 100644
-index 0000000..f69038b
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len
 new file mode 100644
-index 0000000..01bdaa1
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at
 new file mode 100644
-index 0000000..afd1a51
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i
 new file mode 100644
-index 0000000..cb3b398
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/jvm/kotlin/supertypes.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/counters.tab
 new file mode 100644
 index 0000000..c393a51
@@ -1025,100 +954,76 @@ index 0000000..c393a51
 \ No newline at end of file
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab
 new file mode 100644
-index 0000000..efc5d36
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream
 new file mode 100644
-index 0000000..9ce5a6e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len
 new file mode 100644
-index 0000000..90fb13e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len
 new file mode 100644
-index 0000000..01bdaa1
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at
 new file mode 100644
-index 0000000..9f383b5
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i
 new file mode 100644
-index 0000000..84516d7
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/file-to-id.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab
 new file mode 100644
-index 0000000..dcdac07
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream
 new file mode 100644
-index 0000000..636f34a
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len
 new file mode 100644
-index 0000000..29ce11c
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len
 new file mode 100644
-index 0000000..a9f80ae
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at
 new file mode 100644
-index 0000000..0bffa1a
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i
 new file mode 100644
-index 0000000..e9905b3
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/id-to-file.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab
 new file mode 100644
-index 0000000..d2875cd
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream
 new file mode 100644
-index 0000000..1ba674f
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len
 new file mode 100644
-index 0000000..d521bea
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.keystream.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len
 new file mode 100644
-index 0000000..402d1e6
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at
 new file mode 100644
-index 0000000..1b6cf7a
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab.values.at differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i
 new file mode 100644
-index 0000000..5a61b0d
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len
 new file mode 100644
-index 0000000..131e265
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/caches-jvm/lookups/lookups.tab_i.len differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin
 new file mode 100644
-index 0000000..934d2be
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/cacheable/last-build.bin differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin
 new file mode 100644
-index 0000000..14f2692
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/classpath-snapshot/shrunk-classpath-snapshot.bin differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin
 new file mode 100644
-index 0000000..edd62c3
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/kotlin/compileDebugKotlin/local-state/build-history.bin differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/outputs/logs/manifest-merger-debug-report.txt b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/outputs/logs/manifest-merger-debug-report.txt
 new file mode 100644
 index 0000000..d717984
@@ -1143,32 +1048,125 @@ index 0000000..d717984
 +		INJECTED from /Users/sodiq/Desktop/ellingtonpersonal-mobile copy/node_modules/@qore-id/react-native-qoreid-sdk/android/src/main/AndroidManifest.xml
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin
 new file mode 100644
-index 0000000..fe59efa
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/compileDebugJavaWithJavac/previous-compilation-data.bin differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/META-INF/qore-id_react-native-qoreid-sdk_debug.kotlin_module b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/META-INF/qore-id_react-native-qoreid-sdk_debug.kotlin_module
 new file mode 100644
-index 0000000..9dbc290
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/META-INF/qore-id_react-native-qoreid-sdk_debug.kotlin_module differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$1.class b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$1.class
 new file mode 100644
-index 0000000..c43714e
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$1.class differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$2.class b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$2.class
 new file mode 100644
-index 0000000..3688f71
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$2.class differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$Companion.class b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$Companion.class
 new file mode 100644
-index 0000000..caad44d
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule$Companion.class differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule.class b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule.class
 new file mode 100644
-index 0000000..ddf74e0
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkModule.class differ
+index 0000000..e69de29
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkPackage.class b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkPackage.class
 new file mode 100644
-index 0000000..b41c609
-Binary files /dev/null and b/node_modules/@qore-id/react-native-qoreid-sdk/android/build/tmp/kotlin-classes/debug/com/qoreid/reactnativeqoreidsdk/RNQoreIdSdkPackage.class differ
+index 0000000..e69de29
+diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/ios/RCTRNQoreIdSdk.swift b/node_modules/@qore-id/react-native-qoreid-sdk/ios/RCTRNQoreIdSdk.swift
+index 3cc43a7..c2a644b 100644
+--- a/node_modules/@qore-id/react-native-qoreid-sdk/ios/RCTRNQoreIdSdk.swift
++++ b/node_modules/@qore-id/react-native-qoreid-sdk/ios/RCTRNQoreIdSdk.swift
+@@ -17,6 +17,7 @@ import QoreIDSDK
+ public class RCTRNQoreIdSdk: NSObject {
+     @objc public static let shared: RCTRNQoreIdSdk = RCTRNQoreIdSdk()
+     @objc public var onEmitResult: (([String: Any]) -> Void)?
++    private weak var presenterController: UIViewController?
+ 
+     @objc public func launchQoreidSdk(_ data: NSDictionary) -> Void {
+         let config = data["config"] as? NSDictionary
+@@ -66,12 +67,16 @@ public class RCTRNQoreIdSdk: NSObject {
+ 
+         if let params = param {
+             DispatchQueue.main.async {
+-                let vc = ViewController()
+-                vc.param = params
+-                vc.onQoreIdResult = { [weak self] result in
++                guard let host = self.topViewController() else { return }
++                self.presenterController = host
++                // Launch QoreID directly from the live top view controller so it
++                // presents (and self-dismisses) its own UI. We deliberately do NOT
++                // insert an empty intermediate view controller: if QoreID closes
++                // without emitting a result (e.g. user cancels), there is nothing
++                // left covering the screen, so the app never freezes.
++                QoreIdSdk.shared.launch(param: params, vc: host, "react_native_ios_sdk") { [weak self] result in
+                     self?.onQoreIdResultReceived(result: result)
+                 }
+-                self.controller()?.pushViewController(vc, animated: false)
+             }
+         }
+     }
+@@ -86,7 +91,7 @@ public class RCTRNQoreIdSdk: NSObject {
+                     "event": "ERROR_RESULT"
+                 ]
+               self.emitOnResult(payload)
+-                self.controller()?.popViewController(animated: false)
++                self.dismissHost()
+             } else if let successResult = result as? SuccessResult {
+                 let payload: [String: Any] = [
+                     "data": self.parseData(successResult.data),
+@@ -94,7 +99,7 @@ public class RCTRNQoreIdSdk: NSObject {
+                     "event": "SUCCESS_RESULT"
+                 ]
+                 self.emitOnResult(payload)
+-                self.controller()?.popViewController(animated: false)
++                self.dismissHost()
+             } else if let pendingResult = result as? PendingResult {
+                 let payload: [String: Any] = [
+                     "data": pendingResult.data?.verification?.id ?? 0,
+@@ -102,6 +107,7 @@ public class RCTRNQoreIdSdk: NSObject {
+                     "event": "SESSION_RESULT"
+                 ]
+                 self.emitOnResult(payload)
++                self.dismissHost()
+             }
+         }
+     }
+@@ -138,17 +144,31 @@ public class RCTRNQoreIdSdk: NSObject {
+       onEmitResult?(payload)
+   }
+ 
+-   private func controller() -> UINavigationController? {
++   private func dismissHost() {
++        DispatchQueue.main.async {
++            NSLog("[RNQoreIdSdk] result received, dismissing any QoreID UI still presented")
++            // Safety net: if QoreID left its UI presented on top of the host,
++            // dismiss it so we return to the React Native screen. QoreID usually
++            // closes its own UI, in which case this is a no-op.
++            self.presenterController?.presentedViewController?.dismiss(animated: true)
++            self.presenterController = nil
++        }
++    }
++
++   private func topViewController() -> UIViewController? {
++        var keyWindow: UIWindow?
+         if #available(iOS 13.0, *) {
+-            // iOS 13 and later
+-            let scenes = UIApplication.shared.connectedScenes
+-            let windowScene = scenes.first { $0.activationState == .foregroundActive } as? UIWindowScene
+-            let window = windowScene?.windows.first { $0.isKeyWindow }
+-            return (window?.rootViewController as! UINavigationController)
++            keyWindow = UIApplication.shared.connectedScenes
++                .compactMap { $0 as? UIWindowScene }
++                .first { $0.activationState == .foregroundActive }?
++                .windows.first { $0.isKeyWindow }
+         } else {
+-            // iOS 12 and earlier
+-            let window = UIApplication.shared.keyWindow
+-            return (window?.rootViewController as! UINavigationController)
++            keyWindow = UIApplication.shared.keyWindow
++        }
++        var top = keyWindow?.rootViewController
++        while let presented = top?.presentedViewController {
++            top = presented
+         }
++        return top
+     }
+ }
 diff --git a/node_modules/@qore-id/react-native-qoreid-sdk/scripts/ios/qoreid_sdk_pods.rb b/node_modules/@qore-id/react-native-qoreid-sdk/scripts/ios/qoreid_sdk_pods.rb
 index 57be7bc..81af096 100644
 --- a/node_modules/@qore-id/react-native-qoreid-sdk/scripts/ios/qoreid_sdk_pods.rb
