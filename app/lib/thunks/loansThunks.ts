@@ -17,6 +17,9 @@ import { generateSignature, generateNonce } from "../signature";
 import { getDeviceId } from "../utils";
 
 const USE_ENCRYPTION = true;
+// A loan-service authorization failure must be handled by the loan UI, rather
+// than being treated as proof that the customer's app session has expired.
+const PRESERVE_SESSION_ON_401_HEADER = "x-preserve-session-on-401";
 
 const safeFetch = async (url: string, options: RequestInit = {}) => {
   const method = options.method?.toLowerCase() || "get";
@@ -26,7 +29,10 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   const hasAuthToken =
     headers.Authorization && headers.Authorization.startsWith("Bearer ");
 
-  let enhancedHeaders = { ...headers };
+  let enhancedHeaders: Record<string, string> = {
+    ...headers,
+    [PRESERVE_SESSION_ON_401_HEADER]: "true",
+  };
 
   if (hasAuthToken) {
     const timestamp = Date.now().toString();

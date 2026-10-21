@@ -396,7 +396,11 @@ export default function RootLayout() {
       try {
         const response = await originalFetch(input, init);
 
-        if (response && response.status === 401) {
+        const requestHeaders = new Headers(init?.headers);
+        const shouldPreserveSession =
+          requestHeaders.get("x-preserve-session-on-401") === "true";
+
+        if (response && response.status === 401 && !shouldPreserveSession) {
           try {
             await AsyncStorage.removeItem("authToken");
           } catch (e) {
@@ -444,4 +448,3 @@ export default function RootLayout() {
     </Provider>
   );
 }
-

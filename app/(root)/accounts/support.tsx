@@ -15,7 +15,9 @@ import BottomSheet from "@/app/components/BottomSheet";
 import { useRouter } from "expo-router";
 
 const CUSTOMER_CARE_PHONE = "+234 704 700 7086";
-const CUSTOMER_CARE_WHATSAPP = "2347047007086";
+// WhatsApp click-to-chat numbers must be international digits only (no `+`,
+// spaces, or punctuation). Including `+` can make WhatsApp reject the link.
+const CUSTOMER_CARE_WHATSAPP = "2347042678421";
 const SUPPORT_EMAIL = "support@ellingtonmfb.com";
 
 interface FAQItem {
@@ -57,7 +59,7 @@ const FAQS: FAQItem[] = [
   {
     id: "faq_5",
     category: "cards",
-    question: "How do I fund my Ellington wallet using a debit card?",
+    question: "How do I fund my Ellington account using a debit card?",
     answer:
       "Link your Mastercard or Visa debit card under 'Saved Beneficiaries & Cards'. You can then tap Fund Wallet from the home screen for instant funding.",
   },
@@ -104,8 +106,23 @@ export default function HelpAndSupportScreen() {
   const [disputeReason, setDisputeReason] = useState("");
 
   const handleOpenWhatsApp = async () => {
-    const url = `https://wa.me/${CUSTOMER_CARE_WHATSAPP}`;
-    await Linking.openURL(url);
+    const whatsappUrl = `whatsapp://send?phone=${CUSTOMER_CARE_WHATSAPP}`;
+    const webFallbackUrl = `https://wa.me/${CUSTOMER_CARE_WHATSAPP}`;
+
+    try {
+      // Opening the app scheme first avoids the intermediate browser redirect,
+      // which is where WhatsApp was showing the incorrect device-date warning.
+      await Linking.openURL(whatsappUrl);
+    } catch {
+      try {
+        await Linking.openURL(webFallbackUrl);
+      } catch {
+        Alert.alert(
+          "Unable to open WhatsApp",
+          "Please install WhatsApp or contact us by phone or email."
+        );
+      }
+    }
   };
 
   const handleCall = async () => {
@@ -136,7 +153,7 @@ export default function HelpAndSupportScreen() {
     Alert.alert(
       "Dispute Logged",
       "Your dispute has been submitted to compliance. Ticket ref #DISP-" +
-        Math.floor(100000 + Math.random() * 900000)
+      Math.floor(100000 + Math.random() * 900000)
     );
   };
 
@@ -153,7 +170,7 @@ export default function HelpAndSupportScreen() {
         <View className="grid grid-cols-2 gap-3 mb-5">
           <View className="flex-row gap-3">
             {/* Live Chat */}
-            <Pressable
+            {/* <Pressable
               onPress={() => router.push("/(root)/(tabs)/chat")}
               className="flex-1 bg-primary-200 rounded-2xl p-4 shadow-sm active:opacity-90"
             >
@@ -164,7 +181,7 @@ export default function HelpAndSupportScreen() {
               <Text className="text-blue-200 text-[10px] font-outfit mt-0.5">
                 Chat with live agent
               </Text>
-            </Pressable>
+            </Pressable> */}
 
             {/* WhatsApp */}
             <Pressable
@@ -213,7 +230,7 @@ export default function HelpAndSupportScreen() {
         </View>
 
         {/* DISPUTE RESOLUTION & TRACKER */}
-        <View className="bg-white rounded-2xl p-4 mb-5 shadow-sm border border-gray-100">
+        {/* <View className="bg-white rounded-2xl p-4 mb-5 shadow-sm border border-gray-100">
           <View className="flex-row items-center justify-between mb-3">
             <View>
               <Text className="text-gray-900 text-sm font-outfit-bold">
@@ -240,22 +257,20 @@ export default function HelpAndSupportScreen() {
                 <View className="flex-row justify-between items-center mb-1">
                   <Text className="text-gray-900 text-xs font-outfit-bold">{disp.reference}</Text>
                   <View
-                    className={`px-2 py-0.5 rounded-full ${
-                      disp.status === "Refunded"
-                        ? "bg-emerald-100"
-                        : disp.status === "Resolved"
+                    className={`px-2 py-0.5 rounded-full ${disp.status === "Refunded"
+                      ? "bg-emerald-100"
+                      : disp.status === "Resolved"
                         ? "bg-blue-100"
                         : "bg-amber-100"
-                    }`}
+                      }`}
                   >
                     <Text
-                      className={`text-[9px] font-outfit-bold ${
-                        disp.status === "Refunded"
-                          ? "text-emerald-800"
-                          : disp.status === "Resolved"
+                      className={`text-[9px] font-outfit-bold ${disp.status === "Refunded"
+                        ? "text-emerald-800"
+                        : disp.status === "Resolved"
                           ? "text-blue-800"
                           : "text-amber-800"
-                      }`}
+                        }`}
                     >
                       {disp.status}
                     </Text>
@@ -271,15 +286,15 @@ export default function HelpAndSupportScreen() {
               </View>
             ))}
           </View>
-        </View>
+        </View> */}
 
         {/* FAQS & SELF-SERVICE KNOWLEDGE BASE */}
-        <Text className="text-gray-900 text-sm font-outfit-bold mb-2 ml-1">
+        {/* <Text className="text-gray-900 text-sm font-outfit-bold mb-2 ml-1">
           Frequently Asked Questions
-        </Text>
+        </Text> */}
 
         {/* Search Bar */}
-        <View className="bg-white rounded-xl px-4 py-3 flex-row items-center border border-gray-200 mb-3 shadow-sm">
+        {/* <View className="bg-white rounded-xl px-4 py-3 flex-row items-center border border-gray-200 mb-3 shadow-sm">
           <Feather name="search" size={16} color="#94A3B8" />
           <TextInput
             value={searchQuery}
@@ -288,10 +303,10 @@ export default function HelpAndSupportScreen() {
             placeholderTextColor="#94A3B8"
             className="flex-1 ml-3 text-xs text-gray-900 font-outfit"
           />
-        </View>
+        </View> */}
 
         {/* Category Pills */}
-        <View className="flex-row gap-2 mb-3">
+        {/* <View className="flex-row gap-2 mb-3">
           {[
             { id: "all", label: "All" },
             { id: "kyc", label: "KYC & Limits" },
@@ -304,26 +319,24 @@ export default function HelpAndSupportScreen() {
               <Pressable
                 key={cat.id}
                 onPress={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-full border ${
-                  isSelected
-                    ? "bg-primary-200 border-primary-200"
-                    : "bg-white border-gray-200"
-                }`}
+                className={`px-3 py-1.5 rounded-full border ${isSelected
+                  ? "bg-primary-200 border-primary-200"
+                  : "bg-white border-gray-200"
+                  }`}
               >
                 <Text
-                  className={`text-[11px] font-outfit-medium ${
-                    isSelected ? "text-white" : "text-gray-700"
-                  }`}
+                  className={`text-[11px] font-outfit-medium ${isSelected ? "text-white" : "text-gray-700"
+                    }`}
                 >
                   {cat.label}
                 </Text>
               </Pressable>
             );
           })}
-        </View>
+        </View> */}
 
         {/* FAQ Accordion */}
-        <View className="space-y-2.5">
+        {/* <View className="space-y-2.5">
           {filteredFaqs.map((faq) => {
             const isExpanded = expandedFaqId === faq.id;
             return (
@@ -350,11 +363,11 @@ export default function HelpAndSupportScreen() {
               </Pressable>
             );
           })}
-        </View>
+        </View> */}
       </ScrollView>
 
       {/* DISPUTE LOGGING MODAL */}
-      <BottomSheet
+      {/* <BottomSheet
         visible={disputeModalVisible}
         onClose={() => setDisputeModalVisible(false)}
         title="Report Transaction Issue"
@@ -390,7 +403,7 @@ export default function HelpAndSupportScreen() {
             />
           </View>
         </View>
-      </BottomSheet>
+      </BottomSheet> */}
     </SafeAreaView>
   );
 }

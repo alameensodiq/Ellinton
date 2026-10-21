@@ -9,6 +9,7 @@ import {
   Modal,
   Animated,
   StatusBar,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -127,6 +128,11 @@ export default function AccountScreen() {
   const displayName =
     user?.full_name?.toUpperCase() ||
     `${user?.first_name || ""} ${user?.last_name || ""}`.toUpperCase();
+
+  const profileImageUri =
+    typeof user?.passport === "string" && user.passport.trim()
+      ? user.passport
+      : user?.firebaseUser?.photoURL || null;
 
   const hasAccount = Boolean(user?.account_number);
   const kycLevel = hasAccount ? (user?.kyc_level || 1) : 0;
@@ -259,8 +265,16 @@ export default function AccountScreen() {
         >
           {/* Emblem */}
           <View className="items-center mb-3">
-            <View className="w-14 h-14 rounded-full bg-white justify-center items-center shadow-sm">
-              <MaterialCommunityIcons name="bank" size={28} color={C.bgDark} />
+            <View className="w-14 h-14 rounded-full bg-white justify-center items-center shadow-sm overflow-hidden">
+              {profileImageUri ? (
+                <Image
+                  source={{ uri: profileImageUri }}
+                  className="w-full h-full"
+                  resizeMode="cover"
+                />
+              ) : (
+                <MaterialCommunityIcons name="bank" size={28} color={C.bgDark} />
+              )}
             </View>
           </View>
 
