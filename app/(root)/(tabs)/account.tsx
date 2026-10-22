@@ -134,6 +134,11 @@ export default function AccountScreen() {
       ? user.passport
       : user?.firebaseUser?.photoURL || null;
 
+  const profileInitials = [user?.first_name, user?.last_name]
+    .filter((name): name is string => typeof name === "string" && Boolean(name.trim()))
+    .map((name) => name.trim().charAt(0).toUpperCase())
+    .join("");
+
   const hasAccount = Boolean(user?.account_number);
   const kycLevel = hasAccount ? (user?.kyc_level || 1) : 0;
 
@@ -273,7 +278,9 @@ export default function AccountScreen() {
                   resizeMode="cover"
                 />
               ) : (
-                <MaterialCommunityIcons name="bank" size={28} color={C.bgDark} />
+                <Text style={{ color: C.bgDark }} className="text-xl font-outfit-bold">
+                  {profileInitials}
+                </Text>
               )}
             </View>
           </View>
