@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "185",
+      "buildNumber": "186",
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -86,7 +86,7 @@
         "expo-splash-screen",
         {
           "image": "./app/assets/logo.png",
-          "resizeMode": "cover",
+          "resizeMode": "contain",
           "backgroundColor": "#3F401B",
           "enableFullScreenImage_legacy": true
         }

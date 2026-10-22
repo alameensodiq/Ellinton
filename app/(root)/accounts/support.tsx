@@ -18,7 +18,7 @@ const CUSTOMER_CARE_PHONE = "+234 704 700 7086";
 // WhatsApp click-to-chat numbers must be international digits only (no `+`,
 // spaces, or punctuation). Including `+` can make WhatsApp reject the link.
 const CUSTOMER_CARE_WHATSAPP = "2347042678421";
-const SUPPORT_EMAIL = "support@ellingtonmfb.com";
+const SUPPORT_EMAIL = "support@ellingtonbank.com";
 
 interface FAQItem {
   id: string;
@@ -289,12 +289,12 @@ export default function HelpAndSupportScreen() {
         </View> */}
 
         {/* FAQS & SELF-SERVICE KNOWLEDGE BASE */}
-        {/* <Text className="text-gray-900 text-sm font-outfit-bold mb-2 ml-1">
+        <Text className="text-gray-900 text-sm font-outfit-bold mb-2 ml-1">
           Frequently Asked Questions
-        </Text> */}
+        </Text>
 
         {/* Search Bar */}
-        {/* <View className="bg-white rounded-xl px-4 py-3 flex-row items-center border border-gray-200 mb-3 shadow-sm">
+        <View className="bg-white rounded-xl px-4 py-3 flex-row items-center border border-gray-200 mb-3 shadow-sm">
           <Feather name="search" size={16} color="#94A3B8" />
           <TextInput
             value={searchQuery}
@@ -303,10 +303,10 @@ export default function HelpAndSupportScreen() {
             placeholderTextColor="#94A3B8"
             className="flex-1 ml-3 text-xs text-gray-900 font-outfit"
           />
-        </View> */}
+        </View>
 
         {/* Category Pills */}
-        {/* <View className="flex-row gap-2 mb-3">
+        <View className="flex-row gap-2 mb-3">
           {[
             { id: "all", label: "All" },
             { id: "kyc", label: "KYC & Limits" },
@@ -333,10 +333,10 @@ export default function HelpAndSupportScreen() {
               </Pressable>
             );
           })}
-        </View> */}
+        </View>
 
         {/* FAQ Accordion */}
-        {/* <View className="space-y-2.5">
+        <View className="space-y-2.5">
           {filteredFaqs.map((faq) => {
             const isExpanded = expandedFaqId === faq.id;
             return (
@@ -363,7 +363,7 @@ export default function HelpAndSupportScreen() {
               </Pressable>
             );
           })}
-        </View> */}
+        </View>
       </ScrollView>
 
       {/* DISPUTE LOGGING MODAL */}

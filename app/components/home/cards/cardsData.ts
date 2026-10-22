@@ -38,11 +38,12 @@ export const getCardsData = (
 ): CardData[] => {
   const firstCardBalance =
     accountInfo?.accountBalance !== undefined &&
-    accountInfo.accountBalance !== null
+      accountInfo.accountBalance !== null
       ? formatMoney(accountInfo.accountBalance)
       : "0.00";
 
   const firstCardAccountNumber = accountInfo?.accountNumber || "";
+  const hasAccountNumber = firstCardAccountNumber.trim().length > 0;
   const firstCardDisplayNumber = firstCardAccountNumber
     ? `${firstCardAccountNumber.substring(0, 5)}****`
     : "";
@@ -62,34 +63,38 @@ export const getCardsData = (
           label: "Transfer",
           iconLibrary: "Ionicons",
         },
-        {
-          icon: "account-balance",
-          label: "Accounts",
-          iconLibrary: "MaterialIcons",
-        },
+        ...(hasAccountNumber
+          ? [
+              {
+                icon: "account-balance" as const,
+                label: "Accounts",
+                iconLibrary: "MaterialIcons" as const,
+              },
+            ]
+          : []),
       ],
     },
-    {
-      id: 2,
-      title: "Total savings",
-      // ✅ real total savings here
-      balance: formatMoney(savingsTotal),
-      gradientColors: ["#333419", "#18180C"],
-      imagePosition: "top-right",
-      image: Images.landing_balance_card2,
-      actions: [
-        {
-          icon: "arrow-forward",
-          label: "Create Plan",
-          iconLibrary: "Ionicons",
-        },
-        {
-          icon: "account-balance",
-          label: "View plans",
-          iconLibrary: "MaterialIcons",
-        },
-      ],
-    },
+    // {
+    //   id: 2,
+    //   title: "Total savings",
+    //   // ✅ real total savings here
+    //   balance: formatMoney(savingsTotal),
+    //   gradientColors: ["#333419", "#18180C"],
+    //   imagePosition: "top-right",
+    //   image: Images.landing_balance_card2,
+    //   actions: [
+    //     {
+    //       icon: "arrow-forward",
+    //       label: "Create Plan",
+    //       iconLibrary: "Ionicons",
+    //     },
+    //     {
+    //       icon: "account-balance",
+    //       label: "View plans",
+    //       iconLibrary: "MaterialIcons",
+    //     },
+    //   ],
+    // },
     {
       id: 3,
       title: "Point wallets",
