@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
   Platform
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import TextInputField from "@/app/components/inputs/TextInputField";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Button from "@/app/components/Button";
@@ -55,6 +55,8 @@ const Login = () => {
   );
   const [useBiometric, setUseBiometric] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+  const [isBiometricAuthenticating, setIsBiometricAuthenticating] = useState(false);
+  const biometricAuthenticationInProgress = useRef(false);
 
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -207,6 +209,13 @@ const Login = () => {
   };
 
   const handleBiometricAuth = async () => {
+    if (biometricAuthenticationInProgress.current) {
+      return;
+    }
+
+    biometricAuthenticationInProgress.current = true;
+    setIsBiometricAuthenticating(true);
+
     try {
       const [savedPin, storedEmail, userProfile] = await Promise.all([
         AsyncStorage.getItem("userPin"),
@@ -310,6 +319,9 @@ const Login = () => {
           : error?.message || "Biometric authentication failed. Please try again."
       );
       setShowErrorModal(true);
+    } finally {
+      biometricAuthenticationInProgress.current = false;
+      setIsBiometricAuthenticating(false);
     }
   };
 
@@ -367,11 +379,15 @@ const Login = () => {
                 <View className="items-center justify-center my-6">
                   <TouchableOpacity
                     onPress={handleBiometricAuth}
-                    disabled={isLoading}
+                    disabled={isLoading || isBiometricAuthenticating}
                     activeOpacity={0.8}
+                    hitSlop={12}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Log in with ${biometricLabel}`}
+                    accessibilityState={{ disabled: isLoading || isBiometricAuthenticating, busy: isBiometricAuthenticating || isLoading }}
                     className="w-28 h-28 rounded-full bg-primary-400 justify-center items-center border-2 border-accent-100/40 mb-3 shadow-lg"
                   >
-                    {isLoading ? (
+                    {isLoading || isBiometricAuthenticating ? (
                       <ActivityIndicator size="large" color="#D4FF00" />
                     ) : (
                       <BiometricIcon width={56} height={56} fill="#D4FF00" />
@@ -379,10 +395,14 @@ const Login = () => {
                   </TouchableOpacity>
 
                   <Text className="text-white text-base font-semibold text-center mb-1">
-                    {isLoading ? "Logging in..." : `Log in with ${biometricLabel}`}
+                    {isLoading
+                      ? "Logging in..."
+                      : isBiometricAuthenticating
+                        ? `Opening ${biometricLabel}...`
+                        : `Log in with ${biometricLabel}`}
                   </Text>
                   <Text className="text-white/60 text-xs text-center">
-                    {isLoading
+                    {isLoading || isBiometricAuthenticating
                       ? "Please wait while we verify your credentials..."
                       : `Tap the icon above to trigger ${biometricLabel}`}
                   </Text>
@@ -462,5 +482,4 @@ const Login = () => {
 };
 
 export default Login;
-
 
