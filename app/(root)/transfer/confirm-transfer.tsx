@@ -156,24 +156,24 @@ export default function ConfirmTransfer() {
   const numericAmount = parseFloat(amount.replace(/,/g, ""));
   console.log(numericAmount)
 
-  useEffect(() => {
-    if (amount && bank) {
-      dispatch(fetchTransferFee({
-        amount: numericAmount, transferType: bank === 'Ellington Bank' ? 'intra_bank' : 'inter_bank'
-      }));
-    }
-  }, [dispatch, amount, bank]);
+  // useEffect(() => {
+  //   if (amount && bank) {
+  //     dispatch(fetchTransferFee({
+  //       amount: numericAmount, transferType: bank === 'Ellington Bank' ? 'intra_bank' : 'inter_bank'
+  //     }));
+  //   }
+  // }, [dispatch, amount, bank]);
 
 
-  const transferfee = useSelector(
-    (state: RootState) => state.transfers.transferfee
-  );
-  console.log(transferfee)
+  // const transferfee = useSelector(
+  //   (state: RootState) => state.transfers.transferfee
+  // );
+  // console.log(transferfee)
 
-  // const fee = 10;
-  const fee = transferfee?.fee ?? 0;
-  // const totalDebit = numericAmount + fee;
-  const totalDebit = numericAmount + (transferfee?.fee ?? 0);
+  const fee = 0;
+  // const fee = transferfee?.fee ?? 0;
+  const totalDebit = numericAmount + fee;
+  // const totalDebit = numericAmount + (transferfee?.fee ?? 0);
 
   const goldBalance = useAppSelector((s: any) => s.gold.dashboard?.wallet?.balance_grams ?? 0);
   const amountGramsParam = params.amount_grams as string | undefined;
@@ -413,7 +413,7 @@ export default function ConfirmTransfer() {
           onChangeText={setRemark}
           placeholder="Enter a remark"
         />
-        <ScheduleTransaction
+        {/* <ScheduleTransaction
           scheduleEnabled={scheduleEnabled}
           setScheduleEnabled={setScheduleEnabled}
           scheduleName={scheduleName}
@@ -428,7 +428,7 @@ export default function ConfirmTransfer() {
           setEndDate={setEndDate}
           frequencyOptions={frequencyOptions}
           dayOptions={dayOptions}
-        />
+        /> */}
 
         {error && (
           <Text className="text-red-500 text-sm mb-4 text-center">

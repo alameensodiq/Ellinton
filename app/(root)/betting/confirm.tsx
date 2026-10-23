@@ -184,8 +184,8 @@ export default function ConfirmBuyAirtime() {
       console.log("Biometric payment process error:", err);
       setError(
         err?.message ||
-          (typeof err === "string" ? err : null) ||
-          "Service not available at this time, please try again later"
+        (typeof err === "string" ? err : null) ||
+        "Service not available at this time, please try again later"
       );
       Vibration.vibrate(400);
     } finally {
@@ -222,7 +222,7 @@ export default function ConfirmBuyAirtime() {
 
         <SenderCard />
 
-        <ScheduleTransaction
+        {/* <ScheduleTransaction
           scheduleEnabled={scheduleEnabled}
           setScheduleEnabled={setScheduleEnabled}
           scheduleName={scheduleName}
@@ -237,7 +237,7 @@ export default function ConfirmBuyAirtime() {
           setEndDate={setEndDate}
           frequencyOptions={frequencyOptions}
           dayOptions={dayOptions}
-        />
+        /> */}
 
         {error && (
           <Text className="text-red-500 text-sm mb-4 text-center">

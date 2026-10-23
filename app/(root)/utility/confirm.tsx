@@ -252,7 +252,7 @@ export default function ConfirmBuyAirtime() {
 
         <SenderCard />
 
-        <ScheduleTransaction
+        {/* <ScheduleTransaction
           scheduleEnabled={scheduleEnabled}
           setScheduleEnabled={setScheduleEnabled}
           scheduleName={scheduleName}
@@ -267,7 +267,7 @@ export default function ConfirmBuyAirtime() {
           setEndDate={setEndDate}
           frequencyOptions={frequencyOptions}
           dayOptions={dayOptions}
-        />
+        /> */}
 
         {error && (
           <Text className="text-red-500 text-sm mb-4 text-center">

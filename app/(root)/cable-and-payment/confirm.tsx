@@ -258,7 +258,7 @@ export default function ConfirmCablePayment() {
 
         <SenderCard />
 
-        <ScheduleTransaction
+        {/* <ScheduleTransaction
           scheduleEnabled={scheduleEnabled}
           setScheduleEnabled={setScheduleEnabled}
           scheduleName={scheduleName}
@@ -273,7 +273,7 @@ export default function ConfirmCablePayment() {
           setEndDate={setEndDate}
           frequencyOptions={frequencyOptions}
           dayOptions={dayOptions}
-        />
+        /> */}
 
         {error && (
           <Text className="text-red-500 text-sm mb-4 text-center">

@@ -189,8 +189,8 @@ export default function ConfirmInternetPayment() {
       console.log("Biometric payment process error:", err);
       setError(
         err?.message ||
-          (typeof err === "string" ? err : null) ||
-          "Service not available at this time, please try again later"
+        (typeof err === "string" ? err : null) ||
+        "Service not available at this time, please try again later"
       );
       Vibration.vibrate(400);
     } finally {
@@ -226,7 +226,7 @@ export default function ConfirmInternetPayment() {
 
         <SenderCard />
 
-        <ScheduleTransaction
+        {/* <ScheduleTransaction
           scheduleEnabled={scheduleEnabled}
           setScheduleEnabled={setScheduleEnabled}
           scheduleName={scheduleName}
@@ -241,7 +241,7 @@ export default function ConfirmInternetPayment() {
           setEndDate={setEndDate}
           frequencyOptions={frequencyOptions}
           dayOptions={dayOptions}
-        />
+        /> */}
 
         {error && (
           <Text className="text-red-500 text-sm mb-4 text-center">
