@@ -281,7 +281,7 @@ const DeviceOtpScreen = () => {
               Verify your Device and Identity
             </CustomText>
             <CustomText secondary className="mb-8">
-              We've sent a 6-digit code to your email.
+              We've sent a 6-digit code to your number.
             </CustomText>
             {errorMessage && (
               <CustomText className="text-red-500 mt-2 text-sm" weight="medium">
@@ -289,7 +289,7 @@ const DeviceOtpScreen = () => {
               </CustomText>
             )}
             <CustomText secondary className="mb-2 mt-6">
-              SMS Otp
+              SMS OTP
             </CustomText>
             <OtpInput
               digitCount={6}

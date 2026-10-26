@@ -16,6 +16,7 @@ import { Country, PhoneInput } from "@/app/components/inputs/PhoneInput";
 import InfoText from "@/app/components/InfoText";
 import ProgressBar from "@/app/components/ProgressBar";
 import CustomText from "@/app/components/CustomText";
+import ErrorModal from "@/app/components/ErrorModal";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { registerNewUser, ResendNewUserOtp } from "@/app/lib/thunks/authThunks";
@@ -29,6 +30,7 @@ const PhoneNumberScreen = () => {
 
   const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState("");
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [resendModalVisible, setResendModalVisible] = useState(false);
   const { firstName, lastName, middleName } = useLocalSearchParams<{
     firstName: string;
@@ -233,6 +235,11 @@ const PhoneNumberScreen = () => {
   };
 
   const handleContinue = async () => {
+    if (phoneNumber.length < 10 || phoneNumber.length > 11) {
+      setError("Phone number must be 10 or 11 digits.");
+      return;
+    }
+
     const fullPhone = `${selectedCountry.dialCode}${phoneNumber}`;
     const firstNameStr = Array.isArray(firstName) ? firstName[0] : (firstName || "");
     const lastNameStr = Array.isArray(lastName) ? lastName[0] : (lastName || "");
@@ -260,13 +267,19 @@ const PhoneNumberScreen = () => {
         payload?.statusCode === 409 ||
         (typeof payload === "string" && payload.includes("409"))
       ) {
-        setResendModalVisible(true);
-      } else {
-        setError(
+        const message =
           typeof payload === "string"
             ? payload
-            : payload?.message || "Registration failed. Please try again."
-        );
+            : payload?.message || "This phone number is already registered. Please log in instead.";
+        setError(message);
+        setShowErrorModal(true);
+      } else {
+        const message =
+          typeof payload === "string"
+            ? payload
+            : payload?.message || "Registration failed. Please try again.";
+        setError(message);
+        setShowErrorModal(true);
       }
     }
   };
@@ -298,7 +311,7 @@ const PhoneNumberScreen = () => {
             onSelectCountry={setSelectedCountry}
             error={error}
             onChangeText={(text) => {
-              const cleaned = text.replace(/\D/g, "");
+              const cleaned = text.replace(/\D/g, "").slice(0, 11);
               setPhoneNumber(cleaned);
               if (error) setError("");
             }}
@@ -317,52 +330,18 @@ const PhoneNumberScreen = () => {
             variant="primary"
             onPress={handleContinue}
             className="w-full mt-4 mb-4"
-            disabled={!phoneNumber || isLoading}
+            disabled={phoneNumber.length < 10 || isLoading}
           />
         </View>
 
-        <Modal
-          visible={resendModalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setResendModalVisible(false)}
-        >
-          <View className="flex-1 bg-black/60 justify-end">
-            <View
-              className="bg-primary-100 rounded-t-3xl p-6 border-t border-primary-300"
-              style={{ paddingBottom: Math.max(insets.bottom + 36, 52) }}
-            >
-              <View className="flex-row justify-between items-center mb-4">
-                <Text className="text-white text-lg font-bold">Resend OTP via</Text>
-                <TouchableOpacity onPress={() => setResendModalVisible(false)}>
-                  <Ionicons name="close" size={24} color="#fff" />
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                className="flex-row items-center p-4 bg-primary-200 rounded-xl mb-3 border border-primary-300"
-                onPress={() => handleConfirmResend("sms")}
-              >
-                <Ionicons name="chatbox-ellipses-outline" size={24} color="#fff" />
-                <View className="ml-3">
-                  <Text className="text-white font-semibold text-base">Send via SMS</Text>
-                  <Text className="text-accent-100 text-xs">Receive standard text message OTP</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="flex-row items-center p-4 bg-primary-200 rounded-xl border border-primary-300"
-                onPress={() => handleConfirmResend("whatsapp")}
-              >
-                <Ionicons name="logo-whatsapp" size={24} color="#25D366" />
-                <View className="ml-3">
-                  <Text className="text-white font-semibold text-base">Send via WhatsApp</Text>
-                  <Text className="text-accent-100 text-xs">Receive verification code on WhatsApp</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+        <ErrorModal
+          visible={showErrorModal}
+          message={error}
+          onDismiss={() => {
+            setShowErrorModal(false);
+            setError("");
+          }}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

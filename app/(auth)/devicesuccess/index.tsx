@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, Animated, Easing, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "@/app/components/Button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   registerDeviceWithBackend,
   registerForPushNotificationsAsync
@@ -15,9 +16,26 @@ const DeviceSuccessScreen = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fallAnim = useRef(new Animated.Value(0)).current;
-    const { userId } = useLocalSearchParams();
+  const { userId } = useLocalSearchParams();
+  const [isClearingBiometrics, setIsClearingBiometrics] = useState(true);
 
   useEffect(() => {
+    // This device may previously have belonged to another user. Never carry
+    // their biometric login or transaction-approval credentials forward.
+    const clearPreviousUserBiometrics = async () => {
+      try {
+        await AsyncStorage.multiRemove([
+          "loginBiometricEnabled",
+          "transBiometricEnabled",
+          "transBiometricPin",
+          "userPin",
+          "hasLoggedInBefore",
+        ]);
+      } catch (error) {
+        console.error("Could not clear previous biometric settings:", error);
+      }
+    };
+
     // Fade in
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -69,6 +87,7 @@ const DeviceSuccessScreen = () => {
       }
     };
 
+    clearPreviousUserBiometrics().finally(() => setIsClearingBiometrics(false));
     registerPushNotifications();
   }, []);
 
@@ -111,8 +130,9 @@ const DeviceSuccessScreen = () => {
       <Animated.View style={{ opacity: fadeAnim }}>
         <View className="pb-6">
           <Button
-            title="Continue"
+            title={isClearingBiometrics ? "Securing device..." : "Continue"}
             variant="primary"
+            disabled={isClearingBiometrics}
             onPress={() =>
               router.replace({
                 pathname: "/(root)/(tabs)",

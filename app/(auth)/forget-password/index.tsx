@@ -27,19 +27,24 @@ const EmailOtpScreen = () => {
 
   const handleBack = () => router.back();
 
-  const validateEmail = (email: string) =>
-    email.includes("@") && email.includes(".");
-
   const handleEmailChange = (text: string) => {
-    setEmail(text);
+    const phoneNumber = text.replace(/\D/g, "").slice(0, 11);
+    setEmail(phoneNumber);
     setEmailError(
-      text && !validateEmail(text) ? "Please enter a valid email" : ""
+      phoneNumber && phoneNumber.length !== 11
+        ? "Phone number must be exactly 11 digits"
+        : ""
     );
   };
 
   const handleContinue = async () => {
     if (!email) {
-      setEmailError("Email is required");
+      setEmailError("Phone number is required");
+      return;
+    }
+
+    if (email.length !== 11) {
+      setEmailError("Phone number must be exactly 11 digits");
       return;
     }
 
@@ -77,13 +82,13 @@ const EmailOtpScreen = () => {
             </Text>
 
             <TextInputField
-              label="Email"
-              placeholder="Enter your email address"
+              label="Phone Number"
+              placeholder="Enter your phone number"
               onChangeText={handleEmailChange}
               value={email}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoComplete="email"
+              keyboardType="phone-pad"
+              autoComplete="tel"
+              maxLength={11}
               error={emailError}
               onFocus={() => setInputFocused(true)}
               onBlur={() => setInputFocused(false)}

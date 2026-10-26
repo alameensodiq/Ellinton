@@ -129,7 +129,8 @@ export default function CurrentUser() {
           AsyncStorage.getItem("loginBiometricEnabled"),
         ]);
 
-        let isLoginBioEnabled = true;
+        // Biometric login is opt-in; no saved preference means it is off.
+        let isLoginBioEnabled = false;
         if (storedLoginBio !== null) {
           try {
             isLoginBioEnabled = JSON.parse(storedLoginBio) === true;

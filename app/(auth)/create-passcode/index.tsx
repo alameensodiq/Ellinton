@@ -8,7 +8,9 @@ import {
   Vibration,
   ScrollView,
   Platform,
-  Switch
+  Switch,
+  Modal,
+  Pressable,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAvoidingView } from "react-native";
@@ -40,6 +42,48 @@ const CreatePasscodeScreen = () => {
   const [confirmPasscode, setConfirmPasscode] = useState("");
   const [error, setError] = useState("");
   const [enableBiometric, setEnableBiometric] = useState(false);
+  const [biometricConfirmationVisible, setBiometricConfirmationVisible] = useState(false);
+  const [biometricNoticeVisible, setBiometricNoticeVisible] = useState(false);
+
+  const handleBiometricToggle = (value: boolean) => {
+    if (!value) {
+      setEnableBiometric(false);
+      return;
+    }
+
+    // Explain the requirement before opening the device's native biometric prompt.
+    setEnableBiometric(false);
+    setBiometricConfirmationVisible(true);
+  };
+
+  const handleConfirmBiometricEnable = async () => {
+    setBiometricConfirmationVisible(false);
+    const biometricName = Platform.OS === "ios" ? "Face ID" : "biometrics";
+    try {
+      const [hasHardware, isEnrolled, supportedTypes] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+        LocalAuthentication.supportedAuthenticationTypesAsync(),
+      ]);
+      const supportsRequiredBiometric = Platform.OS === "ios"
+        ? supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
+        : supportedTypes.length > 0;
+      if (!hasHardware || !isEnrolled || !supportsRequiredBiometric) {
+        setEnableBiometric(false);
+        setBiometricNoticeVisible(true);
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: `Enable Login with ${biometricName}`,
+        cancelLabel: "Cancel",
+        disableDeviceFallback: true,
+      });
+      setEnableBiometric(result.success);
+    } catch {
+      setEnableBiometric(false);
+    }
+  };
 
   const handleSubmit = async () => {
     setError("");
@@ -56,31 +100,6 @@ const CreatePasscodeScreen = () => {
     }
 
     try {
-      // Always save userPin for biometric / quick passcode logins
-      await AsyncStorage.setItem("userPin", passcode);
-      if (enableBiometric) {
-        const hasHardware = await LocalAuthentication.hasHardwareAsync();
-        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-        if (hasHardware && isEnrolled) {
-          const authResult = await LocalAuthentication.authenticateAsync({
-            promptMessage: "Enable biometric authentication",
-            fallbackLabel: "Use Passcode",
-          });
-          if (!authResult.success) {
-            setError("Biometric authentication failed. Please try again.");
-            return;
-          }
-          await AsyncStorage.setItem("loginBiometricEnabled", "true");
-        } else {
-          setError("Biometrics not available or enrolled on this device.");
-          return;
-        }
-      } else {
-        await AsyncStorage.setItem("loginBiometricEnabled", "true");
-      }
-
-
-
       await dispatch(
         NewUserPasscode({
           phone: phone || "",
@@ -89,6 +108,12 @@ const CreatePasscodeScreen = () => {
           confirm_passcode: confirmPasscode,
         })
       ).unwrap();
+
+      // Persist the login preference only after passcode creation succeeds.
+      await AsyncStorage.multiSet([
+        ["userPin", passcode],
+        ["loginBiometricEnabled", String(enableBiometric)],
+      ]);
 
       router.push({
         pathname: "/(auth)/login",
@@ -165,11 +190,61 @@ const CreatePasscodeScreen = () => {
               </View>
               <Switch
                 value={enableBiometric}
-                onValueChange={setEnableBiometric}
+                onValueChange={handleBiometricToggle}
                 trackColor={{ false: "#3a3a3c", true: "#007AFF" }}
                 thumbColor={enableBiometric ? "#ffffff" : "#f4f3f4"}
               />
             </View>
+
+            <Modal
+              visible={biometricConfirmationVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setBiometricConfirmationVisible(false)}
+            >
+              <View className="flex-1 justify-center px-6 bg-black/60">
+                <View className="bg-white rounded-2xl p-6">
+                  <Text className="text-primary-100 text-lg font-bold mb-2">
+                    Enable {Platform.OS === "ios" ? "Face ID" : "Biometrics"}?
+                  </Text>
+                  <Text className="text-gray-600 text-sm leading-5">
+                    Make sure {Platform.OS === "ios" ? "Face ID is" : "biometrics are"} enabled in your device settings. Continue to verify with {Platform.OS === "ios" ? "Face ID" : "your device biometric"} and enable biometric login.
+                  </Text>
+                  <View className="flex-row gap-3 mt-6">
+                    <Pressable onPress={() => setBiometricConfirmationVisible(false)} className="flex-1 border border-gray-300 rounded-xl items-center py-3">
+                      <Text className="text-gray-700 font-semibold">Cancel</Text>
+                    </Pressable>
+                    <Pressable onPress={handleConfirmBiometricEnable} className="flex-1 bg-primary-100 rounded-xl items-center py-3">
+                      <Text className="text-white font-semibold">Continue</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+            </Modal>
+
+            <Modal
+              visible={biometricNoticeVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setBiometricNoticeVisible(false)}
+            >
+              <View className="flex-1 justify-center px-6 bg-black/60">
+                <View className="bg-white rounded-2xl p-6">
+                  <Text className="text-primary-100 text-lg font-bold mb-2">
+                    {Platform.OS === "ios" ? "Face ID required" : "Biometrics required"}
+                  </Text>
+                  <Text className="text-gray-600 text-sm leading-5">
+                    Set up {Platform.OS === "ios" ? "Face ID" : "biometrics"} in your device settings before turning on biometric login.
+                  </Text>
+                  <Pressable
+                    onPress={() => setBiometricNoticeVisible(false)}
+                    className="bg-primary-100 rounded-xl items-center py-3 mt-6"
+                  >
+                    <Text className="text-white font-semibold">OK</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Modal>
 
             {error ? (
               <CustomText className="text-red-500 mb-6 text-sm font-semibold">

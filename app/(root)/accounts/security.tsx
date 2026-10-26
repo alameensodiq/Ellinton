@@ -61,9 +61,12 @@ export default function SecurityScreen() {
   const requiresTransactionPinSetup = user?.has_transaction_pin === false;
 
   const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_required ?? false);
-  const [loginBiometric, setLoginBiometric] = useState(true);
+  // Biometrics are opt-in; a missing preference must be off.
+  const [loginBiometric, setLoginBiometric] = useState(false);
   const [transBiometric, setTransBiometric] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [loginBiometricConfirmationVisible, setLoginBiometricConfirmationVisible] = useState(false);
+  const [biometricNotice, setBiometricNotice] = useState<{ title: string; message: string } | null>(null);
   const [pinValue, setPinValue] = useState("");
   const [pinError, setPinError] = useState("");
   const [savingPin, setSavingPin] = useState(false);
@@ -80,8 +83,8 @@ export default function SecurityScreen() {
         AsyncStorage.getItem(TRANS_BIOMETRIC_KEY),
         AsyncStorage.getItem(LOGIN_BIOMETRIC_KEY),
       ]);
-      if (storedTrans !== null) setTransBiometric(storedTrans === "true" || JSON.parse(storedTrans) === true);
-      if (storedLogin !== null) setLoginBiometric(storedLogin === "true" || JSON.parse(storedLogin) === true);
+      setTransBiometric(storedTrans === "true");
+      setLoginBiometric(storedLogin === "true");
     } catch (e) { console.log(e); }
   };
 
@@ -98,26 +101,75 @@ export default function SecurityScreen() {
   };
 
   const handleLoginBiometricToggle = async (val: boolean) => {
-    if (val) {
-      try {
-        const hasHW = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        if (!hasHW || !enrolled) { Alert.alert("Biometrics Not Available", "Please set up Face ID or Fingerprint on your device."); setLoginBiometric(false); return; }
-        await AsyncStorage.setItem(LOGIN_BIOMETRIC_KEY, JSON.stringify(true));
-        setLoginBiometric(true);
-      } catch { setLoginBiometric(false); }
-    } else {
+    if (!val) {
       await AsyncStorage.setItem(LOGIN_BIOMETRIC_KEY, JSON.stringify(false));
+      setLoginBiometric(false);
+      return;
+    }
+
+    setLoginBiometric(false);
+    setLoginBiometricConfirmationVisible(true);
+  };
+
+  const handleConfirmLoginBiometricEnable = async () => {
+    setLoginBiometricConfirmationVisible(false);
+    const biometricName = Platform.OS === "ios" ? "Face ID" : "biometrics";
+    try {
+      const [hasHardware, isEnrolled, supportedTypes] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+        LocalAuthentication.supportedAuthenticationTypesAsync(),
+      ]);
+      const supportsRequiredBiometric = Platform.OS === "ios"
+        ? supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
+        : supportedTypes.length > 0;
+      if (!hasHardware || !isEnrolled || !supportsRequiredBiometric) {
+        setBiometricNotice({
+          title: `${biometricName} required`,
+          message: `Set up ${biometricName} in your device settings before turning on Biometric Login.`,
+        });
+        setLoginBiometric(false);
+        return;
+      }
+
+      // Native Face ID/Fingerprint confirmation is shown before this is enabled.
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: `Enable Login with ${biometricName}`,
+        cancelLabel: "Cancel",
+        disableDeviceFallback: true,
+      });
+      if (!result.success) {
+        setLoginBiometric(false);
+        return;
+      }
+
+      await AsyncStorage.setItem(LOGIN_BIOMETRIC_KEY, JSON.stringify(true));
+      setLoginBiometric(true);
+    } catch {
       setLoginBiometric(false);
     }
   };
 
   const handleTransBiometricToggle = async (val: boolean) => {
     if (val) {
+      const biometricName = Platform.OS === "ios" ? "Face ID" : "biometrics";
       try {
-        const hasHW = await LocalAuthentication.hasHardwareAsync();
-        const enrolled = await LocalAuthentication.isEnrolledAsync();
-        if (!hasHW || !enrolled) { Alert.alert("Biometrics Not Available", "Please set up fingerprint or Face ID."); setTransBiometric(false); return; }
+        const [hasHW, enrolled, supportedTypes] = await Promise.all([
+          LocalAuthentication.hasHardwareAsync(),
+          LocalAuthentication.isEnrolledAsync(),
+          LocalAuthentication.supportedAuthenticationTypesAsync(),
+        ]);
+        const supportsRequiredBiometric = Platform.OS === "ios"
+          ? supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
+          : supportedTypes.length > 0;
+        if (!hasHW || !enrolled || !supportsRequiredBiometric) {
+          setBiometricNotice({
+            title: `${biometricName} required`,
+            message: `Set up ${biometricName} in your device settings before turning on Transaction PIN Biometric.`,
+          });
+          setTransBiometric(false);
+          return;
+        }
         setPinValue(""); setPinError(""); setShowPinModal(true);
       } catch { setTransBiometric(false); }
     } else {
@@ -136,7 +188,7 @@ export default function SecurityScreen() {
       await AsyncStorage.setItem(TRANS_BIOMETRIC_KEY, JSON.stringify(true));
       setTransBiometric(true);
       setShowPinModal(false); setPinValue(""); setPinError("");
-      Alert.alert("Biometrics Active", "You can now authenticate transfers with biometrics.");
+      setBiometricNotice({ title: "Biometrics enabled", message: "You can now approve transfers with biometrics." });
     } catch (err: any) {
       setPinError(typeof err === "string" ? err : err?.message || "Invalid transaction PIN.");
     } finally { setSavingPin(false); }
@@ -319,6 +371,62 @@ export default function SecurityScreen() {
           )}
         </View> */}
       </ScrollView>
+
+      <Modal
+        visible={loginBiometricConfirmationVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLoginBiometricConfirmationVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 24 }}>
+          <View style={{ backgroundColor: C.white, borderRadius: 20, padding: 24 }}>
+            <Text style={{ color: C.textPrimary, fontSize: 18, fontFamily: "OutfitBold", marginBottom: 8 }}>
+              Enable {Platform.OS === "ios" ? "Face ID" : "Biometrics"}?
+            </Text>
+            <Text style={{ color: C.textSub, fontSize: 13, fontFamily: "Outfit", lineHeight: 20 }}>
+              Make sure {Platform.OS === "ios" ? "Face ID is" : "biometrics are"} enabled in your device settings. Continue to verify with {Platform.OS === "ios" ? "Face ID" : "your device biometric"} and enable Biometric Login.
+            </Text>
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 24 }}>
+              <Pressable
+                onPress={() => setLoginBiometricConfirmationVisible(false)}
+                style={{ flex: 1, borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, alignItems: "center", paddingVertical: 12 }}
+              >
+                <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14 }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleConfirmLoginBiometricEnable}
+                style={{ flex: 1, backgroundColor: C.accent, borderRadius: 12, alignItems: "center", paddingVertical: 12 }}
+              >
+                <Text style={{ color: C.white, fontFamily: "OutfitBold", fontSize: 14 }}>Continue</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={Boolean(biometricNotice)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setBiometricNotice(null)}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", padding: 24 }}>
+          <View style={{ backgroundColor: C.white, borderRadius: 20, padding: 24 }}>
+            <Text style={{ color: C.textPrimary, fontSize: 18, fontFamily: "OutfitBold", marginBottom: 8 }}>
+              {biometricNotice?.title}
+            </Text>
+            <Text style={{ color: C.textSub, fontSize: 13, fontFamily: "Outfit", lineHeight: 20 }}>
+              {biometricNotice?.message}
+            </Text>
+            <Pressable
+              onPress={() => setBiometricNotice(null)}
+              style={{ backgroundColor: C.accent, borderRadius: 12, alignItems: "center", marginTop: 24, paddingVertical: 12 }}
+            >
+              <Text style={{ color: C.white, fontFamily: "OutfitBold", fontSize: 14 }}>OK</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       {/* PIN MODAL */}
       <Modal

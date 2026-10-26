@@ -80,16 +80,21 @@ const Login = () => {
         const returningUser = Boolean(savedPin || loggedInFlag === "true");
         setHasLoggedInBefore(returningUser);
 
-        if (userProfile) {
+        // `userEmail` stores the exact identifier used at the last successful
+        // login. Prefer it over the profile email so a phone-number login is
+        // prefilled with that phone number when the user returns.
+        if (savedEmail) {
+          setEmail(savedEmail);
+        } else if (userProfile) {
           const parsedUser = JSON.parse(userProfile);
           if (parsedUser?.email) {
             setEmail(parsedUser.email);
           }
-        } else if (savedEmail) {
-          setEmail(savedEmail);
         }
 
-        let isLoginBioEnabled = true;
+        // Biometric login is opt-in. Older installations without a stored
+        // preference must not be treated as enrolled.
+        let isLoginBioEnabled = false;
         if (storedLoginBio !== null) {
           try {
             isLoginBioEnabled = JSON.parse(storedLoginBio) === true;
@@ -158,9 +163,17 @@ const Login = () => {
       return;
     }
 
+    const trimmedInput = email.trim();
+    const isPhoneNumber = /^\d+$/.test(trimmedInput);
+
+    if (isPhoneNumber && trimmedInput.length !== 11) {
+      setCustomError("Phone number must be exactly 11 digits.");
+      setShowErrorModal(true);
+      return;
+    }
+
     try {
       const deviceId = await getDeviceId();
-      const trimmedInput = email.trim();
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedInput) || trimmedInput.includes("@");
 
       const payload = isEmail
@@ -173,7 +186,6 @@ const Login = () => {
       await AsyncStorage.setItem("userPin", pin);
       await AsyncStorage.setItem("userEmail", trimmedInput);
       await AsyncStorage.setItem("hasLoggedInBefore", "true");
-      await AsyncStorage.setItem("loginBiometricEnabled", "true");
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const token = await registerForPushNotificationsAsync();
@@ -406,6 +418,18 @@ const Login = () => {
                       ? "Please wait while we verify your credentials..."
                       : `Tap the icon above to trigger ${biometricLabel}`}
                   </Text>
+
+                  <TouchableOpacity
+                    onPress={() => setUseBiometric(false)}
+                    disabled={isLoading || isBiometricAuthenticating}
+                    className="py-3 px-6 bg-primary-300 rounded-full mt-6"
+                    accessibilityRole="button"
+                    accessibilityLabel="Use passcode instead"
+                  >
+                    <Text className="text-primary-200 font-semibold text-base">
+                      Use Passcode Instead
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
                 <>
@@ -482,4 +506,3 @@ const Login = () => {
 };
 
 export default Login;
-

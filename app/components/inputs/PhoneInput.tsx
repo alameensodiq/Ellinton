@@ -78,6 +78,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           placeholder={selectedCountry.dialCode}
           placeholderTextColor="#9ca3af"
           keyboardType="phone-pad"
+          maxLength={selectedCountry.dialCode.length + 1 + 11}
           className="flex-1 text-white text-base ml-3"
         />
 

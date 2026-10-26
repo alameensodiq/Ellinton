@@ -10,10 +10,12 @@ import Button from "@/app/components/Button";
 import Loading from "@/app/components/Loading";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { uploadUtilityBill, submitTier3 } from "@/app/lib/thunks/kycThunks";
 import { prepareImageForUpload } from "@/app/lib/imageUpload";
 
-const MAX_BYTES = 300 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
+const MAX_FILE_SIZE_LABEL = "4 MB";
 
 const kycUtility = () => {
   const router = useRouter();
@@ -54,6 +56,13 @@ const kycUtility = () => {
     const uri = result.assets[0].uri;
 
     try {
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      const originalSize = (fileInfo as { size?: number }).size ?? result.assets[0].fileSize ?? 0;
+      if (originalSize > MAX_BYTES) {
+        setError(`Please select a document no larger than ${MAX_FILE_SIZE_LABEL}.`);
+        return;
+      }
+
       const {
         uri: compressedUri,
         size,
@@ -69,7 +78,7 @@ const kycUtility = () => {
       if (size > MAX_BYTES) {
         clearImage();
         setError(
-          "Image is still too large. Please pick a smaller/clearer photo."
+          `Image must be no larger than ${MAX_FILE_SIZE_LABEL}. Please pick a smaller or clearer photo.`
         );
         return;
       }
@@ -138,7 +147,7 @@ const kycUtility = () => {
 
             <CustomText secondary size="sm" className="mb-6">
               Please upload a clear image of your utility bill (e.g.,
-              electricity, water, etc.) showing your name and address.
+              electricity, water, etc.) showing your name and address. Maximum file size: 4 MB.
             </CustomText>
 
             {imageUri && (

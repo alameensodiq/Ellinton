@@ -120,7 +120,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
 
   // Transaction Pin & Login Biometrics
   const [transBiometric, setTransBiometric] = useState(false);
-  const [loginBiometric, setLoginBiometric] = useState(true);
+  const [loginBiometric, setLoginBiometric] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinValue, setPinValue] = useState("");
   const [pinError, setPinError] = useState("");
@@ -194,7 +194,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
           }
 
           if (storedLogin !== null) {
-            let isEnabled = true;
+            let isEnabled = false;
             try {
               isEnabled = JSON.parse(storedLogin) === true;
             } catch {
@@ -202,7 +202,7 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
             }
             setLoginBiometric(isEnabled);
           } else {
-            setLoginBiometric(true);
+            setLoginBiometric(false);
           }
         } catch (err: any) {
           console.error("Failed to load biometric state:", err);

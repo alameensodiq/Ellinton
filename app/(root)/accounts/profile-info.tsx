@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import Header from "@/app/components/header-back";
 import { Dropdown } from "@/app/components/inputs/DropdownInputs";
+import { nigeriaStates, stateOptions as NIGERIA_STATE_OPTIONS } from "@/app/lib/utils";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { getUserProfile, updateUserProfile, updatePersonalProfile, updateResidentialAddress, updateNextOfKin, updateFinancialProfile, fetchIndustries, submitNin } from "@/app/lib/thunks/authThunks";
@@ -73,6 +74,26 @@ const NOK_RELATIONSHIP_OPTIONS = [
   { value: "Next of Kin", label: "Next of Kin" },
 ];
 
+const normaliseStateValue = (state?: string) => {
+  const value = state?.trim();
+  if (!value) return "";
+
+  const matchedState = NIGERIA_STATE_OPTIONS.find(
+    (option) => option.value === value.toLowerCase() || option.label.toLowerCase() === value.toLowerCase()
+  );
+  return matchedState?.value || value;
+};
+
+const includeCurrentOption = (
+  options: { value: string; label: string }[],
+  currentValue: string
+) => {
+  if (!currentValue || options.some((option) => option.value.toLowerCase() === currentValue.toLowerCase())) {
+    return options;
+  }
+  return [{ value: currentValue, label: currentValue }, ...options];
+};
+
 // ─── Input field helper ───────────────────────────────────────────────────────
 function Field({
   label,
@@ -80,12 +101,14 @@ function Field({
   onChangeText,
   placeholder,
   keyboardType,
+  maxLength,
 }: {
   label: string;
   value: string;
   onChangeText: (v: string) => void;
   placeholder: string;
   keyboardType?: any;
+  maxLength?: number;
 }) {
   return (
     <View style={{ marginBottom: 16 }}>
@@ -98,6 +121,7 @@ function Field({
         placeholder={placeholder}
         placeholderTextColor="#9A9B7A"
         keyboardType={keyboardType}
+        maxLength={maxLength}
         style={{
           backgroundColor: C.inputBg,
           borderColor: C.cardBorder,
@@ -198,12 +222,13 @@ export default function ProfileInfoScreen() {
   // Residential
   const [address, setAddress] = useState(user?.address_1 || "");
   const [city, setCity] = useState(user?.city || "");
-  const [stateName, setStateName] = useState(user?.state || "");
+  const [stateName, setStateName] = useState(normaliseStateValue(user?.state));
   const [lga, setLga] = useState(user?.local_government || "");
-  const [landmark, setLandmark] = useState("");
-  const [stateOfOrigin, setStateOfOrigin] = useState("");
-  const [lgaOfOrigin, setLgaOfOrigin] = useState("");
+  const [landmark, setLandmark] = useState((user as any)?.landmark || "");
+  const [stateOfOrigin, setStateOfOrigin] = useState(normaliseStateValue((user as any)?.state_of_origin));
+  const [lgaOfOrigin, setLgaOfOrigin] = useState((user as any)?.lga_of_origin || "");
   const [savingResidential, setSavingResidential] = useState(false);
+  const skipNextResidentialHydration = useRef(false);
 
   // NIN
   const [ninValue, setNinValue] = useState("");
@@ -243,6 +268,26 @@ export default function ProfileInfoScreen() {
     loadIndustries();
   }, [dispatch]);
 
+  // The profile is fetched after this screen mounts, so populate the form when
+  // those saved residential values arrive instead of leaving them as placeholders.
+  useEffect(() => {
+    if (!user) return;
+
+    // A successful save intentionally resets this form. Do not immediately
+    // repopulate it from the profile refresh that follows that save.
+    if (skipNextResidentialHydration.current) {
+      skipNextResidentialHydration.current = false;
+      return;
+    }
+
+    setAddress(user.address_1 || "");
+    setCity(user.city || "");
+    setStateName(normaliseStateValue(user.state));
+    setLandmark((user as any).landmark || "");
+    setStateOfOrigin(normaliseStateValue((user as any).state_of_origin));
+    setLgaOfOrigin((user as any).lga_of_origin || "");
+  }, [user]);
+
   const loadIndustries = async () => {
     setLoadingIndustries(true);
     try {
@@ -278,12 +323,14 @@ export default function ProfileInfoScreen() {
   };
 
   const handleSaveResidential = async () => {
+    const stateLabel = NIGERIA_STATE_OPTIONS.find((option) => option.value === stateName)?.label || stateName;
+    const stateOfOriginLabel = NIGERIA_STATE_OPTIONS.find((option) => option.value === stateOfOrigin)?.label || stateOfOrigin;
     const raw: Record<string, string> = {
       address_1: address.trim(),
       city: city.trim(),
-      state: stateName.trim(),
+      state: stateLabel.trim(),
       landmark: landmark.trim(),
-      state_of_origin: stateOfOrigin.trim(),
+      state_of_origin: stateOfOriginLabel.trim(),
       lga_of_origin: lgaOfOrigin.trim(),
     };
     const payload = Object.fromEntries(Object.entries(raw).filter(([, v]) => !!v));
@@ -294,7 +341,15 @@ export default function ProfileInfoScreen() {
     setSavingResidential(true);
     try {
       await dispatch(updateResidentialAddress(payload)).unwrap();
+      skipNextResidentialHydration.current = true;
       await dispatch(getUserProfile());
+      setAddress("");
+      setCity("");
+      setStateName("");
+      setLga("");
+      setLandmark("");
+      setStateOfOrigin("");
+      setLgaOfOrigin("");
       showModal("success", "Residential Updated", "Your residential details have been saved.");
     } catch (err: any) {
       showModal("error", "Update Failed", typeof err === "string" ? err : "Failed to update residential details.");
@@ -314,7 +369,11 @@ export default function ProfileInfoScreen() {
     setSavingEmployment(true);
     try {
       await dispatch(updateFinancialProfile(payload)).unwrap();
-      await AsyncStorage.setItem("user_employment_details", JSON.stringify({ employmentStatus, industry, employerName, incomeRange }));
+      await AsyncStorage.removeItem("user_employment_details");
+      setEmploymentStatus("");
+      setIndustry("");
+      setEmployerName("");
+      setIncomeRange("");
       showModal("success", "Employment Updated", "Your employment details have been saved.");
     } catch (err: any) {
       showModal("error", "Update Failed", typeof err === "string" ? err : "Failed to save employment details.");
@@ -337,6 +396,11 @@ export default function ProfileInfoScreen() {
     setSavingNok(true);
     try {
       await dispatch(updateNextOfKin(payload)).unwrap();
+      setNokFirstName("");
+      setNokLastName("");
+      setNokRelationship("");
+      setNokPhone("");
+      setNokAddress("");
       showModal("success", "Next of Kin Updated", "Your next of kin details have been saved.");
     } catch (err: any) {
       showModal("error", "Update Failed", typeof err === "string" ? err : "Failed to update next of kin.");
@@ -418,6 +482,20 @@ export default function ProfileInfoScreen() {
       <Text className="text-white text-sm font-outfit-bold">{saving ? "Saving..." : label}</Text>
     </Pressable>
   );
+
+  const residentialStateOptions = includeCurrentOption(NIGERIA_STATE_OPTIONS, stateName);
+  const stateOfOriginOptions = includeCurrentOption(NIGERIA_STATE_OPTIONS, stateOfOrigin);
+  const lgaOfOriginOptions = includeCurrentOption(
+    (nigeriaStates[stateOfOrigin.toLowerCase()] || []).map((area) => ({ value: area, label: area })),
+    lgaOfOrigin
+  );
+  const residentialDetails = [
+    { label: "State", value: NIGERIA_STATE_OPTIONS.find((option) => option.value === stateName)?.label || stateName },
+    { label: "Street Address", value: address },
+    { label: "Landmark", value: landmark },
+    { label: "State of Origin", value: NIGERIA_STATE_OPTIONS.find((option) => option.value === stateOfOrigin)?.label || stateOfOrigin },
+    { label: "LGA of Origin", value: lgaOfOrigin },
+  ].filter((detail) => detail.value.trim());
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bgPage }}>
@@ -504,15 +582,17 @@ export default function ProfileInfoScreen() {
                 ))}
 
                 {/* BVN */}
-                <View style={{ borderBottomWidth: 1, borderBottomColor: C.cardBorder, paddingVertical: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Text style={{ color: C.textSub, fontSize: 12, fontFamily: "Outfit" }}>Verified BVN</Text>
-                    <MaterialCommunityIcons name="check-decagram" size={14} color={C.green} />
+                {user?.bvn_verified === true && (
+                  <View style={{ borderBottomWidth: 1, borderBottomColor: C.cardBorder, paddingVertical: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Text style={{ color: C.textSub, fontSize: 12, fontFamily: "Outfit" }}>Verified BVN</Text>
+                      <MaterialCommunityIcons name="check-decagram" size={14} color={C.green} />
+                    </View>
+                    <View style={{ backgroundColor: "rgba(33,209,132,0.1)", borderColor: "rgba(33,209,132,0.3)", borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
+                      <Text style={{ color: "#16a34a", fontSize: 11, fontFamily: "OutfitBold", letterSpacing: 1 }}>{maskedBvn}</Text>
+                    </View>
                   </View>
-                  <View style={{ backgroundColor: "rgba(33,209,132,0.1)", borderColor: "rgba(33,209,132,0.3)", borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 }}>
-                    <Text style={{ color: "#16a34a", fontSize: 11, fontFamily: "OutfitBold", letterSpacing: 1 }}>{maskedBvn}</Text>
-                  </View>
-                </View>
+                )}
 
                 {/* NIN */}
                 {user?.nin_verified ? (
@@ -602,7 +682,7 @@ export default function ProfileInfoScreen() {
           )}
 
           {/* ── UPDATE PERSONAL INFO ───────────────────────────────── */}
-          {activeTab === "update_personal" && (
+          {/* {activeTab === "update_personal" && (
             <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
               <Field label="Email Address" value={upEmail} onChangeText={setUpEmail} placeholder={user?.email || "Enter email address"} keyboardType="email-address" />
               <Field label="Alternate Phone" value={upAltPhone} onChangeText={setUpAltPhone} placeholder={(user as any)?.alternate_phone || "e.g. 08012345678"} keyboardType="phone-pad" />
@@ -632,7 +712,7 @@ export default function ProfileInfoScreen() {
               <Field label="Address Line 2" value={upAddress2} onChangeText={setUpAddress2} placeholder={user?.address_2 || "Apartment, suite, landmark"} />
               <SaveButton onPress={handleSavePersonal} saving={savingPersonal} label="Update Personal Information" />
             </View>
-          )}
+          )} */}
 
           {/* ── RESIDENTIAL ─────────────────────────────────────────── */}
           {activeTab === "residential" && (
@@ -667,13 +747,70 @@ export default function ProfileInfoScreen() {
                 </View>
               </View> */}
 
+              {/* {residentialDetails.length > 0 && (
+                <View
+                  style={{ backgroundColor: "#EEEEE4", borderColor: C.cardBorder, borderWidth: 1 }}
+                  className="rounded-2xl p-5 mb-4"
+                >
+                  <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14, marginBottom: 8 }}>
+                    Saved Residential Details
+                  </Text>
+                  {residentialDetails.map((detail, index) => (
+                    <View
+                      key={detail.label}
+                      style={{
+                        borderBottomColor: C.cardBorder,
+                        borderBottomWidth: index < residentialDetails.length - 1 ? 1 : 0,
+                        paddingVertical: 9,
+                      }}
+                    >
+                      <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11 }}>{detail.label}</Text>
+                      <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 13, marginTop: 2 }}>
+                        {detail.value}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )} */}
+
               <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
+                <Dropdown
+                  label="State"
+                  placeholder="Select your state"
+                  options={residentialStateOptions}
+                  selectedValue={stateName}
+                  onSelect={setStateName}
+                  searchable
+                  searchPlaceholder="Search states"
+                  variant="light"
+                />
                 <Field label="Street Address" value={address} onChangeText={setAddress} placeholder={user?.address_1 || "Enter your street address"} />
                 <Field label="City / Town" value={city} onChangeText={setCity} placeholder={user?.city || "e.g. Ikeja, Lekki, Victoria Island"} />
-                <Field label="State" value={stateName} onChangeText={setStateName} placeholder={user?.state || "e.g. Lagos, Abuja FCT, Rivers"} />
-                <Field label="Landmark" value={landmark} onChangeText={setLandmark} placeholder="e.g. Beside First Bank, Opp. Shoprite" />
-                <Field label="State of Origin" value={stateOfOrigin} onChangeText={setStateOfOrigin} placeholder="e.g. Ogun, Kano, Enugu" />
-                <Field label="LGA of Origin" value={lgaOfOrigin} onChangeText={setLgaOfOrigin} placeholder={user?.local_government || "e.g. Eti-Osa, Ikeja, Surulere"} />
+                <Field label="Landmark" value={landmark} onChangeText={setLandmark} placeholder={(user as any)?.landmark || "e.g. Beside First Bank, Opp. Shoprite"} />
+                <Dropdown
+                  label="State of Origin"
+                  placeholder="Select your state of origin"
+                  options={stateOfOriginOptions}
+                  selectedValue={stateOfOrigin}
+                  onSelect={(value) => {
+                    setStateOfOrigin(value);
+                    setLgaOfOrigin("");
+                  }}
+                  searchable
+                  searchPlaceholder="Search states"
+                  variant="light"
+                />
+                <Dropdown
+                  label="LGA of Origin"
+                  placeholder={stateOfOrigin ? "Select your LGA of origin" : "Select a state of origin first"}
+                  options={lgaOfOriginOptions}
+                  selectedValue={lgaOfOrigin}
+                  onSelect={setLgaOfOrigin}
+                  searchable
+                  searchPlaceholder="Search LGAs"
+                  disabled={!stateOfOrigin}
+                  variant="light"
+                />
                 <SaveButton onPress={handleSaveResidential} saving={savingResidential} label="Save Residential Details" />
               </View>
             </View>
@@ -730,7 +867,14 @@ export default function ProfileInfoScreen() {
                 variant="light"
               />
               <View style={{ marginTop: 16 }}>
-                <Field label="Phone Number" value={nokPhone} onChangeText={setNokPhone} placeholder="e.g. 08012345678" keyboardType="phone-pad" />
+                <Field
+                  label="Phone Number"
+                  value={nokPhone}
+                  onChangeText={(value) => setNokPhone(value.replace(/\D/g, "").slice(0, 11))}
+                  placeholder="e.g. 08012345678"
+                  keyboardType="phone-pad"
+                  maxLength={11}
+                />
               </View>
               <Field label="Residential Address" value={nokAddress} onChangeText={setNokAddress} placeholder="e.g. 15 Admiralty Way, Lekki Phase 1, Lagos" />
               <SaveButton onPress={handleSaveNok} saving={savingNok} label="Save Next of Kin" />

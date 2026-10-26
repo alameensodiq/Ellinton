@@ -58,7 +58,7 @@ export default function AccountScreen() {
   const fadeAnim = useState(new Animated.Value(0))[0];
   const [signOutModalVisible, setSignOutModalVisible] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [loginBiometric, setLoginBiometric] = useState(true);
+  const [loginBiometric, setLoginBiometric] = useState(false);
 
   useEffect(() => {
     dispatch(getUserProfile());

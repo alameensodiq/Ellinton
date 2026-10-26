@@ -7,7 +7,6 @@ import {
   Modal,
   TextInput,
   Platform,
-  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -40,9 +39,9 @@ const C = {
   textMuted: "#9A9B7A",
 };
 
-// The request body is encrypted, which adds overhead to the base64 document.
-// Keep the image comfortably below typical API gateway request limits.
-const MAX_TIER3_DOCUMENT_BYTES = 300 * 1024;
+const MAX_TIER3_DOCUMENT_BYTES = 4 * 1024 * 1024;
+const MAX_TIER3_DOCUMENT_LABEL = "4 MB";
+const SESSION_TOKEN_TIMEOUT_MS = 30 * 1000;
 
 // ─── Status Pill ─────────────────────────────────────────────────────────────
 function StatusPill({
@@ -218,6 +217,7 @@ export default function AccountLimitsScreen() {
   const [prereqModalVisible, setPrereqModalVisible] = useState(false);
   const [utilityModalVisible, setUtilityModalVisible] = useState(false);
   const [govtIdModalVisible, setGovtIdModalVisible] = useState(false);
+  const [documentPickerTarget, setDocumentPickerTarget] = useState<"utility" | "govtid" | null>(null);
 
   // Proof of address
   const [proofType, setProofType] = useState<ProofOfAddressType>(ProofOfAddressType.METER_RECEIPT);
@@ -328,6 +328,12 @@ export default function AccountLimitsScreen() {
       });
       if (!result.canceled && result.assets?.[0]) {
         const asset = result.assets[0];
+        const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+        const size = (fileInfo as { size?: number }).size ?? asset.fileSize ?? 0;
+        if (size > MAX_TIER3_DOCUMENT_BYTES) {
+          showFb("info", "File Too Large", `Please select a document no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
+          return;
+        }
         const preparedImage = await prepareImageForUpload(asset.uri, {
           maxBytes: MAX_TIER3_DOCUMENT_BYTES,
           startWidth: 1080,
@@ -337,7 +343,7 @@ export default function AccountLimitsScreen() {
         });
 
         if (preparedImage.size > MAX_TIER3_DOCUMENT_BYTES || !preparedImage.base64) {
-          showFb("info", "Image Too Large", "Please select a smaller or clearer image.");
+          showFb("info", "Image Too Large", `Please select an image no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
           return;
         }
 
@@ -365,6 +371,12 @@ export default function AccountLimitsScreen() {
       const isPdf =
         asset.mimeType === "application/pdf" ||
         asset.name.toLowerCase().endsWith(".pdf");
+      const fileInfo = await FileSystem.getInfoAsync(asset.uri);
+      const size = (fileInfo as { size?: number }).size ?? asset.size ?? 0;
+      if (size > MAX_TIER3_DOCUMENT_BYTES) {
+        showFb("info", "File Too Large", `Please select a document no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
+        return;
+      }
 
       if (!isPdf) {
         const preparedImage = await prepareImageForUpload(asset.uri, {
@@ -375,7 +387,7 @@ export default function AccountLimitsScreen() {
           minCompress: 0.22,
         });
         if (preparedImage.size > MAX_TIER3_DOCUMENT_BYTES || !preparedImage.base64) {
-          showFb("info", "Image Too Large", "Please select a smaller or clearer image.");
+          showFb("info", "Image Too Large", `Please select an image no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
           return;
         }
         saveSelectedDocument(
@@ -383,13 +395,6 @@ export default function AccountLimitsScreen() {
           normalizeDataUri(preparedImage.base64, asset.mimeType || "image/jpeg"),
           asset.name
         );
-        return;
-      }
-
-      const fileInfo = await FileSystem.getInfoAsync(asset.uri);
-      const size = (fileInfo as { size?: number }).size ?? asset.size ?? 0;
-      if (size > MAX_TIER3_DOCUMENT_BYTES) {
-        showFb("info", "PDF Too Large", "Please select a PDF smaller than 300 KB.");
         return;
       }
 
@@ -408,11 +413,19 @@ export default function AccountLimitsScreen() {
   // Images are picked from the photo library; PDFs and files are picked from
   // the device's document provider.
   const handlePickFile = (target: "utility" | "govtid") => {
-    Alert.alert("Choose document", "Select an image from your gallery or a JPEG, PNG, or PDF from your files.", [
-      { text: "Gallery", onPress: () => void handlePickImage(target) },
-      { text: "Files", onPress: () => void handlePickDeviceFile(target) },
-      { text: "Cancel", style: "cancel" },
-    ]);
+    setDocumentPickerTarget(target);
+  };
+
+  const selectDocumentSource = (source: "gallery" | "files") => {
+    const target = documentPickerTarget;
+    if (!target) return;
+
+    setDocumentPickerTarget(null);
+    if (source === "gallery") {
+      void handlePickImage(target);
+    } else {
+      void handlePickDeviceFile(target);
+    }
   };
 
   const handleSubmitUtility = async () => {
@@ -534,13 +547,22 @@ export default function AccountLimitsScreen() {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;
 
+    const controller = new AbortController();
+    let didSessionTokenRequestTimeout = false;
+    const timeoutId = setTimeout(() => {
+      didSessionTokenRequestTimeout = true;
+      controller.abort();
+    }, SESSION_TOKEN_TIMEOUT_MS);
+
     try {
       setIsVerifyingFace(true);
       const resp = await fetch(SESSIONTOKEN_ENDPOINT(), {
         method: "POST",
         headers,
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       const json = await resp.json().catch(() => ({}));
       console.log(json)
@@ -586,8 +608,18 @@ export default function AccountLimitsScreen() {
       launchQoreId(formData);
     } catch (error: any) {
       livenessRequest.current = null;
-      showFb("error", "Launch Error", error?.message || "Failed to request session token");
+      if (didSessionTokenRequestTimeout) {
+        showFb(
+          "error",
+          "Timeout Error",
+          "The session token request took too long. Please try again."
+        );
+      } else {
+        showFb("error", "Launch Error", error?.message || "Failed to request session token");
+      }
       setIsVerifyingFace(false);
+    } finally {
+      clearTimeout(timeoutId);
     }
   };
 
@@ -956,6 +988,57 @@ export default function AccountLimitsScreen() {
         </View>
       </BottomSheet>
 
+      {/* DOCUMENT SOURCE MODAL */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={documentPickerTarget !== null}
+        onRequestClose={() => setDocumentPickerTarget(null)}
+      >
+        <Pressable
+          onPress={() => setDocumentPickerTarget(null)}
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}
+        >
+          <Pressable
+            onPress={() => {}}
+            style={{ backgroundColor: C.white, borderRadius: 20, padding: 24, width: "100%", maxWidth: 420 }}
+          >
+            <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 18, marginBottom: 8 }}>
+              Choose document
+            </Text>
+            <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 13, lineHeight: 20, marginBottom: 20 }}>
+              Select an image from your gallery or a JPEG, PNG, or PDF from your files.
+            </Text>
+
+            <Pressable
+              onPress={() => selectDocumentSource("gallery")}
+              style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 10 }}
+            >
+              <MaterialCommunityIcons name="image-outline" size={22} color={C.bgDark} />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14 }}>Gallery</Text>
+                <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11, marginTop: 2 }}>Choose an image from your photo library</Text>
+              </View>
+            </Pressable>
+
+            <Pressable
+              onPress={() => selectDocumentSource("files")}
+              style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 18 }}
+            >
+              <MaterialCommunityIcons name="file-document-outline" size={22} color={C.bgDark} />
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14 }}>Files</Text>
+                <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11, marginTop: 2 }}>Choose a JPEG, PNG, or PDF file</Text>
+              </View>
+            </Pressable>
+
+            <Pressable onPress={() => setDocumentPickerTarget(null)} style={{ alignItems: "center", paddingVertical: 8 }}>
+              <Text style={{ color: C.bgDark, fontFamily: "OutfitBold", fontSize: 14 }}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       {/* BVN input modal (used when raw BVN not available) */}
       <Modal transparent animationType="fade" visible={bvnModalVisible} onRequestClose={() => setBvnModalVisible(false)}>
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }} onPress={() => setBvnModalVisible(false)}>
@@ -1002,7 +1085,7 @@ export default function AccountLimitsScreen() {
       >
         <View className="py-2">
           <Text style={{ color: C.textSub }} className="text-xs font-outfit mb-3">
-            Select the document type and upload a clear copy from your gallery or files.
+            Select the document type and upload a clear copy from your gallery or files (maximum 4 MB).
           </Text>
 
           {/* Type picker */}
@@ -1052,7 +1135,7 @@ export default function AccountLimitsScreen() {
       >
         <View className="py-2">
           <Text style={{ color: C.textSub }} className="text-xs font-outfit mb-3">
-            Select your ID type, enter the ID number, then upload a clear photo or scan.
+            Select your ID type, enter the ID number, then upload a clear photo or scan (maximum 4 MB).
           </Text>
 
           {/* ID type picker */}
