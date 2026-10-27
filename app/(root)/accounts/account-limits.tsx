@@ -555,7 +555,6 @@ export default function AccountLimitsScreen() {
     }, SESSION_TOKEN_TIMEOUT_MS);
 
     try {
-      setIsVerifyingFace(true);
       const resp = await fetch(SESSIONTOKEN_ENDPOINT(), {
         method: "POST",
         headers,
@@ -567,8 +566,7 @@ export default function AccountLimitsScreen() {
       const json = await resp.json().catch(() => ({}));
       console.log(json)
       if (!resp.ok) {
-        const message = json?.data?.message || json?.message || `Session token request failed (${resp.status})`;
-        showFb("error", "Session Token Error", message);
+        showFb("error", "BVN Verification", "BVN has been used");
         setIsVerifyingFace(false);
         return;
       }
@@ -605,6 +603,7 @@ export default function AccountLimitsScreen() {
       };
 
       // Launch the QoreId flow
+      setIsVerifyingFace(true);
       launchQoreId(formData);
     } catch (error: any) {
       livenessRequest.current = null;
