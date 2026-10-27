@@ -163,15 +163,15 @@ export default function AccountLimitsScreen() {
         showFb("success", "Verification", "BVN liveness completed.");
       } else {
         setIsVerifyingFace(false);
-        showFb(
-          "error",
-          "Verification",
-          result?.message || payload?.message || "BVN liveness verification was not successful."
-        );
+        // showFb(
+        //   "error",
+        //   "Verification",
+        //   result?.message || payload?.message || "BVN liveness verification was not successful."
+        // );
       }
     } catch (error: any) {
       setIsVerifyingFace(false);
-      showFb("error", "Verification", error?.message || "Unable to retrieve the BVN liveness result.");
+      // showFb("error", "Verification", error?.message || "Unable to retrieve the BVN liveness result.");
     } finally {
       livenessRequest.current = null;
       isCheckingLiveness.current = false;
@@ -1000,7 +1000,7 @@ export default function AccountLimitsScreen() {
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}
         >
           <Pressable
-            onPress={() => {}}
+            onPress={() => { }}
             style={{ backgroundColor: C.white, borderRadius: 20, padding: 24, width: "100%", maxWidth: 420 }}
           >
             <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 18, marginBottom: 8 }}>
