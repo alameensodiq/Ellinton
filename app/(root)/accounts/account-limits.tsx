@@ -42,6 +42,7 @@ const C = {
 const MAX_TIER3_DOCUMENT_BYTES = 4 * 1024 * 1024;
 const MAX_TIER3_DOCUMENT_LABEL = "4 MB";
 const SESSION_TOKEN_TIMEOUT_MS = 30 * 1000;
+const FACE_VERIFICATION_TIMEOUT_MS = 30 * 1000;
 
 // ─── Status Pill ─────────────────────────────────────────────────────────────
 function StatusPill({
@@ -213,6 +214,24 @@ export default function AccountLimitsScreen() {
   );
   const showFb = (type: FBType, title: string, msg: string) => setFb({ visible: true, type, title, msg });
   const closeFb = () => setFb((f) => ({ ...f, visible: false }));
+
+  useEffect(() => {
+    if (!isVerifyingFace) return;
+
+    const timeoutId = setTimeout(() => {
+      livenessRequest.current = null;
+      isCheckingLiveness.current = false;
+      setIsVerifyingFace(false);
+      setFb({
+        visible: true,
+        type: "error",
+        title: "Verification Failed",
+        msg: "Something went wrong, Please try again",
+      });
+    }, FACE_VERIFICATION_TIMEOUT_MS);
+
+    return () => clearTimeout(timeoutId);
+  }, [isVerifyingFace]);
 
   const [prereqModalVisible, setPrereqModalVisible] = useState(false);
   const [utilityModalVisible, setUtilityModalVisible] = useState(false);
