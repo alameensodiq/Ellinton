@@ -9,7 +9,6 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "192",
       "supportsTablet": true,
       "bundleIdentifier": "com.ellingtonmfb.app",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -47,7 +46,8 @@
           "remote-notification",
           "fetch"
         ]
-      }
+      },
+      "buildNumber": "2"
     },
     "android": {
       "package": "com.ellingtonmfb.app",

@@ -121,7 +121,7 @@ export default function AccountLimitsScreen() {
     const request = livenessRequest.current;
     if (!request) {
       setIsVerifyingFace(false);
-      showFb("error", "Verification", "Unable to confirm the liveness result.");
+      // showFb("error", "Verification", "Unable to confirm the liveness result.");
       return;
     }
 
@@ -157,7 +157,7 @@ export default function AccountLimitsScreen() {
         // Refresh the Redux user state so the new BVN/KYC status is reflected
         // everywhere as soon as liveness verification is confirmed.
         await dispatch(getUserProfile()).unwrap().catch((error) => {
-          console.warn("Unable to refresh profile after liveness verification:", error);
+          // console.warn("Unable to refresh profile after liveness verification:", error);
         });
         setIsVerifyingFace(false);
         showFb("success", "Verification", "BVN liveness completed.");
@@ -608,13 +608,13 @@ export default function AccountLimitsScreen() {
     } catch (error: any) {
       livenessRequest.current = null;
       if (didSessionTokenRequestTimeout) {
-        showFb(
-          "error",
-          "Timeout Error",
-          "The session token request took too long. Please try again."
-        );
+        // showFb(
+        //   "error",
+        //   "Timeout Error",
+        //   "The session token request took too long. Please try again."
+        // );
       } else {
-        showFb("error", "Launch Error", error?.message || "Failed to request session token");
+        // showFb("error", "Launch Error", error?.message || "Failed to request session token");
       }
       setIsVerifyingFace(false);
     } finally {
@@ -982,7 +982,7 @@ export default function AccountLimitsScreen() {
             Prerequisite Action Required
           </Text>
           <Text style={{ color: C.textSub }} className="text-xs font-outfit text-center leading-5 px-2 mb-4">
-            Before uploading your utility bill or Government-issued ID for Tier 3 verification, please complete your residential address, occupation, and next of kin details in Profile Information.
+            Before uploading your utility bill or Government-issued ID for Tier 3 verification, please complete your profile
           </Text>
         </View>
       </BottomSheet>

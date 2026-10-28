@@ -5,7 +5,6 @@ import {
   ScrollView,
   Pressable,
   Switch,
-  Alert,
   Modal,
   Platform,
 } from "react-native";
@@ -72,6 +71,12 @@ export default function SecurityScreen() {
   const [savingPin, setSavingPin] = useState(false);
   const [devices, setDevices] = useState<ActiveDevice[]>(DEFAULT_DEVICES);
 
+  // ── Custom modal state ────────────────────────────────────────────────────
+  const [pinAlertVisible, setPinAlertVisible] = useState(false);
+  const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
+  const [logoutSuccessVisible, setLogoutSuccessVisible] = useState(false);
+  const [mfaErrorMessage, setMfaErrorMessage] = useState<string | null>(null);
+
   useEffect(() => {
     setMfaEnabled(user?.mfa_required ?? false);
     loadBiometrics();
@@ -96,7 +101,7 @@ export default function SecurityScreen() {
       if (ex) { const p = JSON.parse(ex); p.mfa_required = val; await AsyncStorage.setItem("data", JSON.stringify(p)); }
     } catch (err: any) {
       setMfaEnabled(!val);
-      Alert.alert("MFA Error", err?.message || "Failed to update MFA.");
+      setMfaErrorMessage(err?.message || "Failed to update MFA.");
     }
   };
 
@@ -195,18 +200,14 @@ export default function SecurityScreen() {
   };
 
   const handleLogoutOtherDevices = () => {
-    Alert.alert("Log Out Other Devices", "Invalidate all other active sessions?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Log Out All", style: "destructive", onPress: () => { setDevices((p) => p.filter((d) => d.isCurrent)); Alert.alert("Success", "All other sessions revoked."); } },
-    ]);
+    setLogoutConfirmVisible(true);
   };
 
   const handleCreateTransactionPin = () => {
     if (!user?.id) {
-      Alert.alert("Transaction PIN", "Your account details are unavailable. Please sign in again.");
+      setPinAlertVisible(true);
       return;
     }
-
     router.push("/(root)/accounts/create-transaction-pin" as any);
   };
 
@@ -471,6 +472,115 @@ export default function SecurityScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* ── Transaction PIN Alert Modal ──────────────────────────────── */}
+      <Modal transparent animationType="fade" visible={pinAlertVisible} onRequestClose={() => setPinAlertVisible(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}
+          onPress={() => setPinAlertVisible(false)}
+        >
+          <Pressable style={{ backgroundColor: "#fff", borderRadius: 24, padding: 28, width: "100%", alignItems: "center", shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 24, elevation: 10 }} onPress={() => { }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(245,158,11,0.12)", justifyContent: "center", alignItems: "center", marginBottom: 16 }}>
+              <MaterialCommunityIcons name="alert-circle" size={36} color="#F59E0B" />
+            </View>
+            <Text style={{ fontFamily: "OutfitBold", fontSize: 17, color: "#2A2B0F", marginBottom: 8, textAlign: "center" }}>Transaction PIN</Text>
+            <Text style={{ fontFamily: "Outfit", fontSize: 13, color: "#7A7B5A", textAlign: "center", lineHeight: 20 }}>
+              Your account details are unavailable. Please sign in again.
+            </Text>
+            <Pressable
+              onPress={() => setPinAlertVisible(false)}
+              style={{ marginTop: 24, backgroundColor: "#969841", borderRadius: 12, paddingVertical: 13, paddingHorizontal: 40 }}
+            >
+              <Text style={{ fontFamily: "OutfitBold", fontSize: 14, color: "#fff" }}>OK</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ── Log Out Other Devices — Confirm Modal ───────────────────── */}
+      <Modal transparent animationType="fade" visible={logoutConfirmVisible} onRequestClose={() => setLogoutConfirmVisible(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}
+          onPress={() => setLogoutConfirmVisible(false)}
+        >
+          <Pressable style={{ backgroundColor: "#fff", borderRadius: 24, padding: 28, width: "100%", alignItems: "center", shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 24, elevation: 10 }} onPress={() => { }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(239,68,68,0.10)", justifyContent: "center", alignItems: "center", marginBottom: 16 }}>
+              <MaterialCommunityIcons name="logout-variant" size={36} color="#EF4444" />
+            </View>
+            <Text style={{ fontFamily: "OutfitBold", fontSize: 17, color: "#2A2B0F", marginBottom: 8, textAlign: "center" }}>Log Out Other Devices</Text>
+            <Text style={{ fontFamily: "Outfit", fontSize: 13, color: "#7A7B5A", textAlign: "center", lineHeight: 20 }}>
+              This will invalidate all other active sessions. You will remain logged in on this device.
+            </Text>
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 24, width: "100%" }}>
+              <Pressable
+                onPress={() => setLogoutConfirmVisible(false)}
+                style={{ flex: 1, backgroundColor: "#F3F4F6", borderRadius: 12, paddingVertical: 13, alignItems: "center" }}
+              >
+                <Text style={{ fontFamily: "OutfitBold", fontSize: 14, color: "#2A2B0F" }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setDevices((p) => p.filter((d) => d.isCurrent));
+                  setLogoutConfirmVisible(false);
+                  setLogoutSuccessVisible(true);
+                }}
+                style={{ flex: 1, backgroundColor: "#EF4444", borderRadius: 12, paddingVertical: 13, alignItems: "center" }}
+              >
+                <Text style={{ fontFamily: "OutfitBold", fontSize: 14, color: "#fff" }}>Log Out All</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ── Log Out Other Devices — Success Modal ───────────────────── */}
+      <Modal transparent animationType="fade" visible={logoutSuccessVisible} onRequestClose={() => setLogoutSuccessVisible(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}
+          onPress={() => setLogoutSuccessVisible(false)}
+        >
+          <Pressable style={{ backgroundColor: "#fff", borderRadius: 24, padding: 28, width: "100%", alignItems: "center", shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 24, elevation: 10 }} onPress={() => { }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(33,209,132,0.12)", justifyContent: "center", alignItems: "center", marginBottom: 16 }}>
+              <MaterialCommunityIcons name="check-circle" size={36} color="#21D184" />
+            </View>
+            <Text style={{ fontFamily: "OutfitBold", fontSize: 17, color: "#2A2B0F", marginBottom: 8, textAlign: "center" }}>Sessions Revoked</Text>
+            <Text style={{ fontFamily: "Outfit", fontSize: 13, color: "#7A7B5A", textAlign: "center", lineHeight: 20 }}>
+              All other sessions have been successfully revoked.
+            </Text>
+            <Pressable
+              onPress={() => setLogoutSuccessVisible(false)}
+              style={{ marginTop: 24, backgroundColor: "#969841", borderRadius: 12, paddingVertical: 13, paddingHorizontal: 40 }}
+            >
+              <Text style={{ fontFamily: "OutfitBold", fontSize: 14, color: "#fff" }}>OK</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* ── MFA Error Modal ──────────────────────────────────────────── */}
+      <Modal transparent animationType="fade" visible={!!mfaErrorMessage} onRequestClose={() => setMfaErrorMessage(null)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}
+          onPress={() => setMfaErrorMessage(null)}
+        >
+          <Pressable style={{ backgroundColor: "#fff", borderRadius: 24, padding: 28, width: "100%", alignItems: "center", shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 24, elevation: 10 }} onPress={() => { }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(239,68,68,0.10)", justifyContent: "center", alignItems: "center", marginBottom: 16 }}>
+              <MaterialCommunityIcons name="close-circle" size={36} color="#EF4444" />
+            </View>
+            <Text style={{ fontFamily: "OutfitBold", fontSize: 17, color: "#2A2B0F", marginBottom: 8, textAlign: "center" }}>MFA Error</Text>
+            <Text style={{ fontFamily: "Outfit", fontSize: 13, color: "#7A7B5A", textAlign: "center", lineHeight: 20 }}>
+              {mfaErrorMessage}
+            </Text>
+            <Pressable
+              onPress={() => setMfaErrorMessage(null)}
+              style={{ marginTop: 24, backgroundColor: "#969841", borderRadius: 12, paddingVertical: 13, paddingHorizontal: 40 }}
+            >
+              <Text style={{ fontFamily: "OutfitBold", fontSize: 14, color: "#fff" }}>OK</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
     </SafeAreaView>
   );
 }

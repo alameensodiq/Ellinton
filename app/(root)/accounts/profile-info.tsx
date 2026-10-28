@@ -16,7 +16,7 @@ import { Dropdown } from "@/app/components/inputs/DropdownInputs";
 import { nigeriaStates, stateOptions as NIGERIA_STATE_OPTIONS } from "@/app/lib/utils";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
-import { getUserProfile, updateUserProfile, updatePersonalProfile, updateResidentialAddress, updateNextOfKin, updateFinancialProfile, fetchIndustries, submitNin } from "@/app/lib/thunks/authThunks";
+import { getUserProfile, updateUserProfile, updatePersonalProfile, updateResidentialAddress, updateNextOfKin, updateFinancialProfile, fetchIndustries, submitNin, GetResidentialAddress, GetNextOfKin, GetFinancialProfile } from "@/app/lib/thunks/authThunks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ─── App Colors ──────────────────────────────────────────────────────────────
@@ -251,6 +251,11 @@ export default function ProfileInfoScreen() {
   const [nokAddress, setNokAddress] = useState("");
   const [savingNok, setSavingNok] = useState(false);
 
+  // Fetched data from GET endpoints
+  const [fetchedResidential, setFetchedResidential] = useState<Record<string, string> | null>(null);
+  const [fetchedEmployment, setFetchedEmployment] = useState<Record<string, string> | null>(null);
+  const [fetchedNok, setFetchedNok] = useState<Record<string, string> | null>(null);
+
   // Update Personal Info (empty → placeholder shows current value)
   const [upEmail, setUpEmail] = useState("");
   const [upLga, setUpLga] = useState("");
@@ -267,6 +272,23 @@ export default function ProfileInfoScreen() {
     loadSaved();
     loadIndustries();
   }, [dispatch]);
+
+  // Fetch the relevant GET endpoint whenever the tab changes
+  useEffect(() => {
+    if (activeTab === "residential") {
+      dispatch(GetResidentialAddress()).unwrap()
+        .then((data: any) => setFetchedResidential(data?.data || data))
+        .catch(() => { });
+    } else if (activeTab === "employment") {
+      dispatch(GetFinancialProfile()).unwrap()
+        .then((data: any) => setFetchedEmployment(data?.data || data))
+        .catch(() => { });
+    } else if (activeTab === "next_of_kin") {
+      dispatch(GetNextOfKin()).unwrap()
+        .then((data: any) => setFetchedNok(data?.data || data))
+        .catch(() => { });
+    }
+  }, [activeTab, dispatch]);
 
   // The profile is fetched after this screen mounts, so populate the form when
   // those saved residential values arrive instead of leaving them as placeholders.
@@ -343,6 +365,10 @@ export default function ProfileInfoScreen() {
       await dispatch(updateResidentialAddress(payload)).unwrap();
       skipNextResidentialHydration.current = true;
       await dispatch(getUserProfile());
+      // Refresh displayed residential info
+      dispatch(GetResidentialAddress()).unwrap()
+        .then((data: any) => setFetchedResidential(data?.data || data))
+        .catch(() => { });
       setAddress("");
       setCity("");
       setStateName("");
@@ -370,6 +396,10 @@ export default function ProfileInfoScreen() {
     try {
       await dispatch(updateFinancialProfile(payload)).unwrap();
       await AsyncStorage.removeItem("user_employment_details");
+      // Refresh displayed employment info
+      dispatch(GetFinancialProfile()).unwrap()
+        .then((data: any) => setFetchedEmployment(data?.data || data))
+        .catch(() => { });
       setEmploymentStatus("");
       setIndustry("");
       setEmployerName("");
@@ -396,6 +426,10 @@ export default function ProfileInfoScreen() {
     setSavingNok(true);
     try {
       await dispatch(updateNextOfKin(payload)).unwrap();
+      // Refresh displayed NOK info
+      dispatch(GetNextOfKin()).unwrap()
+        .then((data: any) => setFetchedNok(data?.data || data))
+        .catch(() => { });
       setNokFirstName("");
       setNokLastName("");
       setNokRelationship("");
@@ -571,6 +605,8 @@ export default function ProfileInfoScreen() {
                   { label: "Last Name", value: user?.last_name },
                   { label: "Date of Birth", value: user?.date_of_birth },
                   { label: "Gender", value: user?.gender },
+                  { label: "Email", value: user?.email },
+                  { label: "Phone Number", value: user?.phone },
                 ].map((row, i, arr) => (
                   <View
                     key={row.label}
@@ -717,61 +753,30 @@ export default function ProfileInfoScreen() {
           {/* ── RESIDENTIAL ─────────────────────────────────────────── */}
           {activeTab === "residential" && (
             <View>
-              {/* Proof of address status */}
-              {/* <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-4 shadow-sm flex-row items-center justify-between mb-4">
-                <View>
-                  <Text style={{ color: C.textSub, fontSize: 11, fontFamily: "Outfit" }}>Proof of Address Status</Text>
-                  <Text style={{ color: C.textPrimary, fontSize: 13, fontFamily: "OutfitBold", marginTop: 2 }}>Utility & Residential Validation</Text>
-                </View>
+              {/* ── Fetched Residential Info ─── */}
+              {fetchedResidential && (
                 <View
-                  style={{
-                    backgroundColor: proofStatus === "Verified" ? "rgba(33,209,132,0.12)" : proofStatus === "Pending" ? "rgba(251,205,88,0.18)" : "#F5F5F0",
-                    borderColor: proofStatus === "Verified" ? "rgba(33,209,132,0.4)" : proofStatus === "Pending" ? "rgba(251,205,88,0.5)" : C.cardBorder,
-                    borderWidth: 1,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 999,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
+                  style={{ backgroundColor: "#EEEEE4", borderColor: C.accent, borderWidth: 1, borderRadius: 16, padding: 20, marginBottom: 16 }}
                 >
-                  <MaterialCommunityIcons
-                    name={proofStatus === "Verified" ? "check-circle" : proofStatus === "Pending" ? "clock-outline" : "alert-circle-outline"}
-                    size={13}
-                    color={proofStatus === "Verified" ? C.green : proofStatus === "Pending" ? "#ca8a04" : C.textMuted}
-                  />
-                  <Text style={{ color: proofStatus === "Verified" ? "#16a34a" : proofStatus === "Pending" ? "#ca8a04" : C.textSub, fontSize: 11, fontFamily: "OutfitBold" }}>
-                    {proofStatus}
-                  </Text>
-                </View>
-              </View> */}
-
-              {/* {residentialDetails.length > 0 && (
-                <View
-                  style={{ backgroundColor: "#EEEEE4", borderColor: C.cardBorder, borderWidth: 1 }}
-                  className="rounded-2xl p-5 mb-4"
-                >
-                  <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14, marginBottom: 8 }}>
-                    Saved Residential Details
-                  </Text>
-                  {residentialDetails.map((detail, index) => (
+                  <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14, marginBottom: 10 }}>Current Residential Details</Text>
+                  {([
+                    { label: "Street Address", key: "address_1" },
+                    { label: "City", key: "city" },
+                    { label: "State", key: "state" },
+                    { label: "Landmark", key: "landmark" },
+                    { label: "State of Origin", key: "state_of_origin" },
+                    { label: "LGA of Origin", key: "lga_of_origin" },
+                  ] as { label: string; key: string }[]).filter(({ key }) => !!(fetchedResidential as any)[key]).map(({ label, key }, index, arr) => (
                     <View
-                      key={detail.label}
-                      style={{
-                        borderBottomColor: C.cardBorder,
-                        borderBottomWidth: index < residentialDetails.length - 1 ? 1 : 0,
-                        paddingVertical: 9,
-                      }}
+                      key={key}
+                      style={{ borderBottomWidth: index < arr.length - 1 ? 1 : 0, borderBottomColor: C.cardBorder, paddingVertical: 8 }}
                     >
-                      <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11 }}>{detail.label}</Text>
-                      <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 13, marginTop: 2 }}>
-                        {detail.value}
-                      </Text>
+                      <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11 }}>{label}</Text>
+                      <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 13, marginTop: 2 }}>{(fetchedResidential as any)[key]}</Text>
                     </View>
                   ))}
                 </View>
-              )} */}
+              )}
 
               <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
                 <Dropdown
@@ -818,66 +823,117 @@ export default function ProfileInfoScreen() {
 
           {/* ── EMPLOYMENT ──────────────────────────────────────────── */}
           {activeTab === "employment" && (
-            <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
-              <Dropdown
-                label="Employment Status"
-                placeholder="Select status"
-                options={EMPLOYMENT_STATUS_OPTIONS}
-                selectedValue={employmentStatus}
-                onSelect={setEmploymentStatus}
-                variant="light"
-              />
-              <View style={{ marginTop: 16 }}>
+            <View>
+              {/* ── Fetched Employment Info ─── */}
+              {fetchedEmployment && (
+                <View
+                  style={{ backgroundColor: "#EEEEE4", borderColor: C.accent, borderWidth: 1, borderRadius: 16, padding: 20, marginBottom: 16 }}
+                >
+                  <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14, marginBottom: 10 }}>Current Employment Details</Text>
+                  {([
+                    { label: "Industry", key: "industry" },
+                    { label: "Employer", key: "employer" },
+                    { label: "Employment Status", key: "employment_status" },
+                    { label: "Estimated Monthly Income", key: "estimated_monthly_income" },
+                  ] as { label: string; key: string }[]).filter(({ key }) => !!(fetchedEmployment as any)[key]).map(({ label, key }, index, arr) => (
+                    <View
+                      key={key}
+                      style={{ borderBottomWidth: index < arr.length - 1 ? 1 : 0, borderBottomColor: C.cardBorder, paddingVertical: 8 }}
+                    >
+                      <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11 }}>{label}</Text>
+                      <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 13, marginTop: 2 }}>{String((fetchedEmployment as any)[key])}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
                 <Dropdown
-                  label={loadingIndustries ? "Industry (loading...)" : "Industry"}
-                  placeholder="Select your industry"
-                  options={industries.length > 0 ? industries : [{ value: "", label: "No industries loaded" }]}
-                  selectedValue={industry}
-                  onSelect={setIndustry}
+                  label="Employment Status"
+                  placeholder="Select status"
+                  options={EMPLOYMENT_STATUS_OPTIONS}
+                  selectedValue={employmentStatus}
+                  onSelect={setEmploymentStatus}
                   variant="light"
                 />
+                <View style={{ marginTop: 16 }}>
+                  <Dropdown
+                    label={loadingIndustries ? "Industry (loading...)" : "Industry"}
+                    placeholder="Select your industry"
+                    options={industries.length > 0 ? industries : [{ value: "", label: "No industries loaded" }]}
+                    selectedValue={industry}
+                    onSelect={setIndustry}
+                    variant="light"
+                  />
+                </View>
+                <View style={{ marginTop: 16 }}>
+                  <Field label="Employer / Business Name" value={employerName} onChangeText={setEmployerName} placeholder="e.g. Ellington Financial / Self" />
+                </View>
+                <Dropdown
+                  label="Estimated Monthly Income"
+                  placeholder="Select monthly income"
+                  options={INCOME_RANGE_OPTIONS}
+                  selectedValue={incomeRange}
+                  onSelect={setIncomeRange}
+                  variant="light"
+                />
+                <SaveButton onPress={handleSaveEmployment} saving={savingEmployment} label="Save Employment Details" />
               </View>
-              <View style={{ marginTop: 16 }}>
-                <Field label="Employer / Business Name" value={employerName} onChangeText={setEmployerName} placeholder="e.g. Ellington Financial / Self" />
-              </View>
-              <Dropdown
-                label="Estimated Monthly Income"
-                placeholder="Select monthly income"
-                options={INCOME_RANGE_OPTIONS}
-                selectedValue={incomeRange}
-                onSelect={setIncomeRange}
-                variant="light"
-              />
-              <SaveButton onPress={handleSaveEmployment} saving={savingEmployment} label="Save Employment Details" />
             </View>
           )}
 
 
           {/* ── NEXT OF KIN ─────────────────────────────────────────── */}
           {activeTab === "next_of_kin" && (
-            <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
-              <Field label="First Name" value={nokFirstName} onChangeText={setNokFirstName} placeholder="e.g. Funmilayo" />
-              <Field label="Last Name" value={nokLastName} onChangeText={setNokLastName} placeholder="e.g. Awoyomi" />
-              <Dropdown
-                label="Relationship"
-                placeholder={nokRelationship || "Select relationship"}
-                options={NOK_RELATIONSHIP_OPTIONS}
-                selectedValue={nokRelationship}
-                onSelect={setNokRelationship}
-                variant="light"
-              />
-              <View style={{ marginTop: 16 }}>
-                <Field
-                  label="Phone Number"
-                  value={nokPhone}
-                  onChangeText={(value) => setNokPhone(value.replace(/\D/g, "").slice(0, 11))}
-                  placeholder="e.g. 08012345678"
-                  keyboardType="phone-pad"
-                  maxLength={11}
+            <View>
+              {/* ── Fetched Next of Kin Info ─── */}
+              {fetchedNok && (
+                <View
+                  style={{ backgroundColor: "#EEEEE4", borderColor: C.accent, borderWidth: 1, borderRadius: 16, padding: 20, marginBottom: 16 }}
+                >
+                  <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14, marginBottom: 10 }}>Current Next of Kin</Text>
+                  {([
+                    { label: "First Name", key: "first_name" },
+                    { label: "Last Name", key: "last_name" },
+                    { label: "Relationship", key: "relationship" },
+                    { label: "Phone", key: "phone" },
+                    { label: "Address", key: "address_1" },
+                  ] as { label: string; key: string }[]).filter(({ key }) => !!(fetchedNok as any)[key]).map(({ label, key }, index, arr) => (
+                    <View
+                      key={key}
+                      style={{ borderBottomWidth: index < arr.length - 1 ? 1 : 0, borderBottomColor: C.cardBorder, paddingVertical: 8 }}
+                    >
+                      <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11 }}>{label}</Text>
+                      <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 13, marginTop: 2 }}>{(fetchedNok as any)[key]}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
+                <Field label="First Name" value={nokFirstName} onChangeText={setNokFirstName} placeholder="e.g. Funmilayo" />
+                <Field label="Last Name" value={nokLastName} onChangeText={setNokLastName} placeholder="e.g. Awoyomi" />
+                <Dropdown
+                  label="Relationship"
+                  placeholder={nokRelationship || "Select relationship"}
+                  options={NOK_RELATIONSHIP_OPTIONS}
+                  selectedValue={nokRelationship}
+                  onSelect={setNokRelationship}
+                  variant="light"
                 />
+                <View style={{ marginTop: 16 }}>
+                  <Field
+                    label="Phone Number"
+                    value={nokPhone}
+                    onChangeText={(value) => setNokPhone(value.replace(/\D/g, "").slice(0, 11))}
+                    placeholder="e.g. 08012345678"
+                    keyboardType="phone-pad"
+                    maxLength={11}
+                  />
+                </View>
+                <Field label="Residential Address" value={nokAddress} onChangeText={setNokAddress} placeholder="e.g. 15 Admiralty Way, Lekki Phase 1, Lagos" />
+                <SaveButton onPress={handleSaveNok} saving={savingNok} label="Save Next of Kin" />
               </View>
-              <Field label="Residential Address" value={nokAddress} onChangeText={setNokAddress} placeholder="e.g. 15 Admiralty Way, Lekki Phase 1, Lagos" />
-              <SaveButton onPress={handleSaveNok} saving={savingNok} label="Save Next of Kin" />
             </View>
           )}
         </ScrollView>

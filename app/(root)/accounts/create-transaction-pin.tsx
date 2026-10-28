@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -69,49 +69,55 @@ export default function CreateTransactionPinScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bgPage }}>
       <Header title="Create Transaction PIN" />
 
-      <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 44 }}>
-        <View style={{ alignItems: "center" }}>
-          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(251,205,88,0.18)", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-            <MaterialCommunityIcons name="shield-key-outline" size={31} color="#FBCD58" />
-          </View>
-          <Text style={{ color: C.white, fontFamily: "OutfitBold", fontSize: 23, textAlign: "center" }}>
-            {step === "create" ? "Create your PIN" : "Confirm your PIN"}
-          </Text>
-          <Text style={{ color: "#D1D1D1", fontFamily: "Outfit", fontSize: 13, lineHeight: 20, textAlign: "center", marginTop: 10, maxWidth: 300 }}>
-            {step === "create"
-              ? "Set a secure 4-digit PIN to approve your transfers."
-              : "Enter the same 4-digit PIN again to confirm it."}
-          </Text>
-        </View>
-
-        <View style={{ alignItems: "center", marginTop: 42 }}>
-          <OtpInput
-            digitCount={4}
-            value={value}
-            onChange={setValue}
-            secure
-            autoFocus
-            inputStyle="w-14 h-14 text-lg"
-          />
-        </View>
-
-        <View style={{ marginTop: "auto", paddingBottom: 24 }}>
-          {step === "confirm" && (
-            <Pressable onPress={() => { setStep("create"); setConfirmPin(""); }} style={{ alignItems: "center", paddingVertical: 12 }}>
-              <Text style={{ color: "#FBCD58", fontFamily: "OutfitBold", fontSize: 13 }}>Change PIN</Text>
-            </Pressable>
-          )}
-          <Pressable
-            disabled={value.length !== 4 || isSubmitting}
-            onPress={handleContinue}
-            style={{ backgroundColor: C.bgDark, opacity: value.length === 4 && !isSubmitting ? 1 : 0.55, paddingVertical: 15, borderRadius: 14, alignItems: "center" }}
-          >
-            <Text style={{ color: C.white, fontFamily: "OutfitBold", fontSize: 15 }}>
-              {isSubmitting ? "Creating PIN..." : step === "create" ? "Continue" : "Create Transaction PIN"}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+      >
+        <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 44 }}>
+          <View style={{ alignItems: "center" }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: "rgba(251,205,88,0.18)", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+              <MaterialCommunityIcons name="shield-key-outline" size={31} color="#FBCD58" />
+            </View>
+            <Text style={{ color: C.white, fontFamily: "OutfitBold", fontSize: 23, textAlign: "center" }}>
+              {step === "create" ? "Create your PIN" : "Confirm your PIN"}
             </Text>
-          </Pressable>
+            <Text style={{ color: "#D1D1D1", fontFamily: "Outfit", fontSize: 13, lineHeight: 20, textAlign: "center", marginTop: 10, maxWidth: 300 }}>
+              {step === "create"
+                ? "Set a secure 4-digit PIN to approve your transfers."
+                : "Enter the same 4-digit PIN again to confirm it."}
+            </Text>
+          </View>
+
+          <View style={{ alignItems: "center", marginTop: 42 }}>
+            <OtpInput
+              digitCount={4}
+              value={value}
+              onChange={setValue}
+              secure
+              autoFocus
+              inputStyle="w-14 h-14 text-lg"
+            />
+          </View>
+
+          <View style={{ marginTop: "auto", paddingBottom: 24 }}>
+            {step === "confirm" && (
+              <Pressable onPress={() => { setStep("create"); setConfirmPin(""); }} style={{ alignItems: "center", paddingVertical: 12 }}>
+                <Text style={{ color: "#FBCD58", fontFamily: "OutfitBold", fontSize: 13 }}>Change PIN</Text>
+              </Pressable>
+            )}
+            <Pressable
+              disabled={value.length !== 4 || isSubmitting}
+              onPress={handleContinue}
+              style={{ backgroundColor: C.bgDark, opacity: value.length === 4 && !isSubmitting ? 1 : 0.55, paddingVertical: 15, borderRadius: 14, alignItems: "center" }}
+            >
+              <Text style={{ color: C.white, fontFamily: "OutfitBold", fontSize: 15 }}>
+                {isSubmitting ? "Creating PIN..." : step === "create" ? "Continue" : "Create Transaction PIN"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
 
       <ErrorModal
         visible={Boolean(errorMessage)}

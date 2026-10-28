@@ -1681,6 +1681,40 @@ export const updateResidentialAddress = createAsyncThunk(
   }
 );
 
+export const GetResidentialAddress = createAsyncThunk(
+  "auth/GetResidentialAddress",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(UPDATE_RESIDENTIAL_ENDPOINT(), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Residential update failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Residential update error"
+      );
+    }
+  }
+);
+
 export interface UpdateNextOfKinPayload {
   first_name?: string;
   last_name?: string;
@@ -1724,6 +1758,40 @@ export const updateNextOfKin = createAsyncThunk(
   }
 );
 
+export const GetNextOfKin = createAsyncThunk(
+  "auth/GetNextOfKin",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(UPDATE_NEXTOFKIN_ENDPOINT(), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Next of Kin update failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Next of Kin update error"
+      );
+    }
+  }
+);
+
 export interface UpdateFinancialPayload {
   industry?: string;
   employer?: string;
@@ -1745,6 +1813,40 @@ export const updateFinancialProfile = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(
+          data?.data?.message ||
+          data?.message ||
+          `Financial update failed (${response.status})`
+        );
+      }
+
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.data?.message || error.message || "Financial update error"
+      );
+    }
+  }
+);
+
+export const GetFinancialProfile = createAsyncThunk(
+  "auth/GetFinancialProfile",
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+
+      const response = await safeFetch(UPDATE_FINANCIAL_ENDPOINT(), {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       const data = await response.json();
@@ -1881,8 +1983,8 @@ export const fetchProfileCompletion = createAsyncThunk<ProfileCompletion>(
       if (!response.ok || data.success === false || !completion) {
         return rejectWithValue(
           data?.data?.message ||
-            data?.message ||
-            `Profile completion fetch failed (${response.status})`
+          data?.message ||
+          `Profile completion fetch failed (${response.status})`
         );
       }
 
@@ -1914,11 +2016,11 @@ const postTier3Request = async (
   if (!response.ok) {
     throw new Error(
       data?.data?.message ||
-        data?.message ||
-        (response.status === 413
-          ? "Uploaded image is too large. Please choose a smaller image."
-          : undefined) ||
-        `Tier 3 request failed (${response.status})`
+      data?.message ||
+      (response.status === 413
+        ? "Uploaded image is too large. Please choose a smaller image."
+        : undefined) ||
+      `Tier 3 request failed (${response.status})`
     );
   }
 
