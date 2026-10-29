@@ -65,12 +65,12 @@ export const getCardsData = (
         },
         ...(hasAccountNumber
           ? [
-              {
-                icon: "account-balance" as const,
-                label: "Accounts",
-                iconLibrary: "MaterialIcons" as const,
-              },
-            ]
+            {
+              icon: "account-balance" as const,
+              label: "Account",
+              iconLibrary: "MaterialIcons" as const,
+            },
+          ]
           : []),
       ],
     },

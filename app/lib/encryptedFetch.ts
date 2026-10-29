@@ -41,9 +41,6 @@ class EncryptedFetch {
         this.generatedIV = originalIv;
         this.generatedReversedIV = reversedIv;
 
-        console.log("  📌 EXACT IV GENERATED:", originalIv);
-        console.log("  🔄 Reversed IV (sent in REQUEST header):", reversedIv);
-
         const bodyString = typeof requestOptions.body === 'string'
           ? requestOptions.body
           : JSON.stringify(requestOptions.body);
@@ -63,9 +60,6 @@ class EncryptedFetch {
           data: encryptedData
         });
 
-        console.log("\n📤 REQUEST:");
-        console.log("  Header x-request-id:", reversedIv, "(REVERSED)");
-
       } catch (error) {
         console.error('Request encryption failed:', error);
         throw new Error('Failed to encrypt request');
@@ -75,9 +69,7 @@ class EncryptedFetch {
     const response = await fetch(url, requestOptions);
 
     let responseIvHeader = null;
-    console.log("\n📥 RESPONSE HEADERS:");
     response.headers.forEach((value, key) => {
-      console.log(`  ${key}: ${value}`);
       if (key.toLowerCase() === 'x-request-id') {
         responseIvHeader = value;
       }
@@ -95,7 +87,6 @@ class EncryptedFetch {
 
     try {
       responseData = await clonedResponse.json();
-      console.log("\n📥 RAW RESPONSE BODY:", JSON.stringify(responseData, null, 2));
     } catch (e) {
       console.error('Failed to parse response JSON:', e);
       return response;
@@ -103,33 +94,23 @@ class EncryptedFetch {
 
     // Check if response has encrypted data field
     if (responseData && responseData.data && typeof responseData.data === 'string' && responseData.data.length > 0) {
-      console.log("\n🔐 ENCRYPTED RESPONSE DETECTED");
-
       let ivToUse: string | null = null;
 
       // PRIORITY 1: Use response header if backend sent it
       if (responseIvHeader) {
-        console.log("✅ Using response header x-request-id:", responseIvHeader);
         ivToUse = responseIvHeader;
       }
       // PRIORITY 2: If no response header, use the original IV we generated
       else if (this.generatedIV) {
-        console.log("⚠️ No x-request-id header from backend, using generated IV:", this.generatedIV);
         ivToUse = this.generatedIV;
       }
 
       if (ivToUse) {
-        console.log("\n🔓 DECRYPTING with IV:", ivToUse);
-
         try {
           const decryptedData = await encryptionClient.decrypt(
             responseData.data,
             ivToUse
           );
-
-          // Log the decrypted data properly
-          console.log("\n✅ DECRYPTED DATA:", JSON.stringify(decryptedData, null, 2));
-          console.log("📊 DECRYPTED DATA TYPE:", typeof decryptedData);
 
           // Build the final response
           let finalResponse: any = {};

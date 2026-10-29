@@ -78,7 +78,7 @@ const EmailOtpScreen = () => {
               Passcode reset
             </Text>
             <Text className="text-accent-100 text-base leading-relaxed mt-4 mb-8">
-              Enter your registered email address to continue
+              Enter your registered phone number to continue
             </Text>
 
             <TextInputField

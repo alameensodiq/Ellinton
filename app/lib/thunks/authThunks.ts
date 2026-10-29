@@ -60,8 +60,6 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
 
   let enhancedHeaders = { ...headers };
 
-  console.log(hasAuthToken);
-
   if (hasAuthToken) {
     const timestamp = Date.now().toString();
     const nonce = generateNonce();
@@ -88,14 +86,6 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
       timestamp,
       deviceId
     );
-
-    console.log(signature);
-    console.log(method);
-    console.log(path);
-    console.log(body);
-    console.log(nonce);
-    console.log(deviceId);
-    console.log(timestamp);
 
     // CRITICAL FIX: Add x-device-id header
     enhancedHeaders = {

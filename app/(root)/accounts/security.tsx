@@ -16,7 +16,7 @@ import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
-import { MfaReset, ResetPinOtp } from "@/app/lib/thunks/authThunks";
+import { getUserProfile, MfaReset, ResetPinOtp } from "@/app/lib/thunks/authThunks";
 import { TransactionPinValidation } from "@/app/lib/thunks/transferThunks";
 import { useRouter } from "expo-router";
 
@@ -97,8 +97,11 @@ export default function SecurityScreen() {
     setMfaEnabled(val);
     try {
       await dispatch(MfaReset({ enabled: val })).unwrap();
-      const ex = await AsyncStorage.getItem("data");
-      if (ex) { const p = JSON.parse(ex); p.mfa_required = val; await AsyncStorage.setItem("data", JSON.stringify(p)); }
+      try {
+        await dispatch(getUserProfile()).unwrap();
+      } catch {
+        setMfaErrorMessage("MFA was updated, but your profile could not be refreshed.");
+      }
     } catch (err: any) {
       setMfaEnabled(!val);
       setMfaErrorMessage(err?.message || "Failed to update MFA.");

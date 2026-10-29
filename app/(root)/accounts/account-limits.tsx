@@ -7,6 +7,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -105,7 +106,6 @@ export default function AccountLimitsScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
-  console.log(user)
   const token = useAppSelector((state) => (state as any).auth.token);
   const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion | null>(null);
 
@@ -206,7 +206,6 @@ export default function AccountLimitsScreen() {
 
       });
   }, [dispatch]);
-  console.log(profileCompletion)
   // ── Feedback modal state
   type FBType = "success" | "error" | "info";
   const [fb, setFb] = useState<{ visible: boolean; type: FBType; title: string; msg: string }>(
@@ -237,6 +236,7 @@ export default function AccountLimitsScreen() {
   const [utilityModalVisible, setUtilityModalVisible] = useState(false);
   const [govtIdModalVisible, setGovtIdModalVisible] = useState(false);
   const [documentPickerTarget, setDocumentPickerTarget] = useState<"utility" | "govtid" | null>(null);
+  const [preparingDocument, setPreparingDocument] = useState(false);
 
   // Proof of address
   const [proofType, setProofType] = useState<ProofOfAddressType>(ProofOfAddressType.METER_RECEIPT);
@@ -291,7 +291,7 @@ export default function AccountLimitsScreen() {
     router.push("/(root)/kyc");
   };
 
-  const handleTier3UploadPress = (type: "utility" | "govtid") => {
+  const handleTier3UploadPress = async (type: "utility" | "govtid") => {
     if (!hasCompletedTier1) {
       handleTier2VerificationPress();
       return;
@@ -302,18 +302,20 @@ export default function AccountLimitsScreen() {
       return;
     }
 
-    if (!isProfileComplete) {
-      const missingFields = profileCompletion?.missing_fields ?? [];
-      const formattedFields = missingFields
-        .map((field) => field.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()))
-        .join(", ");
-      showFb(
-        "info",
-        "Complete Profile First",
-        formattedFields
-          ? `Please complete: ${formattedFields}.`
-          : "Please complete your profile information before uploading a Tier 3 document."
-      );
+    let completion = profileCompletion;
+    if (!completion) {
+      try {
+        completion = await dispatch(fetchProfileCompletion()).unwrap();
+        setProfileCompletion(completion);
+      } catch {
+        showFb("error", "Unable to Check Profile", "Please try again in a moment.");
+        return;
+      }
+    }
+
+    const missingFields = completion.missing_fields ?? [];
+    if (completion.completion_percentage < 100 || missingFields.length > 0) {
+      setPrereqModalVisible(true);
       return;
     }
 
@@ -346,6 +348,7 @@ export default function AccountLimitsScreen() {
         base64: false,
       });
       if (!result.canceled && result.assets?.[0]) {
+        setPreparingDocument(true);
         const asset = result.assets[0];
         const fileInfo = await FileSystem.getInfoAsync(asset.uri);
         const size = (fileInfo as { size?: number }).size ?? asset.fileSize ?? 0;
@@ -374,6 +377,10 @@ export default function AccountLimitsScreen() {
       }
     } catch {
       showFb("error", "Upload Error", "Could not select the document.");
+    } finally {
+      setPreparingDocument(false);
+      if (target === "utility") setUtilityModalVisible(true);
+      else setGovtIdModalVisible(true);
     }
   };
 
@@ -387,6 +394,7 @@ export default function AccountLimitsScreen() {
       if (result.canceled || !result.assets?.[0]) return;
 
       const asset = result.assets[0];
+      setPreparingDocument(true);
       const isPdf =
         asset.mimeType === "application/pdf" ||
         asset.name.toLowerCase().endsWith(".pdf");
@@ -426,6 +434,10 @@ export default function AccountLimitsScreen() {
       saveSelectedDocument(target, dataUri, asset.name);
     } catch {
       showFb("error", "Upload Error", "Could not select the document.");
+    } finally {
+      setPreparingDocument(false);
+      if (target === "utility") setUtilityModalVisible(true);
+      else setGovtIdModalVisible(true);
     }
   };
 
@@ -435,11 +447,15 @@ export default function AccountLimitsScreen() {
     setDocumentPickerTarget(target);
   };
 
-  const selectDocumentSource = (source: "gallery" | "files") => {
+  const selectDocumentSource = async (source: "gallery" | "files") => {
     const target = documentPickerTarget;
     if (!target) return;
 
     setDocumentPickerTarget(null);
+    setUtilityModalVisible(false);
+    setGovtIdModalVisible(false);
+    // Let the upload sheet's native Modal dismiss before presenting the OS picker.
+    await new Promise((resolve) => setTimeout(resolve, 300));
     if (source === "gallery") {
       void handlePickImage(target);
     } else {
@@ -448,6 +464,7 @@ export default function AccountLimitsScreen() {
   };
 
   const handleSubmitUtility = async () => {
+    if (uploadingUtility) return;
     if (!canUploadTier3Documents) {
       setUtilityModalVisible(false);
       handleTier3UploadPress("utility");
@@ -497,6 +514,7 @@ export default function AccountLimitsScreen() {
   };
 
   const handleSubmitGovtId = async () => {
+    if (uploadingGovtId) return;
     if (!canUploadTier3Documents) {
       setGovtIdModalVisible(false);
       handleTier3UploadPress("govtid");
@@ -998,11 +1016,25 @@ export default function AccountLimitsScreen() {
             <MaterialCommunityIcons name="lock-alert" size={30} color="#ca8a04" />
           </View>
           <Text style={{ color: C.textPrimary }} className="text-base font-outfit-bold text-center mb-2">
-            Prerequisite Action Required
+            Complete Your Profile First
           </Text>
           <Text style={{ color: C.textSub }} className="text-xs font-outfit text-center leading-5 px-2 mb-4">
-            Before uploading your utility bill or Government-issued ID for Tier 3 verification, please complete your profile
+            Complete these profile details before uploading your utility bill or Government-issued ID:
           </Text>
+          <View style={{ width: "100%", gap: 8 }}>
+            {missingProfileFields.length > 0 ? missingProfileFields.map((field) => (
+              <View key={field} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <MaterialCommunityIcons name="circle-small" size={20} color={C.bgDark} />
+                <Text style={{ color: C.textPrimary, fontFamily: "Outfit", fontSize: 13, flex: 1 }}>
+                  {field.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
+                </Text>
+              </View>
+            )) : (
+              <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 12, textAlign: "center" }}>
+                Your profile is incomplete. Review and complete the information in Profile Information.
+              </Text>
+            )}
+          </View>
         </View>
       </BottomSheet>
 
@@ -1029,7 +1061,7 @@ export default function AccountLimitsScreen() {
             </Text>
 
             <Pressable
-              onPress={() => selectDocumentSource("gallery")}
+              onPress={() => void selectDocumentSource("gallery")}
               style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 10 }}
             >
               <MaterialCommunityIcons name="image-outline" size={22} color={C.bgDark} />
@@ -1040,7 +1072,7 @@ export default function AccountLimitsScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => selectDocumentSource("files")}
+              onPress={() => void selectDocumentSource("files")}
               style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 18 }}
             >
               <MaterialCommunityIcons name="file-document-outline" size={22} color={C.bgDark} />
@@ -1213,6 +1245,22 @@ export default function AccountLimitsScreen() {
           </Pressable>
         </View>
       </BottomSheet>
+
+      <Modal
+        transparent
+        animationType="fade"
+        visible={preparingDocument || uploadingUtility || uploadingGovtId}
+        onRequestClose={() => {}}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center" }}>
+          <View style={{ backgroundColor: C.white, borderRadius: 16, padding: 24, alignItems: "center", minWidth: 180 }}>
+            <ActivityIndicator size="large" color={C.bgDark} />
+            <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 14, marginTop: 14 }}>
+              {preparingDocument ? "Preparing document…" : "Uploading document…"}
+            </Text>
+          </View>
+        </View>
+      </Modal>
 
       {/* FEEDBACK MODAL */}
       <Modal transparent animationType="fade" visible={fb.visible} onRequestClose={closeFb}>

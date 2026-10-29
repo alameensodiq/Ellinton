@@ -517,7 +517,7 @@ export const registerDeviceWithBackend = async (token: string, passedAuthToken?:
 
     console.log(`📤 Sending Expo push token to backend (${Platform.OS}):`, token);
 
-    const response = await safeFetch(`${BASE_URL}/users/push-tokens`, {
+    const response = await safeFetch(`${BASE_URL}users/push-tokens`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

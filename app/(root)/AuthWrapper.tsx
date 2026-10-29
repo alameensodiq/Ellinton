@@ -846,5 +846,5 @@ export default function AuthWrapper() {
     return null;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Stack screenOptions={{ headerShown: false, gestureEnabled: false }} />;
 }

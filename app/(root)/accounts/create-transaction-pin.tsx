@@ -8,7 +8,7 @@ import OtpInput from "@/app/components/inputs/OtpInput";
 import ErrorModal from "@/app/components/ErrorModal";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
-import { createUserTransactionPin } from "@/app/lib/thunks/authThunks";
+import { createUserTransactionPin, getUserProfile } from "@/app/lib/thunks/authThunks";
 
 const C = {
   bgPage: "#3F401B",
@@ -57,6 +57,7 @@ export default function CreateTransactionPinScreen() {
     setIsSubmitting(true);
     try {
       await dispatch(createUserTransactionPin({ userId: user.id, pin })).unwrap();
+      await dispatch(getUserProfile()).unwrap();
       router.replace("/(root)/accounts/transaction-pin-success");
     } catch (error: unknown) {
       setErrorMessage(typeof error === "string" ? error : "Unable to create your transaction PIN. Please try again.");
