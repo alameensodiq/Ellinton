@@ -87,12 +87,12 @@ export default function BuyAirtime() {
 
     setIsSubmitting(true);
     try {
-      await dispatch(
-        validatePhoneNumber({
-          phoneNumber: formatNigerianPhone(phoneNumber).replace("+234", "0"),
-          network: selectedProvider,
-        })
-      ).unwrap();
+      // await dispatch(
+      //   validatePhoneNumber({
+      //     phoneNumber: formatNigerianPhone(phoneNumber).replace("+234", "0"),
+      //     network: selectedProvider,
+      //   })
+      // ).unwrap();
 
       router.push({
         pathname: "/(root)/airtime/confirm",

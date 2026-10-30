@@ -112,12 +112,12 @@ export default function BuyData() {
     const formattedPhone = formatNigerianPhone(phoneNumber);
 
     try {
-      await dispatch(
-        validatePhoneNumber({
-          phoneNumber: formattedPhone.replace("+234", "0"),
-          network: selectedProvider,
-        })
-      ).unwrap();
+      // await dispatch(
+      //   validatePhoneNumber({
+      //     phoneNumber: formattedPhone.replace("+234", "0"),
+      //     network: selectedProvider,
+      //   })
+      // ).unwrap();
 
       router.push({
         pathname: "/(root)/data/confirm",

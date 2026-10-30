@@ -8,6 +8,9 @@ import {
   TextInput,
   Platform,
   ActivityIndicator,
+  ActionSheetIOS,
+  InteractionManager,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -213,6 +216,12 @@ export default function AccountLimitsScreen() {
   );
   const showFb = (type: FBType, title: string, msg: string) => setFb({ visible: true, type, title, msg });
   const closeFb = () => setFb((f) => ({ ...f, visible: false }));
+  // iOS silently drops a Modal presented while another Modal is dismissing.
+  // Use this whenever a sheet/loader is closed in the same step as the popup.
+  const showFbAfterDismiss = (type: FBType, title: string, msg: string) => {
+    if (Platform.OS === "ios") setTimeout(() => showFb(type, title, msg), 500);
+    else showFb(type, title, msg);
+  };
 
   useEffect(() => {
     if (!isVerifyingFace) return;
@@ -302,15 +311,16 @@ export default function AccountLimitsScreen() {
       return;
     }
 
-    let completion = profileCompletion;
-    if (!completion) {
-      try {
-        completion = await dispatch(fetchProfileCompletion()).unwrap();
-        setProfileCompletion(completion);
-      } catch {
-        showFb("error", "Unable to Check Profile", "Please try again in a moment.");
-        return;
-      }
+    // Profile Info can be edited while this screen stays mounted. Always use
+    // the latest server result here instead of the completion snapshot from
+    // the first render, otherwise a completed profile remains locked out.
+    let completion: ProfileCompletion;
+    try {
+      completion = await dispatch(fetchProfileCompletion()).unwrap();
+      setProfileCompletion(completion);
+    } catch {
+      showFb("error", "Unable to Check Profile", "Please try again in a moment.");
+      return;
     }
 
     const missingFields = completion.missing_fields ?? [];
@@ -336,10 +346,8 @@ export default function AccountLimitsScreen() {
 
   const handlePickImage = async (target: "utility" | "govtid") => {
     try {
-      if (Platform.OS === "ios") {
-        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        if (status !== "granted") { showFb("info", "Permission", "Photo library access is required."); return; }
-      }
+      // iOS 14+ uses PHPicker which needs no library permission; requesting it
+      // can return "limited" and wrongly block the user.
       // Try image picker first
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
@@ -353,7 +361,7 @@ export default function AccountLimitsScreen() {
         const fileInfo = await FileSystem.getInfoAsync(asset.uri);
         const size = (fileInfo as { size?: number }).size ?? asset.fileSize ?? 0;
         if (size > MAX_TIER3_DOCUMENT_BYTES) {
-          showFb("info", "File Too Large", `Please select a document no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
+          showFbAfterDismiss("info", "File Too Large", `Please select a document no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
           return;
         }
         const preparedImage = await prepareImageForUpload(asset.uri, {
@@ -365,7 +373,7 @@ export default function AccountLimitsScreen() {
         });
 
         if (preparedImage.size > MAX_TIER3_DOCUMENT_BYTES || !preparedImage.base64) {
-          showFb("info", "Image Too Large", `Please select an image no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
+          showFbAfterDismiss("info", "Image Too Large", `Please select an image no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
           return;
         }
 
@@ -376,11 +384,13 @@ export default function AccountLimitsScreen() {
         saveSelectedDocument(target, dataUri, asset.fileName || "document.jpg");
       }
     } catch {
-      showFb("error", "Upload Error", "Could not select the document.");
+      showFbAfterDismiss("error", "Upload Error", "Could not select the document.");
     } finally {
       setPreparingDocument(false);
-      if (target === "utility") setUtilityModalVisible(true);
-      else setGovtIdModalVisible(true);
+      if (Platform.OS !== "ios") {
+        if (target === "utility") setUtilityModalVisible(true);
+        else setGovtIdModalVisible(true);
+      }
     }
   };
 
@@ -401,7 +411,7 @@ export default function AccountLimitsScreen() {
       const fileInfo = await FileSystem.getInfoAsync(asset.uri);
       const size = (fileInfo as { size?: number }).size ?? asset.size ?? 0;
       if (size > MAX_TIER3_DOCUMENT_BYTES) {
-        showFb("info", "File Too Large", `Please select a document no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
+        showFbAfterDismiss("info", "File Too Large", `Please select a document no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
         return;
       }
 
@@ -414,7 +424,7 @@ export default function AccountLimitsScreen() {
           minCompress: 0.22,
         });
         if (preparedImage.size > MAX_TIER3_DOCUMENT_BYTES || !preparedImage.base64) {
-          showFb("info", "Image Too Large", `Please select an image no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
+          showFbAfterDismiss("info", "Image Too Large", `Please select an image no larger than ${MAX_TIER3_DOCUMENT_LABEL}.`);
           return;
         }
         saveSelectedDocument(
@@ -428,22 +438,49 @@ export default function AccountLimitsScreen() {
       const base64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: "base64" });
       const dataUri = normalizeDataUri(base64, "application/pdf");
       if (!dataUri || !isValidDocumentDataUri(dataUri)) {
-        showFb("error", "Upload Error", "The selected PDF could not be read.");
+        showFbAfterDismiss("error", "Upload Error", "The selected PDF could not be read.");
         return;
       }
       saveSelectedDocument(target, dataUri, asset.name);
     } catch {
-      showFb("error", "Upload Error", "Could not select the document.");
+      showFbAfterDismiss("error", "Upload Error", "Could not select the document.");
     } finally {
       setPreparingDocument(false);
-      if (target === "utility") setUtilityModalVisible(true);
-      else setGovtIdModalVisible(true);
+      if (Platform.OS !== "ios") {
+        if (target === "utility") setUtilityModalVisible(true);
+        else setGovtIdModalVisible(true);
+      }
     }
   };
 
   // Images are picked from the photo library; PDFs and files are picked from
   // the device's document provider.
   const handlePickFile = (target: "utility" | "govtid") => {
+    if (preparingDocument) return;
+    if (Platform.OS === "ios") {
+      // iOS: keep the sheet open and present the native action sheet + pickers
+      // on top of it. Dismissing the RN Modal while presenting a picker makes
+      // iOS silently drop the picker.
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: "Upload Document",
+          message: "Choose an image from your gallery or a JPEG, PNG, or PDF from your files.",
+          options: ["Gallery", "Files", "Cancel"],
+          cancelButtonIndex: 2,
+        },
+        (index) => {
+          if (index === 2) return;
+          // Wait for the action sheet to fully dismiss before presenting.
+          InteractionManager.runAfterInteractions(() => {
+            setTimeout(() => {
+              if (index === 0) void handlePickImage(target);
+              else void handlePickDeviceFile(target);
+            }, 350);
+          });
+        }
+      );
+      return;
+    }
     setDocumentPickerTarget(target);
   };
 
@@ -462,6 +499,37 @@ export default function AccountLimitsScreen() {
       void handlePickDeviceFile(target);
     }
   };
+
+  const renderDocumentSourceChoice = () => (
+    <View className="py-2">
+      <Text style={{ color: C.textSub }} className="text-xs font-outfit mb-4">
+        Select an image from your gallery or a JPEG, PNG, or PDF from your files.
+      </Text>
+      <Pressable
+        onPress={() => void selectDocumentSource("gallery")}
+        style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 10 }}
+      >
+        <MaterialCommunityIcons name="image-outline" size={22} color={C.bgDark} />
+        <View style={{ marginLeft: 12, flex: 1 }}>
+          <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14 }}>Gallery</Text>
+          <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11, marginTop: 2 }}>Choose an image from your photo library</Text>
+        </View>
+      </Pressable>
+      <Pressable
+        onPress={() => void selectDocumentSource("files")}
+        style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center" }}
+      >
+        <MaterialCommunityIcons name="file-document-outline" size={22} color={C.bgDark} />
+        <View style={{ marginLeft: 12, flex: 1 }}>
+          <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14 }}>Files</Text>
+          <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11, marginTop: 2 }}>Choose a JPEG, PNG, or PDF file</Text>
+        </View>
+      </Pressable>
+      <Pressable onPress={() => setDocumentPickerTarget(null)} style={{ alignItems: "center", paddingVertical: 14 }}>
+        <Text style={{ color: C.bgDark, fontFamily: "OutfitBold", fontSize: 14 }}>Cancel</Text>
+      </Pressable>
+    </View>
+  );
 
   const handleSubmitUtility = async () => {
     if (uploadingUtility) return;
@@ -501,16 +569,18 @@ export default function AccountLimitsScreen() {
         proof_of_address_type: proofType,
         proof_of_address: proofBase64,
       })).unwrap();
-      setUtilityModalVisible(false);
-      setProofBase64(null); setProofFileName(null);
       await dispatch(getUserProfile()).unwrap().catch((error) => {
         console.warn("Unable to refresh profile after proof-of-address upload:", error);
       });
-      showFb("success", "Submitted", "Proof of address submitted for compliance review.");
-    } catch (err: any) {
+      setUploadingUtility(false);
       setUtilityModalVisible(false);
-      showFb("error", "Submission Failed", typeof err === "string" ? err : "Failed to submit proof of address.");
-    } finally { setUploadingUtility(false); }
+      setProofBase64(null); setProofFileName(null);
+      showFbAfterDismiss("success", "Submitted", "Proof of address submitted for compliance review.");
+    } catch (err: any) {
+      setUploadingUtility(false);
+      setUtilityModalVisible(false);
+      showFbAfterDismiss("error", "Submission Failed", typeof err === "string" ? err : "Failed to submit proof of address.");
+    }
   };
 
   const handleSubmitGovtId = async () => {
@@ -532,16 +602,18 @@ export default function AccountLimitsScreen() {
         identification_number: identificationNumber.trim() || undefined,
         government_id: govtIdBase64,
       })).unwrap();
-      setGovtIdModalVisible(false);
-      setGovtIdBase64(null); setGovtIdFileName(null); setIdentificationNumber("");
       await dispatch(getUserProfile()).unwrap().catch((error) => {
         console.warn("Unable to refresh profile after Government ID upload:", error);
       });
-      showFb("success", "Submitted", "Government ID submitted for compliance review.");
-    } catch (err: any) {
+      setUploadingGovtId(false);
       setGovtIdModalVisible(false);
-      showFb("error", "Submission Failed", typeof err === "string" ? err : "Failed to submit Government ID.");
-    } finally { setUploadingGovtId(false); }
+      setGovtIdBase64(null); setGovtIdFileName(null); setIdentificationNumber("");
+      showFbAfterDismiss("success", "Submitted", "Government ID submitted for compliance review.");
+    } catch (err: any) {
+      setUploadingGovtId(false);
+      setGovtIdModalVisible(false);
+      showFbAfterDismiss("error", "Submission Failed", typeof err === "string" ? err : "Failed to submit Government ID.");
+    }
   };
 
   const handleTier3Upgrade = async () => {
@@ -1038,57 +1110,6 @@ export default function AccountLimitsScreen() {
         </View>
       </BottomSheet>
 
-      {/* DOCUMENT SOURCE MODAL */}
-      <Modal
-        transparent
-        animationType="fade"
-        visible={documentPickerTarget !== null}
-        onRequestClose={() => setDocumentPickerTarget(null)}
-      >
-        <Pressable
-          onPress={() => setDocumentPickerTarget(null)}
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}
-        >
-          <Pressable
-            onPress={() => { }}
-            style={{ backgroundColor: C.white, borderRadius: 20, padding: 24, width: "100%", maxWidth: 420 }}
-          >
-            <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 18, marginBottom: 8 }}>
-              Choose document
-            </Text>
-            <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 13, lineHeight: 20, marginBottom: 20 }}>
-              Select an image from your gallery or a JPEG, PNG, or PDF from your files.
-            </Text>
-
-            <Pressable
-              onPress={() => void selectDocumentSource("gallery")}
-              style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 10 }}
-            >
-              <MaterialCommunityIcons name="image-outline" size={22} color={C.bgDark} />
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14 }}>Gallery</Text>
-                <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11, marginTop: 2 }}>Choose an image from your photo library</Text>
-              </View>
-            </Pressable>
-
-            <Pressable
-              onPress={() => void selectDocumentSource("files")}
-              style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 18 }}
-            >
-              <MaterialCommunityIcons name="file-document-outline" size={22} color={C.bgDark} />
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14 }}>Files</Text>
-                <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11, marginTop: 2 }}>Choose a JPEG, PNG, or PDF file</Text>
-              </View>
-            </Pressable>
-
-            <Pressable onPress={() => setDocumentPickerTarget(null)} style={{ alignItems: "center", paddingVertical: 8 }}>
-              <Text style={{ color: C.bgDark, fontFamily: "OutfitBold", fontSize: 14 }}>Cancel</Text>
-            </Pressable>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
       {/* BVN input modal (used when raw BVN not available) */}
       <Modal transparent animationType="fade" visible={bvnModalVisible} onRequestClose={() => setBvnModalVisible(false)}>
         <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }} onPress={() => setBvnModalVisible(false)}>
@@ -1129,11 +1150,12 @@ export default function AccountLimitsScreen() {
       <BottomSheet
         visible={utilityModalVisible}
         onClose={() => setUtilityModalVisible(false)}
+        hideshowButton={documentPickerTarget === "utility"}
         title="Proof of Address"
         buttonText={uploadingUtility ? "Submitting..." : "Submit Proof of Address"}
         onConfirm={handleSubmitUtility}
       >
-        <View className="py-2">
+        {documentPickerTarget === "utility" ? renderDocumentSourceChoice() : <View className="py-2">
           <Text style={{ color: C.textSub }} className="text-xs font-outfit mb-3">
             Select the document type and upload a clear copy from your gallery or files (maximum 4 MB).
           </Text>
@@ -1147,43 +1169,52 @@ export default function AccountLimitsScreen() {
                 onPress={() => setProofType(opt.value)}
                 style={{
                   flexDirection: "row", alignItems: "center", gap: 6,
-                  backgroundColor: proofType === opt.value ? C.bgDark : C.white,
+                  backgroundColor: C.white,
                   borderColor: proofType === opt.value ? C.bgDark : C.cardBorder,
-                  borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+                  borderWidth: proofType === opt.value ? 1.5 : 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
                 }}
               >
-                <MaterialCommunityIcons name={opt.icon as any} size={14} color={proofType === opt.value ? "#fff" : C.textSub} />
-                <Text style={{ color: proofType === opt.value ? "#fff" : C.textPrimary, fontSize: 11, fontFamily: "OutfitMedium" }}>{opt.label}</Text>
+                <MaterialCommunityIcons name={opt.icon as any} size={14} color={proofType === opt.value ? C.bgDark : C.textSub} />
+                <Text style={{ color: proofType === opt.value ? C.bgDark : C.textPrimary, fontSize: 11, fontFamily: proofType === opt.value ? "OutfitBold" : "OutfitMedium" }}>{opt.label}</Text>
               </Pressable>
             ))}
           </View>
 
           {/* File picker */}
-          <Pressable
+          <TouchableOpacity
             onPress={() => handlePickFile("utility")}
-            style={{ borderColor: C.accent, borderWidth: 2, borderStyle: "dashed", borderRadius: 12, backgroundColor: "#FAFAF5" }}
-            className="p-5 items-center"
+            activeOpacity={0.6}
+            disabled={preparingDocument}
+            hitSlop={8}
+            style={{ borderColor: C.accent, borderWidth: 2, borderStyle: "dashed", borderRadius: 12, backgroundColor: C.white, padding: 20, alignItems: "center" }}
           >
-            <MaterialCommunityIcons name="file-upload-outline" size={30} color={C.accent} />
-            <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 12, marginTop: 6, textAlign: "center" }}>
-              {proofFileName ? `✓ ${proofFileName}` : "Tap to choose from Gallery or Files"}
-            </Text>
-            {proofFileName && (
-              <Text style={{ color: C.green, fontSize: 10, fontFamily: "Outfit", marginTop: 2 }}>File ready to upload</Text>
+            {preparingDocument && Platform.OS === "ios" ? (
+              <ActivityIndicator size="small" color={C.accent} />
+            ) : (
+              <MaterialCommunityIcons name={proofFileName ? "file-check-outline" : "file-upload-outline"} size={30} color={proofFileName ? C.green : C.accent} />
             )}
-          </Pressable>
-        </View>
+            <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 12, marginTop: 6, textAlign: "center" }}>
+              {preparingDocument && Platform.OS === "ios"
+                ? "Preparing document…"
+                : proofFileName ? `✓ ${proofFileName}` : "Tap to choose from Gallery or Files"}
+            </Text>
+            {proofFileName && !preparingDocument && (
+              <Text style={{ color: C.green, fontSize: 10, fontFamily: "Outfit", marginTop: 2 }}>File ready to upload · tap to change</Text>
+            )}
+          </TouchableOpacity>
+        </View>}
       </BottomSheet>
 
       {/* GOVERNMENT ID BOTTOM SHEET */}
       <BottomSheet
         visible={govtIdModalVisible}
         onClose={() => setGovtIdModalVisible(false)}
+        hideshowButton={documentPickerTarget === "govtid"}
         title="Government-Issued ID"
         buttonText={uploadingGovtId ? "Uploading..." : "Submit Government ID"}
         onConfirm={handleSubmitGovtId}
       >
-        <View className="py-2">
+        {documentPickerTarget === "govtid" ? renderDocumentSourceChoice() : <View className="py-2">
           <Text style={{ color: C.textSub }} className="text-xs font-outfit mb-3">
             Select your ID type, enter the ID number, then upload a clear photo or scan (maximum 4 MB).
           </Text>
@@ -1230,27 +1261,35 @@ export default function AccountLimitsScreen() {
           />
 
           {/* File picker */}
-          <Pressable
+          <TouchableOpacity
             onPress={() => handlePickFile("govtid")}
-            style={{ borderColor: C.accent, borderWidth: 2, borderStyle: "dashed", borderRadius: 12, backgroundColor: "#FAFAF5" }}
-            className="p-5 items-center"
+            activeOpacity={0.6}
+            disabled={preparingDocument}
+            hitSlop={8}
+            style={{ borderColor: C.accent, borderWidth: 2, borderStyle: "dashed", borderRadius: 12, backgroundColor: C.white, padding: 20, alignItems: "center" }}
           >
-            <MaterialCommunityIcons name="card-account-details-outline" size={30} color={C.accent} />
-            <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 12, marginTop: 6, textAlign: "center" }}>
-              {govtIdFileName ? `✓ ${govtIdFileName}` : `Upload photo of your ${GOVT_ID_OPTIONS.find(o => o.value === govtIdType)?.label}`}
-            </Text>
-            {govtIdFileName && (
-              <Text style={{ color: C.green, fontSize: 10, fontFamily: "Outfit", marginTop: 2 }}>File ready to upload</Text>
+            {preparingDocument && Platform.OS === "ios" ? (
+              <ActivityIndicator size="small" color={C.accent} />
+            ) : (
+              <MaterialCommunityIcons name={govtIdFileName ? "file-check-outline" : "card-account-details-outline"} size={30} color={govtIdFileName ? C.green : C.accent} />
             )}
-          </Pressable>
-        </View>
+            <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 12, marginTop: 6, textAlign: "center" }}>
+              {preparingDocument && Platform.OS === "ios"
+                ? "Preparing document…"
+                : govtIdFileName ? `✓ ${govtIdFileName}` : `Upload photo of your ${GOVT_ID_OPTIONS.find(o => o.value === govtIdType)?.label}`}
+            </Text>
+            {govtIdFileName && !preparingDocument && (
+              <Text style={{ color: C.green, fontSize: 10, fontFamily: "Outfit", marginTop: 2 }}>File ready to upload · tap to change</Text>
+            )}
+          </TouchableOpacity>
+        </View>}
       </BottomSheet>
 
       <Modal
         transparent
         animationType="fade"
-        visible={preparingDocument || uploadingUtility || uploadingGovtId}
-        onRequestClose={() => {}}
+        visible={(preparingDocument && Platform.OS !== "ios") || uploadingUtility || uploadingGovtId}
+        onRequestClose={() => { }}
       >
         <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center" }}>
           <View style={{ backgroundColor: C.white, borderRadius: 16, padding: 24, alignItems: "center", minWidth: 180 }}>
