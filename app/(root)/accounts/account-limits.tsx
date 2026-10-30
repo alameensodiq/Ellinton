@@ -46,7 +46,10 @@ const C = {
 const MAX_TIER3_DOCUMENT_BYTES = 4 * 1024 * 1024;
 const MAX_TIER3_DOCUMENT_LABEL = "4 MB";
 const SESSION_TOKEN_TIMEOUT_MS = 30 * 1000;
+// Max time to wait for our backend to return the liveness result (after QoreID finishes).
 const FACE_VERIFICATION_TIMEOUT_MS = 30 * 1000;
+// Safety net only: if QoreID never calls back (e.g. user closes it), stop the loader.
+const QOREID_RESULT_WATCHDOG_MS = 5 * 60 * 1000;
 
 // ─── Status Pill ─────────────────────────────────────────────────────────────
 function StatusPill({
@@ -115,11 +118,23 @@ export default function AccountLimitsScreen() {
   const [isVerifyingFace, setIsVerifyingFace] = useState(false);
   const livenessRequest = useRef<{ reference: string; bvn: string } | null>(null);
   const isCheckingLiveness = useRef(false);
+  const qoreIdWatchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [bvnModalVisible, setBvnModalVisible] = useState(false);
   const [bvnInput, setBvnInput] = useState("");
   const [bvnError, setBvnError] = useState("");
 
+  const clearQoreIdWatchdog = () => {
+    if (qoreIdWatchdog.current) {
+      clearTimeout(qoreIdWatchdog.current);
+      qoreIdWatchdog.current = null;
+    }
+  };
+
+  useEffect(() => clearQoreIdWatchdog, []);
+
   const onQoreResult = async () => {
+    // QoreID has responded, so the "no callback" safety net is no longer needed.
+    clearQoreIdWatchdog();
     if (isCheckingLiveness.current) return;
 
     const request = livenessRequest.current;
@@ -130,6 +145,12 @@ export default function AccountLimitsScreen() {
     }
 
     isCheckingLiveness.current = true;
+    const controller = new AbortController();
+    let didResultTimeout = false;
+    const resultTimeoutId = setTimeout(() => {
+      didResultTimeout = true;
+      controller.abort();
+    }, FACE_VERIFICATION_TIMEOUT_MS);
     try {
       // QoreID completes first; allow the provider time to persist the result
       // before asking our backend for the definitive verification status.
@@ -141,6 +162,7 @@ export default function AccountLimitsScreen() {
       const response = await fetch(ONBOARDING_ENDPOINT(request.reference), {
         method: "GET",
         headers,
+        signal: controller.signal,
       });
       const payload = await response.json().catch(() => ({}));
       const result = payload?.data ?? payload;
@@ -164,19 +186,27 @@ export default function AccountLimitsScreen() {
           // console.warn("Unable to refresh profile after liveness verification:", error);
         });
         setIsVerifyingFace(false);
-        showFb("success", "Verification", "BVN liveness completed.");
+        showFbAfterDismiss("success", "Verification", "BVN liveness completed.");
       } else {
+        // Only now do we know the verification actually failed.
         setIsVerifyingFace(false);
-        // showFb(
-        //   "error",
-        //   "Verification",
-        //   result?.message || payload?.message || "BVN liveness verification was not successful."
-        // );
+        showFbAfterDismiss(
+          "error",
+          "Verification Failed",
+          result?.message || payload?.message || "Something went wrong, Please try again"
+        );
       }
     } catch (error: any) {
       setIsVerifyingFace(false);
-      // showFb("error", "Verification", error?.message || "Unable to retrieve the BVN liveness result.");
+      showFbAfterDismiss(
+        "error",
+        "Verification Failed",
+        didResultTimeout
+          ? "Verification is taking too long. Please try again."
+          : "Something went wrong, Please try again"
+      );
     } finally {
+      clearTimeout(resultTimeoutId);
       livenessRequest.current = null;
       isCheckingLiveness.current = false;
     }
@@ -223,23 +253,6 @@ export default function AccountLimitsScreen() {
     else showFb(type, title, msg);
   };
 
-  useEffect(() => {
-    if (!isVerifyingFace) return;
-
-    const timeoutId = setTimeout(() => {
-      livenessRequest.current = null;
-      isCheckingLiveness.current = false;
-      setIsVerifyingFace(false);
-      setFb({
-        visible: true,
-        type: "error",
-        title: "Verification Failed",
-        msg: "Something went wrong, Please try again",
-      });
-    }, FACE_VERIFICATION_TIMEOUT_MS);
-
-    return () => clearTimeout(timeoutId);
-  }, [isVerifyingFace]);
 
   const [prereqModalVisible, setPrereqModalVisible] = useState(false);
   const [utilityModalVisible, setUtilityModalVisible] = useState(false);
@@ -713,6 +726,14 @@ export default function AccountLimitsScreen() {
 
       // Launch the QoreId flow
       setIsVerifyingFace(true);
+      clearQoreIdWatchdog();
+      qoreIdWatchdog.current = setTimeout(() => {
+        qoreIdWatchdog.current = null;
+        // Never interrupt a result check that is already in progress.
+        if (isCheckingLiveness.current) return;
+        livenessRequest.current = null;
+        setIsVerifyingFace(false);
+      }, QOREID_RESULT_WATCHDOG_MS);
       launchQoreId(formData);
     } catch (error: any) {
       livenessRequest.current = null;
@@ -1097,7 +1118,7 @@ export default function AccountLimitsScreen() {
             {missingProfileFields.length > 0 ? missingProfileFields.map((field) => (
               <View key={field} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <MaterialCommunityIcons name="circle-small" size={20} color={C.bgDark} />
-                <Text style={{ color: C.textPrimary, fontFamily: "Outfit", fontSize: 13, flex: 1 }}>
+                <Text style={{ color: "#fff", fontFamily: "Outfit", fontSize: 13, flex: 1 }}>
                   {field.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
                 </Text>
               </View>

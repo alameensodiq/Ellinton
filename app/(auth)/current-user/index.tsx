@@ -94,7 +94,7 @@ export default function CurrentUser() {
             ? { email: userIdentifier.toLowerCase(), passcode: savedPin, device_id: deviceId }
             : { phone: userIdentifier, passcode: savedPin, device_id: deviceId };
 
-            console.log(payload)
+          console.log(payload)
 
           await dispatch(loginUser(payload)).unwrap();
 
@@ -333,7 +333,7 @@ export default function CurrentUser() {
               </View>
 
               <InfoText
-                text="Not you?"
+                text=""
                 actionText="Back to login"
                 onPress={() => router.replace("/(auth)/login")}
               />

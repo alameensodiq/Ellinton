@@ -109,7 +109,7 @@ export default function Card({
                   <TouchableOpacity
                     className="flex-col items-center gap-2 px-6 py-6 bg-primary-500 border border-white/10 rounded-xl"
                     onPress={() => {
-                      if (action.label === "Accounts") {
+                      if (action.label === "Account") {
                         onOpenAccounts?.();
                       } else if (action.label === "Transfer") {
                         router.push("/transfer");

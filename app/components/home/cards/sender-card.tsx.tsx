@@ -13,6 +13,11 @@ export default function SenderCard() {
     error,
   } = useSelector((state: RootState) => state.accounts);
   const {user } = useSelector((state: RootState) => state.auth);
+  const initials =
+    [user?.first_name, user?.last_name]
+      .filter((name): name is string => !!name?.trim())
+      .map((name) => name.trim().charAt(0).toUpperCase())
+      .join("") || "U";
   return (
     <View className="mb-6">
       <Text className="text-sm text-white/70 mb-3">You are sending from</Text>
@@ -41,11 +46,15 @@ export default function SenderCard() {
           </View>
 
           <View className="flex-row items-center">
-            <View className="w-12 h-12 rounded-full overflow-hidden -mr-4">
-              <Image
-                source={{ uri: user?.passport || "https://i.pravatar.cc/100" }}
-                className="w-full h-full"
-              />
+            <View className="w-12 h-12 rounded-full overflow-hidden -mr-4 bg-primary-300 items-center justify-center">
+              {user?.passport ? (
+                <Image
+                  source={{ uri: user.passport }}
+                  className="w-full h-full"
+                />
+              ) : (
+                <Text className="text-base font-bold text-white">{initials}</Text>
+              )}
             </View>
 
             <TouchableOpacity className="w-12 h-12 rounded-full bg-primary-400 items-center justify-center z-10 overflow-hidden">
