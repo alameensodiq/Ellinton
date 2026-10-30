@@ -47,7 +47,7 @@
           "fetch"
         ]
       },
-      "buildNumber": "9"
+      "buildNumber": "10"
     },
     "android": {
       "package": "com.ellingtonmfb.app",
