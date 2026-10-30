@@ -59,7 +59,7 @@ export default function SecurityScreen() {
   const user = useAppSelector((state) => state.auth.user);
   const requiresTransactionPinSetup = user?.has_transaction_pin === false;
 
-  const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_required ?? false);
+  const [mfaEnabled, setMfaEnabled] = useState(user?.mfa_enabled ?? false);
   // Biometrics are opt-in; a missing preference must be off.
   const [loginBiometric, setLoginBiometric] = useState(false);
   const [transBiometric, setTransBiometric] = useState(false);
@@ -78,9 +78,9 @@ export default function SecurityScreen() {
   const [mfaErrorMessage, setMfaErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setMfaEnabled(user?.mfa_required ?? false);
+    setMfaEnabled(user?.mfa_enabled ?? false);
     loadBiometrics();
-  }, [user?.mfa_required]);
+  }, [user?.mfa_enabled]);
 
   const loadBiometrics = async () => {
     try {
