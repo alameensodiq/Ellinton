@@ -178,11 +178,12 @@ class EncryptedFetch {
     return response;
   }
 
-  async post(url: string, body?: any, headers?: HeadersInit): Promise<Response> {
+  async post(url: string, body?: any, headers?: HeadersInit, signal?: AbortSignal): Promise<Response> {
     return this.request(url, {
       method: 'POST',
       body: body ? JSON.stringify(body) : undefined,
-      headers
+      headers,
+      signal
     });
   }
 

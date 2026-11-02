@@ -72,7 +72,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
-        return await encryptedFetch.post(url, body, enhancedHeaders);
+        return await encryptedFetch.post(url, body, enhancedHeaders, options.signal ?? undefined);
       case "put":
         return await encryptedFetch.put(url, body, enhancedHeaders);
       case "patch":
@@ -251,7 +251,11 @@ export const TransactionPinValidation = createAsyncThunk<
   TransactionPinPayload
 >(
   "transaction-pin/validate",
-  async (payload, { rejectWithValue, getState }) => {
+  async (payload, { rejectWithValue, getState, signal }) => {
+    const requestController = new AbortController();
+    const abortRequest = () => requestController.abort();
+    const timeout = setTimeout(() => requestController.abort(), 45000);
+    signal.addEventListener("abort", abortRequest);
     try {
       const token = (getState() as any).auth.token;
 
@@ -262,6 +266,7 @@ export const TransactionPinValidation = createAsyncThunk<
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
+        signal: requestController.signal,
       });
 
       const result = await response.json().catch(() => null);
@@ -272,7 +277,12 @@ export const TransactionPinValidation = createAsyncThunk<
 
       return result.data ?? { status: "SUCCESS" };
     } catch (err: any) {
-      return rejectWithValue(err.message || "Network Error");
+      return rejectWithValue(requestController.signal.aborted
+        ? "Transfer request timed out or was cancelled. Check your transaction history before trying again."
+        : err.message || "Network Error");
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abortRequest);
     }
   }
 );
@@ -282,7 +292,11 @@ export const performIntraBankTransfer = createAsyncThunk<
   TransferPayload
 >(
   "transfers/performIntraBank",
-  async (payload, { rejectWithValue, getState }) => {
+  async (payload, { rejectWithValue, getState, signal }) => {
+    const requestController = new AbortController();
+    const abortRequest = () => requestController.abort();
+    const timeout = setTimeout(() => requestController.abort(), 45000);
+    signal.addEventListener("abort", abortRequest);
     try {
       const token = (getState() as any).auth.token;
 
@@ -293,6 +307,7 @@ export const performIntraBankTransfer = createAsyncThunk<
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
+        signal: requestController.signal,
       });
 
       const result = await response.json().catch(() => null);
@@ -303,7 +318,12 @@ export const performIntraBankTransfer = createAsyncThunk<
 
       return result.data ?? { status: "SUCCESS" };
     } catch (err: any) {
-      return rejectWithValue(err.message || "Network Error");
+      return rejectWithValue(requestController.signal.aborted
+        ? "Transfer request timed out or was cancelled. Check your transaction history before trying again."
+        : err.message || "Network Error");
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abortRequest);
     }
   }
 );
@@ -313,7 +333,11 @@ export const performInterBankTransfer = createAsyncThunk<
   InterBankTransferPayload
 >(
   "transfers/performInterBank",
-  async (payload, { rejectWithValue, getState }) => {
+  async (payload, { rejectWithValue, getState, signal }) => {
+    const requestController = new AbortController();
+    const abortRequest = () => requestController.abort();
+    const timeout = setTimeout(() => requestController.abort(), 45000);
+    signal.addEventListener("abort", abortRequest);
     try {
       const token = (getState() as any).auth.token;
 
@@ -324,6 +348,7 @@ export const performInterBankTransfer = createAsyncThunk<
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
+        signal: requestController.signal,
       });
 
       const result = await response.json().catch(() => null);
@@ -334,7 +359,12 @@ export const performInterBankTransfer = createAsyncThunk<
 
       return result.data ?? { status: "SUCCESS" };
     } catch (err: any) {
-      return rejectWithValue(err.message || "Network Error");
+      return rejectWithValue(requestController.signal.aborted
+        ? "Transfer request timed out or was cancelled. Check your transaction history before trying again."
+        : err.message || "Network Error");
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abortRequest);
     }
   }
 );

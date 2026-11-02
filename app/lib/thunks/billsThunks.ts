@@ -72,7 +72,7 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
-        return await encryptedFetch.post(url, body, enhancedHeaders);
+        return await encryptedFetch.post(url, body, enhancedHeaders, options.signal ?? undefined);
       case "put":
         return await encryptedFetch.put(url, body, enhancedHeaders);
       case "patch":
@@ -261,9 +261,13 @@ export const validatePhoneNumber = createAsyncThunk<
 
 export const payBill = createAsyncThunk<any, PayBillPayload>(
   "bills/payBill",
-  async (payload, { rejectWithValue, getState }) => {
+  async (payload, { rejectWithValue, getState, signal }) => {
     const state = getState() as any;
     const token = state.auth.token;
+    const requestController = new AbortController();
+    const abortRequest = () => requestController.abort();
+    const timeout = setTimeout(() => requestController.abort(), 45000);
+    signal.addEventListener("abort", abortRequest);
     try {
       const response = await safeFetch(BILLS_PAY_ENDPOINT, {
         method: "POST",
@@ -272,6 +276,7 @@ export const payBill = createAsyncThunk<any, PayBillPayload>(
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
+        signal: requestController.signal,
       });
       const data: ApiResponse<any> = await response.json();
       console.log(data);
@@ -281,8 +286,13 @@ export const payBill = createAsyncThunk<any, PayBillPayload>(
       }
       return data;
     } catch (error: any) {
-      console.log(error)
-      return rejectWithValue(error.message || "Network error");
+      const message = requestController.signal.aborted
+        ? "Payment request timed out or was cancelled. Check your transaction history before trying again."
+        : error?.message || "Network error. Please try again.";
+      return rejectWithValue(message);
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abortRequest);
     }
   }
 );

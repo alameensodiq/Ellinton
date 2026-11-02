@@ -22,7 +22,7 @@ export default function ServicesSection() {
     if (item.id === "6") { router.push("/(root)/travel-&-hotel-payment"); return true; }
     if (item.id === "7") { router.push("/(root)/internet"); return true; }
     // if (item.id === "8") { router.push("/(root)/other-bills"); return true; }
-    if (item.id === "9") { router.push("/(root)/loans"); return true; }
+    // if (item.id === "9") { router.push("/(root)/loans"); return true; }
 
     // Savings/Wealth Management routes
     // if (item.id === "12") { router.push({ pathname: "/(root)/savings", params: { type: "basic" } }); return true; }
@@ -44,14 +44,14 @@ export default function ServicesSection() {
         items={billPaymentServices}
         onItemPress={handleItemPress}
       />
-      <OtherServicesSection
+      {/* <OtherServicesSection
         items={otherServices}
         onItemPress={handleItemPress}
-      />
-      <WealthManagementSection
+      /> */}
+      {/* <WealthManagementSection
         items={wealthManagement}
         onItemPress={handleItemPress}
-      />
+      /> */}
     </View>
   );
 }

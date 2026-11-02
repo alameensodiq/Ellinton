@@ -60,6 +60,7 @@ const Loans = () => {
   const router = useRouter();
 
   const [selectedLoan, setSelectedLoan] = useState<string | null>(null);
+  const [selectionError, setSelectionError] = useState("");
 
   const {
     products,
@@ -142,7 +143,11 @@ const Loans = () => {
   }, [visibleProducts, selectedLoan]);
 
   const handleContinue = () => {
-    if (!selectedProduct) return;
+    if (!selectedProduct) {
+      setSelectionError("Please select a loan type to continue.");
+      return;
+    }
+    setSelectionError("");
 
     router.push({
       pathname: "/(root)/loans/step4",
@@ -203,7 +208,10 @@ const Loans = () => {
             return (
               <Pressable
                 key={loan.id}
-                onPress={() => setSelectedLoan(productCode)}
+                onPress={() => {
+                  setSelectedLoan(productCode);
+                  setSelectionError("");
+                }}
                 className={`mb-4 rounded-3xl p-4 bg-primary-400 border ${
                   isSelected ? "border-primary-200" : "border-transparent"
                 }`}
@@ -261,9 +269,14 @@ const Loans = () => {
       </ScrollView>
 
       <View className="px-6 pb-6 pt-2">
+        {!!selectionError && (
+          <CustomText size="sm" className="text-red-500 text-center mb-3">
+            {selectionError}
+          </CustomText>
+        )}
         <Button
           title="Continue"
-          disabled={!selectedProduct || loading}
+          disabled={loading}
           onPress={handleContinue}
           variant="primary"
           className="py-5"

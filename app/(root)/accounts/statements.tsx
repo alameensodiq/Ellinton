@@ -165,15 +165,21 @@ export default function AccountStatementsScreen() {
           </View>
 
           {openStartPicker && (
-            <DateTimePicker value={startDate} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} onChange={(e, d) => { setOpenStartPicker(false); if (d) setStartDate(d); }} />
+            <>
+              <DateTimePicker value={startDate} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} maximumDate={new Date()} onChange={(_, d) => { if (Platform.OS !== "ios") setOpenStartPicker(false); if (d) setStartDate(d); }} />
+              {Platform.OS === "ios" && <Button title="Done" onPress={() => setOpenStartPicker(false)} />}
+            </>
           )}
           {openEndPicker && (
-            <DateTimePicker value={endDate} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} onChange={(e, d) => { setOpenEndPicker(false); if (d) setEndDate(d); }} />
+            <>
+              <DateTimePicker value={endDate} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} minimumDate={startDate} maximumDate={new Date()} onChange={(_, d) => { if (Platform.OS !== "ios") setOpenEndPicker(false); if (d) setEndDate(d); }} />
+              {Platform.OS === "ios" && <Button title="Done" onPress={() => setOpenEndPicker(false)} />}
+            </>
           )}
         </SectionCard>
 
         {/* 2. FILE FORMAT */}
-        <SectionCard title="2. File Format">
+        {/* <SectionCard title="2. File Format">
           <View className="flex-row gap-3">
             {[
               { id: "pdf", icon: "file-pdf-box", label: "PDF Document", sub: "Official stamp included", selBg: "#FEF2F2", selBorder: "#FCA5A5", selIconColor: "#DC2626", selTextColor: "#7F1D1D" },
@@ -201,15 +207,15 @@ export default function AccountStatementsScreen() {
               );
             })}
           </View>
-        </SectionCard>
+        </SectionCard> */}
 
         {/* 3. DELIVERY METHOD */}
-        <SectionCard title="3. Delivery Method">
+        <SectionCard title="2. Delivery Method">
           <View style={{ gap: 10 }}>
             {[
               { id: "email", title: "Send to Registered Email", subtitle: user?.email || "your-email@domain.com", icon: "email-outline" },
-              { id: "download", title: "Download to Device", subtitle: "Saves PDF into your downloads folder", icon: "download-outline" },
-              { id: "in_app", title: "Instant In-App Viewer", subtitle: "Preview statement on your screen now", icon: "eye-outline" },
+              // { id: "download", title: "Download to Device", subtitle: "Saves PDF into your downloads folder", icon: "download-outline" },
+              // { id: "in_app", title: "Instant In-App Viewer", subtitle: "Preview statement on your screen now", icon: "eye-outline" },
             ].map((item) => {
               const sel = delivery === item.id;
               return (

@@ -11,6 +11,7 @@ import {
   ActionSheetIOS,
   InteractionManager,
   TouchableOpacity,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, Feather } from "@expo/vector-icons";
@@ -107,6 +108,47 @@ const PROOF_OPTIONS: { value: ProofOfAddressType; label: string; icon: string }[
   { value: ProofOfAddressType.LAWMA_BILL, label: "LAWMA / Utility Bill", icon: "file-document-outline" },
   { value: ProofOfAddressType.BANK_STATEMENT, label: "3-Month Bank Statement", icon: "bank-outline" },
 ];
+
+const getIdentificationNumberError = (
+  type: GovernmentIdType,
+  value: string,
+): string | null => {
+  const id = value.trim().toUpperCase();
+  if (!id) return null;
+
+  switch (type) {
+    case GovernmentIdType.PASSPORT:
+      return /^[A-Z]\d{8}$/.test(id)
+        ? null
+        : "Passport number must be 1 uppercase letter followed by 8 digits.";
+    case GovernmentIdType.VOTERS_CARD:
+      return /^[A-Z0-9]{19}$/.test(id)
+        ? null
+        : "Voter's Card number must contain 19 letters or digits.";
+    case GovernmentIdType.DRIVERS_LICENSE:
+      return /^[A-Z]{3}\d{5}[A-Z]{2}\d{1,2}$/.test(id)
+        ? null
+        : "Driver's License number must match the 11 or 12 character format.";
+    case GovernmentIdType.NIN:
+    case GovernmentIdType.NATIONAL_ID:
+      return /^\d{11}$/.test(id) ? null : "NIN must contain 11 digits.";
+    default:
+      return null;
+  }
+};
+
+const getIdentificationNumberMaxLength = (type: GovernmentIdType) => {
+  switch (type) {
+    case GovernmentIdType.PASSPORT:
+      return 9;
+    case GovernmentIdType.VOTERS_CARD:
+      return 19;
+    case GovernmentIdType.DRIVERS_LICENSE:
+      return 12;
+    default:
+      return 11;
+  }
+};
 
 export default function AccountLimitsScreen() {
   const router = useRouter();
@@ -272,10 +314,26 @@ export default function AccountLimitsScreen() {
   const [govtIdBase64, setGovtIdBase64] = useState<string | null>(null);
   const [govtIdFileName, setGovtIdFileName] = useState<string | null>(null);
   const [identificationNumber, setIdentificationNumber] = useState("");
+  const identificationNumberInputRef = useRef<TextInput>(null);
+  const shouldRefocusIdentificationNumber = useRef(false);
   const [uploadingGovtId, setUploadingGovtId] = useState(false);
   const isNinId =
     govtIdType === GovernmentIdType.NIN ||
     govtIdType === GovernmentIdType.NATIONAL_ID;
+
+  useEffect(() => {
+    if (!shouldRefocusIdentificationNumber.current) return;
+
+    // iOS may keep the old keyboard type if the field is refocused while the
+    // previous keyboard is still dismissing. Wait for dismissal to finish so
+    // the updated keyboardType is applied before focusing the same input.
+    const timeout = setTimeout(() => {
+      shouldRefocusIdentificationNumber.current = false;
+      identificationNumberInputRef.current?.focus();
+    }, Platform.OS === "ios" ? 300 : 0);
+
+    return () => clearTimeout(timeout);
+  }, [govtIdType]);
 
   // Document status comes from the latest user profile returned by the API.
   // These verification fields are the source of truth for Tier 3 documents.
@@ -606,6 +664,14 @@ export default function AccountLimitsScreen() {
 
     if (!govtIdBase64 || !isValidDocumentDataUri(govtIdBase64)) {
       showFb("info", "Validation", "Please select a valid Government ID document in JPEG, PNG or PDF format.");
+      return;
+    }
+    const identificationNumberError = getIdentificationNumberError(
+      govtIdType,
+      identificationNumber,
+    );
+    if (identificationNumberError) {
+      showFb("info", "Validation", identificationNumberError);
       return;
     }
     setUploadingGovtId(true);
@@ -1187,7 +1253,13 @@ export default function AccountLimitsScreen() {
             {PROOF_OPTIONS.map((opt) => (
               <Pressable
                 key={opt.value}
-                onPress={() => setProofType(opt.value)}
+                onPress={() => {
+                  if (opt.value !== proofType) {
+                    setProofBase64(null);
+                    setProofFileName(null);
+                  }
+                  setProofType(opt.value);
+                }}
                 style={{
                   flexDirection: "row", alignItems: "center", gap: 6,
                   backgroundColor: C.white,
@@ -1247,10 +1319,16 @@ export default function AccountLimitsScreen() {
               <Pressable
                 key={opt.value}
                 onPress={() => {
-                  setGovtIdType(opt.value);
-                  if (opt.value === GovernmentIdType.NIN || opt.value === GovernmentIdType.NATIONAL_ID) {
-                    setIdentificationNumber((value) => value.replace(/\D/g, "").slice(0, 11));
+                  if (opt.value !== govtIdType) {
+                    shouldRefocusIdentificationNumber.current =
+                      identificationNumberInputRef.current?.isFocused() ?? false;
+                    identificationNumberInputRef.current?.blur();
+                    Keyboard.dismiss();
+                    setIdentificationNumber("");
+                    setGovtIdBase64(null);
+                    setGovtIdFileName(null);
                   }
+                  setGovtIdType(opt.value);
                 }}
                 style={{
                   flexDirection: "row", alignItems: "center", gap: 6,
@@ -1268,16 +1346,21 @@ export default function AccountLimitsScreen() {
           {/* ID Number */}
           <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 12, marginBottom: 6 }}>ID / Document Number</Text>
           <TextInput
+            ref={identificationNumberInputRef}
             value={identificationNumber}
-            onChangeText={(value) =>
+            onChangeText={(value) => {
+              const normalized = isNinId
+                ? value.replace(/\D/g, "")
+                : value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
               setIdentificationNumber(
-                isNinId ? value.replace(/\D/g, "").slice(0, 11) : value
-              )
-            }
+                normalized.slice(0, getIdentificationNumberMaxLength(govtIdType)),
+              );
+            }}
             placeholder={`Enter your ${GOVT_ID_OPTIONS.find(o => o.value === govtIdType)?.label || "ID"} number`}
             placeholderTextColor="#9A9B7A"
             keyboardType={isNinId ? "numeric" : "default"}
-            maxLength={isNinId ? 11 : undefined}
+            autoCapitalize="characters"
+            maxLength={getIdentificationNumberMaxLength(govtIdType)}
             style={{ backgroundColor: "#FAFAF5", borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11, color: C.textPrimary, fontFamily: "Outfit", fontSize: 13, marginBottom: 14 }}
           />
 

@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import Header from "@/app/components/header-back";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Numpad from "@/app/components/inputs/Numpad";
+import ErrorModal from "@/app/components/ErrorModal";
 
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { payBill } from "@/app/lib/thunks/billsThunks";
@@ -155,15 +156,17 @@ export default function AuthorizeDataPayment() {
 
           {loading && <ActivityIndicator className="mt-6" color="#fff" />}
 
-          {error && (
-            <Text className="text-red-500 text-sm mt-4 text-center">
-              {error}
-            </Text>
-          )}
         </View>
 
         <Numpad onPress={handleNumberPress} onDelete={handleDelete} />
       </View>
+
+      <ErrorModal
+        visible={!!error}
+        title="Payment Failed"
+        message={error || "Service not available at this time, please try again later"}
+        onDismiss={() => setError(null)}
+      />
     </SafeAreaView>
   );
 }

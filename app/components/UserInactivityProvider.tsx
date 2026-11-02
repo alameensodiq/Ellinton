@@ -2,7 +2,6 @@ import { useRouter, usePathname } from "expo-router";
 import { useEffect, useRef, useCallback } from "react";
 import { AppState, AppStateStatus, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { logoutUser } from "../lib/thunks/authThunks";
 import { clearError, logout } from "../lib/slices/authSlice";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
@@ -56,15 +55,19 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
         inactivityTimer.current = null;
       }
 
-      // 1. Immediately update auth state and navigate to prevent UI delay
+      // Clear local credentials before exposing the signed-out screen, so a
+      // quick re-login cannot have its newly written credentials removed by
+      // this cleanup operation.
+      await clearSessionStorage();
+
+      // Update auth state and navigate after the old session storage is clear.
       dispatch(logout());
       dispatch(clearError());
       router.replace("/(auth)/current-user");
 
-      // 2. Perform backend & Firebase sign-out and selective storage cleanup asynchronously in background
-      clearSessionStorage();
-      dispatch(logoutUser());
-      signOut(auth).catch(console.error);
+      // Do not dispatch logoutUser here: its async completion can race with a
+      // new login and clear the fresh credentials from Redux.
+      await signOut(auth).catch(console.error);
     } catch (error) {
       console.error("Logout error:", error);
       dispatch(logout());

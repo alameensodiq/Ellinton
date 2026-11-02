@@ -72,6 +72,7 @@ export default function TransferScreen() {
     (state: RootState) => state.beneficiaries.error
   );
   const banks = useSelector((state: RootState) => state.accounts.banks);
+  console.log(banks)
   const validationResult = useSelector(
     (state: RootState) => state.accounts.validationResult
   );

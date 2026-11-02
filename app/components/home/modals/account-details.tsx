@@ -154,10 +154,10 @@ Holder: ${accountHolder}`;
 
             <View className="p-6">
               <Text className="text-2xl font-bold text-white mb-2">
-                Your bank detail
+                Your bank details
               </Text>
               <Text className="text-sm text-accent-100 mb-6">
-                See your account detail below
+                See your account details below
               </Text>
 
               {loading ? (

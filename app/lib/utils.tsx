@@ -57,7 +57,7 @@ const billPaymentServices: ServiceItem[] = [
 ];
 
 const otherServices: ServiceItem[] = [
-  { id: "9", icon: SERVICE_ICONS.requestLoan, label: "Request loan" },
+  // { id: "9", icon: SERVICE_ICONS.requestLoan, label: "Request loan" },
   // { id: "10", icon: SERVICE_ICONS.insurance, label: "Buy Insurance" },
   // { id: "11", icon: SERVICE_ICONS.schedule, label: "Schedule transaction" },
 ];

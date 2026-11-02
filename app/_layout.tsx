@@ -399,8 +399,17 @@ export default function RootLayout() {
         const requestHeaders = new Headers(init?.headers);
         const shouldPreserveSession =
           requestHeaders.get("x-preserve-session-on-401") === "true";
+        const requestAuthorization = requestHeaders.get("Authorization");
+        const requestToken = requestAuthorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+        const activeToken = store.getState().auth.token;
 
-        if (response && response.status === 401 && !shouldPreserveSession) {
+        if (
+          response &&
+          response.status === 401 &&
+          !shouldPreserveSession &&
+          requestToken &&
+          requestToken === activeToken
+        ) {
           try {
             await AsyncStorage.removeItem("authToken");
           } catch (e) {
