@@ -562,6 +562,7 @@ import { useDispatch } from "react-redux";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { AppDispatch, RootState } from "../lib/store";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
+import TransactionPinSetupGuard from "@/app/components/TransactionPinSetupGuard";
 import { restoreAuth } from "../lib/thunks/authThunks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import crashlytics from "@react-native-firebase/crashlytics";
@@ -846,5 +847,10 @@ export default function AuthWrapper() {
     return null;
   }
 
-  return <Stack screenOptions={{ headerShown: false, gestureEnabled: false }} />;
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false, gestureEnabled: false }} />
+      <TransactionPinSetupGuard />
+    </>
+  );
 }

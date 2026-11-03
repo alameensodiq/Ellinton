@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Modal,
   View,
@@ -45,7 +45,6 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   onCancel,
 }) => {
   const slideAnim = useRef(new Animated.Value(screenHeight)).current;
-  const [contentHeight, setContentHeight] = useState<number>(0);
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -123,7 +122,6 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
           >
             <View
               style={{ padding: 24 }}
-              onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
             >
             <View style={{ marginBottom: 16 }}>
               {title && (

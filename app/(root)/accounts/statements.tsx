@@ -5,6 +5,7 @@ import {
   ScrollView,
   Pressable,
   Platform,
+  Modal,
   TextInput,
   Alert,
 } from "react-native";
@@ -50,7 +51,7 @@ export default function AccountStatementsScreen() {
   const user = useAppSelector((state) => state.auth.user);
 
   const [preset, setPreset] = useState<DateRangePreset>("30");
-  const [startDate, setStartDate] = useState<Date>(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+  const [startDate, setStartDate] = useState<Date>(() => new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [openStartPicker, setOpenStartPicker] = useState(false);
   const [openEndPicker, setOpenEndPicker] = useState(false);
@@ -59,6 +60,22 @@ export default function AccountStatementsScreen() {
   const [requesting, setRequesting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const today = new Date();
+  today.setHours(23, 59, 59, 999);
+
+  const handleStartDateChange = (_: unknown, selectedDate?: Date) => {
+    if (!selectedDate) return;
+    const selected = selectedDate > today ? today : selectedDate;
+    setStartDate(selected);
+    if (endDate < selected) setEndDate(selected);
+  };
+
+  const handleEndDateChange = (_: unknown, selectedDate?: Date) => {
+    if (!selectedDate) return;
+    const selected = selectedDate > today ? today : selectedDate;
+    setEndDate(selected < startDate ? startDate : selected);
+  };
 
   const handleSelectPreset = (days: DateRangePreset) => {
     setPreset(days);
@@ -153,7 +170,7 @@ export default function AccountStatementsScreen() {
           </View>
 
           <View className="flex-row gap-3">
-            {[{ label: "Start Date", date: startDate, onOpen: () => { setPreset("custom"); setOpenStartPicker(true); } }, { label: "End Date", date: endDate, onOpen: () => { setPreset("custom"); setOpenEndPicker(true); } }].map((item) => (
+            {[{ label: "Start Date", date: startDate, onOpen: () => { setPreset("custom"); setOpenEndPicker(false); setOpenStartPicker(true); } }, { label: "End Date", date: endDate, onOpen: () => { setPreset("custom"); setOpenStartPicker(false); setOpenEndPicker(true); } }].map((item) => (
               <View key={item.label} style={{ flex: 1 }}>
                 <Text style={{ color: C.textSub, fontSize: 11, fontFamily: "Outfit", marginBottom: 6 }}>{item.label}</Text>
                 <Pressable onPress={item.onOpen} style={{ backgroundColor: C.inputBg, borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
@@ -164,18 +181,6 @@ export default function AccountStatementsScreen() {
             ))}
           </View>
 
-          {openStartPicker && (
-            <>
-              <DateTimePicker value={startDate} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} maximumDate={new Date()} onChange={(_, d) => { if (Platform.OS !== "ios") setOpenStartPicker(false); if (d) setStartDate(d); }} />
-              {Platform.OS === "ios" && <Button title="Done" onPress={() => setOpenStartPicker(false)} />}
-            </>
-          )}
-          {openEndPicker && (
-            <>
-              <DateTimePicker value={endDate} mode="date" display={Platform.OS === "ios" ? "spinner" : "default"} minimumDate={startDate} maximumDate={new Date()} onChange={(_, d) => { if (Platform.OS !== "ios") setOpenEndPicker(false); if (d) setEndDate(d); }} />
-              {Platform.OS === "ios" && <Button title="Done" onPress={() => setOpenEndPicker(false)} />}
-            </>
-          )}
         </SectionCard>
 
         {/* 2. FILE FORMAT */}
@@ -254,6 +259,76 @@ export default function AccountStatementsScreen() {
           disabled={!canSubmit || requesting}
         />
       </ScrollView>
+
+      {Platform.OS !== "ios" && openStartPicker && (
+        <DateTimePicker
+          value={startDate}
+          mode="date"
+          display="default"
+          maximumDate={today}
+          onChange={(event, selectedDate) => {
+            setOpenStartPicker(false);
+            handleStartDateChange(event, selectedDate);
+          }}
+        />
+      )}
+      {Platform.OS !== "ios" && openEndPicker && (
+        <DateTimePicker
+          value={endDate}
+          mode="date"
+          display="default"
+          minimumDate={startDate}
+          maximumDate={today}
+          onChange={(event, selectedDate) => {
+            setOpenEndPicker(false);
+            handleEndDateChange(event, selectedDate);
+          }}
+        />
+      )}
+
+      {Platform.OS === "ios" && (
+        <Modal
+          visible={openStartPicker || openEndPicker}
+          transparent
+          animationType="slide"
+          presentationStyle="overFullScreen"
+          onRequestClose={() => {
+            setOpenStartPicker(false);
+            setOpenEndPicker(false);
+          }}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }}>
+            <View style={{ backgroundColor: C.white, paddingHorizontal: 20, paddingTop: 18, paddingBottom: 28, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
+              <View className="flex-row items-center justify-between mb-2">
+                <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 16 }}>
+                  {openStartPicker ? "Select Start Date" : "Select End Date"}
+                </Text>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setOpenStartPicker(false);
+                    setOpenEndPicker(false);
+                  }}
+                  hitSlop={12}
+                >
+                  <Text style={{ color: C.bgDark, fontFamily: "OutfitBold", fontSize: 14 }}>Done</Text>
+                </Pressable>
+              </View>
+              <DateTimePicker
+                value={openStartPicker ? startDate : endDate}
+                mode="date"
+                display="spinner"
+                themeVariant="light"
+                textColor={C.textPrimary}
+                style={{ height: 220, width: "100%" }}
+                minimumDate={openEndPicker ? startDate : undefined}
+                maximumDate={today}
+                onChange={openStartPicker ? handleStartDateChange : handleEndDateChange}
+              />
+            </View>
+          </View>
+        </Modal>
+      )}
 
       <SuccessModal
         visible={showSuccess}

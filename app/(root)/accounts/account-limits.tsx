@@ -315,25 +315,10 @@ export default function AccountLimitsScreen() {
   const [govtIdFileName, setGovtIdFileName] = useState<string | null>(null);
   const [identificationNumber, setIdentificationNumber] = useState("");
   const identificationNumberInputRef = useRef<TextInput>(null);
-  const shouldRefocusIdentificationNumber = useRef(false);
   const [uploadingGovtId, setUploadingGovtId] = useState(false);
   const isNinId =
     govtIdType === GovernmentIdType.NIN ||
     govtIdType === GovernmentIdType.NATIONAL_ID;
-
-  useEffect(() => {
-    if (!shouldRefocusIdentificationNumber.current) return;
-
-    // iOS may keep the old keyboard type if the field is refocused while the
-    // previous keyboard is still dismissing. Wait for dismissal to finish so
-    // the updated keyboardType is applied before focusing the same input.
-    const timeout = setTimeout(() => {
-      shouldRefocusIdentificationNumber.current = false;
-      identificationNumberInputRef.current?.focus();
-    }, Platform.OS === "ios" ? 300 : 0);
-
-    return () => clearTimeout(timeout);
-  }, [govtIdType]);
 
   // Document status comes from the latest user profile returned by the API.
   // These verification fields are the source of truth for Tier 3 documents.
@@ -1320,8 +1305,6 @@ export default function AccountLimitsScreen() {
                 key={opt.value}
                 onPress={() => {
                   if (opt.value !== govtIdType) {
-                    shouldRefocusIdentificationNumber.current =
-                      identificationNumberInputRef.current?.isFocused() ?? false;
                     identificationNumberInputRef.current?.blur();
                     Keyboard.dismiss();
                     setIdentificationNumber("");

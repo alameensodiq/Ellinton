@@ -380,7 +380,7 @@ export default function Card() {
         title="Block Card"
         buttonText="Continue"
       >
-        <BlockCardContent onContinue={() => {}} />
+        <BlockCardContent onContinue={() => { }} />
       </BottomSheet>
     </SafeAreaView>
   );

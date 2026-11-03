@@ -17,6 +17,7 @@ import {
   createUserTransactionPin,
   getUserProfile,
   updateUserProfile,
+  requestProfileEmailOtp,
   updateUserAddress,
   updateProfilePicture,
   setupPasscode,
@@ -85,6 +86,8 @@ interface AuthState {
   searchResults: User[];
   multi: boolean;
   device: boolean;
+  emailOtpLoading: boolean;
+  emailOtpError: string | null;
 }
 
 const initialState: AuthState = {
@@ -98,7 +101,9 @@ const initialState: AuthState = {
   isRestoring: false,
   searchResults: [],
   multi: false,
-  device: false
+  device: false,
+  emailOtpLoading: false,
+  emailOtpError: null
 };
 
 const authSlice = createSlice({
@@ -143,6 +148,19 @@ const authSlice = createSlice({
     }
   },
   extraReducers: (builder) => {
+    builder
+      .addCase(requestProfileEmailOtp.pending, (state) => {
+        state.emailOtpLoading = true;
+        state.emailOtpError = null;
+      })
+      .addCase(requestProfileEmailOtp.fulfilled, (state) => {
+        state.emailOtpLoading = false;
+      })
+      .addCase(requestProfileEmailOtp.rejected, (state, action) => {
+        state.emailOtpLoading = false;
+        state.emailOtpError = action.payload as string || action.error.message || "Email OTP request failed";
+      });
+
     /** -----------------------------------------
      * RESTORE AUTH
      * ----------------------------------------- */

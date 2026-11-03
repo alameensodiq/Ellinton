@@ -16,7 +16,7 @@ import { Dropdown } from "@/app/components/inputs/DropdownInputs";
 import { nigeriaStates, stateOptions as NIGERIA_STATE_OPTIONS } from "@/app/lib/utils";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
-import { getUserProfile, updateUserProfile, updatePersonalProfile, updateResidentialAddress, updateNextOfKin, updateFinancialProfile, fetchIndustries, submitNin, GetResidentialAddress, GetNextOfKin, GetFinancialProfile } from "@/app/lib/thunks/authThunks";
+import { getUserProfile, updateUserProfile, updatePersonalProfile, requestProfileEmailOtp, updateResidentialAddress, updateNextOfKin, updateFinancialProfile, fetchIndustries, submitNin, GetResidentialAddress, GetNextOfKin, GetFinancialProfile } from "@/app/lib/thunks/authThunks";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // ─── App Colors ──────────────────────────────────────────────────────────────
@@ -208,6 +208,7 @@ function FeedbackModal({
 export default function ProfileInfoScreen() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const emailOtpLoading = useAppSelector((state) => state.auth.emailOtpLoading);
 
   // ── Feedback modal ──────────────────────────────────────────────────────────
   const [modal, setModal] = useState<{ visible: boolean; type: FeedbackType; title: string; message: string }>({
@@ -266,6 +267,11 @@ export default function ProfileInfoScreen() {
   const [upAltPhone, setUpAltPhone] = useState("");
   const [upGender, setUpGender] = useState("");
   const [savingPersonal, setSavingPersonal] = useState(false);
+  const [savingEmail, setSavingEmail] = useState(false);
+  const [savingAltPhone, setSavingAltPhone] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [showEmailOtpModal, setShowEmailOtpModal] = useState(false);
 
   useEffect(() => {
     dispatch(getUserProfile());
@@ -469,27 +475,61 @@ export default function ProfileInfoScreen() {
     } finally { setSavingPersonal(false); }
   };
 
-  const handleSaveContact = async () => {
-    const raw: Record<string, string> = {
-      email: upEmail.trim(),
-      alternate_phone: upAltPhone.trim(),
-    };
-    const payload = Object.fromEntries(Object.entries(raw).filter(([, value]) => !!value));
-    if (Object.keys(payload).length === 0) {
-      showModal("info", "Nothing to Update", "Enter an email address or alternate phone number.");
+  const handleSaveContact = async (field: "email" | "alternate_phone") => {
+    const value = field === "email" ? upEmail.trim() : upAltPhone.trim();
+    if (!value) {
+      showModal(
+        "info",
+        "Nothing to Update",
+        field === "email"
+          ? "Enter an email address to update it."
+          : "Enter an alternate phone number to update it."
+      );
       return;
     }
 
-    setSavingPersonal(true);
+    const setSavingField = field === "email" ? setSavingEmail : setSavingAltPhone;
+    setSavingField(true);
     try {
+      if (field === "email") {
+        await dispatch(requestProfileEmailOtp({ email: value })).unwrap();
+        setPendingEmail(value);
+        setEmailOtp("");
+        setShowEmailOtpModal(true);
+        return;
+      }
+
+      const payload = { [field]: value };
       await dispatch(updatePersonalProfile(payload)).unwrap();
       await dispatch(getUserProfile());
-      setUpEmail("");
       setUpAltPhone("");
-      showModal("success", "Contact Details Updated", "Your email and alternate phone number have been updated.");
+      showModal(
+        "success",
+        "Alternate Phone Updated",
+        "Your alternate phone number has been updated."
+      );
     } catch (err: any) {
       showModal("error", "Update Failed", typeof err === "string" ? err : "Failed to update contact details.");
-    } finally { setSavingPersonal(false); }
+    } finally { setSavingField(false); }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    const otp = emailOtp.trim();
+    if (!otp) {
+      showModal("info", "OTP Required", "Enter the OTP sent to your new email address.");
+      return;
+    }
+    setSavingEmail(true);
+    try {
+      await dispatch(updatePersonalProfile({ email: pendingEmail, email_otp: otp })).unwrap();
+      await dispatch(getUserProfile());
+      setShowEmailOtpModal(false);
+      setEmailOtp("");
+      setUpEmail("");
+      showModal("success", "Email Updated", "Your email address has been updated.");
+    } catch (err: any) {
+      showModal("error", "Update Failed", typeof err === "string" ? err : "Failed to verify OTP and update email.");
+    } finally { setSavingEmail(false); }
   };
 
   const proofStatus: "Verified" | "Pending" | "Unverified" =
@@ -711,8 +751,14 @@ export default function ProfileInfoScreen() {
                 className="rounded-2xl p-5 shadow-sm mt-4"
               >
                 <Field label="Email Address" value={upEmail} onChangeText={setUpEmail} placeholder={user?.email || "Enter email address"} keyboardType="email-address" />
+                <SaveButton onPress={() => handleSaveContact("email")} saving={savingEmail} label="Update Email" />
+              </View>
+              <View
+                style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }}
+                className="rounded-2xl p-5 shadow-sm mt-4"
+              >
                 <Field label="Alternate Phone" value={upAltPhone} onChangeText={setUpAltPhone} placeholder={(user as any)?.alternate_phone || "e.g. 08012345678"} keyboardType="phone-pad" />
-                <SaveButton onPress={handleSaveContact} saving={savingPersonal} label="Update Email or Alternate Phone" />
+                <SaveButton onPress={() => handleSaveContact("alternate_phone")} saving={savingAltPhone} label="Update Phone" />
               </View>
             </View>
           )}
@@ -946,6 +992,36 @@ export default function ProfileInfoScreen() {
         message={modal.message}
         onClose={closeModal}
       />
+      <Modal transparent animationType="fade" visible={showEmailOtpModal} onRequestClose={() => setShowEmailOtpModal(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", paddingHorizontal: 24 }}
+          onPress={() => setShowEmailOtpModal(false)}
+        >
+          <Pressable onPress={() => { }} style={{ backgroundColor: C.white, borderRadius: 20, padding: 24 }}>
+            <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 18, marginBottom: 8 }}>Verify email address</Text>
+            <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 13, marginBottom: 18 }}>Enter the OTP sent to {pendingEmail}.</Text>
+            <TextInput
+              value={emailOtp}
+              onChangeText={setEmailOtp}
+              placeholder="Enter OTP"
+              placeholderTextColor={C.textMuted}
+              keyboardType="number-pad"
+              maxLength={6}
+              style={{ backgroundColor: C.inputBg, borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, color: C.textPrimary, fontSize: 16, marginBottom: 16 }}
+            />
+            <Pressable
+              onPress={handleVerifyEmailOtp}
+              disabled={savingEmail || emailOtpLoading}
+              style={{ backgroundColor: C.bgMid, borderRadius: 12, alignItems: "center", paddingVertical: 14, opacity: savingEmail ? 0.6 : 1 }}
+            >
+              <Text style={{ color: C.white, fontFamily: "OutfitBold", fontSize: 14 }}>{savingEmail ? "Updating..." : "Verify and Update Email"}</Text>
+            </Pressable>
+            <Pressable onPress={() => setShowEmailOtpModal(false)} style={{ alignItems: "center", paddingTop: 14 }}>
+              <Text style={{ color: C.textSub, fontFamily: "OutfitMedium", fontSize: 13 }}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }

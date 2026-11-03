@@ -31,6 +31,7 @@ import {
   NEWPASSCODE_ENDPOINT,
   RESEND_NEW_OTP_USERS_ENDPOINT,
   UPDATE_PROFILE_ENDPOINT,
+  REQUEST_PROFILE_EMAIL_OTP_ENDPOINT,
   UPDATE_RESIDENTIAL_ENDPOINT,
   UPDATE_NEXTOFKIN_ENDPOINT,
   UPDATE_FINANCIAL_ENDPOINT,
@@ -1582,6 +1583,7 @@ export const updateUserProfile = createAsyncThunk(
 
 export interface UpdatePersonalProfilePayload {
   email?: string;
+  email_otp?: string;
   local_government?: string;
   address_2?: string;
   marital_status?: string;
@@ -1590,6 +1592,31 @@ export interface UpdatePersonalProfilePayload {
   alternate_phone?: string;
   gender?: string;
 }
+
+export const requestProfileEmailOtp = createAsyncThunk(
+  "auth/requestProfileEmailOtp",
+  async ({ email }: { email: string }, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as any;
+      const token = state.auth.token;
+      const response = await safeFetch(REQUEST_PROFILE_EMAIL_OTP_ENDPOINT(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data?.data?.message || data?.message || `Email OTP request failed (${response.status})`);
+      }
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.data?.message || error.message || "Email OTP request failed");
+    }
+  }
+);
 
 export const updatePersonalProfile = createAsyncThunk(
   "auth/updatePersonalProfile",

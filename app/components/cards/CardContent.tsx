@@ -1,11 +1,10 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, ImageBackground } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Button from "@/app/components/Button";
 import CustomText from "@/app/components/CustomText";
 import CardFeatures from "./CardFeatures";
 import images from "@/app/assets/images";
-import { useRouter } from "expo-router";
 
 type CardType = "virtual" | "physical";
 
@@ -44,12 +43,18 @@ const CardContent: React.FC<CardContentProps> = ({
   sectionTitle,
   cardType,
 }) => {
-  const router = useRouter();
+  const [showComingSoon, setShowComingSoon] = useState(false);
+  const comingSoonTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handlePress = () => {
-    if (cardType === "virtual") router.push("/cards/virtual-card");
-    else router.push("/cards/physical-card");
+    setShowComingSoon(true);
+    if (comingSoonTimeout.current) clearTimeout(comingSoonTimeout.current);
+    comingSoonTimeout.current = setTimeout(() => setShowComingSoon(false), 2000);
   };
+
+  useEffect(() => () => {
+    if (comingSoonTimeout.current) clearTimeout(comingSoonTimeout.current);
+  }, []);
 
   return (
     <View className="px-4 mt-6">
@@ -70,6 +75,11 @@ const CardContent: React.FC<CardContentProps> = ({
             className="w-full"
           />
         </View>
+        {showComingSoon && (
+          <View className="absolute right-3 top-3 bg-primary-200 px-3 py-1.5 rounded-full">
+            <CustomText size="xs" className="text-white">Coming soon</CustomText>
+          </View>
+        )}
       </View>
 
       <View className="mt-6">

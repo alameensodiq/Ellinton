@@ -95,20 +95,20 @@ export const getCardsData = (
     //     },
     //   ],
     // },
-    {
-      id: 3,
-      title: "Point wallets",
-      balance: formatMoney(pointBalance),
-      gradientColors: ["#333419", "#18180C"],
-      imagePosition: "top-right",
-      image: Images.landing_balance_card3,
-      actions: [
-        {
-          icon: "wallet",
-          label: "Wallet",
-          iconLibrary: "Ionicons",
-        },
-      ],
-    },
+    // {
+    //   id: 3,
+    //   title: "Point wallets",
+    //   balance: formatMoney(pointBalance),
+    //   gradientColors: ["#333419", "#18180C"],
+    //   imagePosition: "top-right",
+    //   image: Images.landing_balance_card3,
+    //   actions: [
+    //     {
+    //       icon: "wallet",
+    //       label: "Wallet",
+    //       iconLibrary: "Ionicons",
+    //     },
+    //   ],
+    // },
   ];
 };
