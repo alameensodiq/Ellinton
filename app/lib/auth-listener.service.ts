@@ -20,6 +20,13 @@ class AuthListenerService {
           
           const firebaseToken = await firebaseUser.getIdToken();
           const appToken = await AsyncStorage.getItem('authToken');
+
+          // A Firebase callback can finish after an app logout has cleared the
+          // backend token. Ignore it so stale auth state cannot sign the user
+          // back in while the inactivity redirect is running.
+          if (!appToken || auth.currentUser?.uid !== firebaseUser.uid) {
+            return;
+          }
           
           // Get current state to preserve existing user data
           const currentState = store.getState() as any;
@@ -41,8 +48,8 @@ class AuthListenerService {
                 photoURL: firebaseUser.photoURL,
               }
             },
-            token: appToken || '', // Your app token
-            isAuthenticated: !!appToken, // Only true if app token exists
+            token: appToken, // Your app token
+            isAuthenticated: true,
           }));
 
           await AsyncStorage.setItem('firebaseToken', firebaseToken);

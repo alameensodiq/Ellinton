@@ -111,7 +111,7 @@ const HomeScreen = () => {
   };
 
   console.log(user);
-
+  const showKycBannerzero = user?.kyc_level === 0;
   const showKycBanner = user?.kyc_level === 1;
   const showKycBanner2 = user?.kyc_level === 2;
 
@@ -131,7 +131,14 @@ const HomeScreen = () => {
         }
       >
         <SliderCard onOpenAccounts={() => setModalVisible(true)} />
-
+        {showKycBannerzero && (
+          <InfoBanner
+            title="Complete your KYC verification"
+            description="To access all features it’s essential to verify your identity."
+            icon={images.landing_kyc_icon}
+            onPress={() => router.push("/(root)/accounts/account-limits")}
+          />
+        )}
         {showKycBanner && (
           <InfoBanner
             title="Complete your KYC verification"

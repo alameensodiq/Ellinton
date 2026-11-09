@@ -1,5 +1,5 @@
-// const BASE_URL = "https://api.ellingtonbank.com/api/";
-const BASE_URL = "https://stagingapi.ellingtonbank.com/api/";
+const BASE_URL = "https://api.ellingtonbank.com/api/";
+// const BASE_URL = "https://stagingapi.ellingtonbank.com/api/";
 
 //users endpoint
 const REGISTER_USERS_ENDPOINT = `${BASE_URL}v2/users/register`;

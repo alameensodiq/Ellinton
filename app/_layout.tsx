@@ -213,7 +213,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { store } from "./lib/store";
 import AuthWrapper from "./(root)/AuthWrapper";
 import { logout } from "./lib/slices/authSlice";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
 import firebaseService from "./lib/firebase.service";
 import authListenerService from "./lib/auth-listener.service";
@@ -244,9 +244,6 @@ export default function RootLayout() {
     OutfitBold: require("./assets/fonts/Outfit-Bold.ttf")
   });
 
-  const [encryptionReady, setEncryptionReady] = useState(false);
-  const [initializationComplete, setInitializationComplete] = useState(false);
-
   // Handle App Tracking Transparency and initialize tracking only after permission
   const initializeTrackingWithPermission = async () => {
     if (Platform.OS === 'ios') {
@@ -275,40 +272,32 @@ export default function RootLayout() {
     }
   };
 
-  // Main initialization
+  // Initialize app services without blocking the first screen. In particular,
+  // the tracking permission prompt must not keep the native splash screen up.
   useEffect(() => {
-    const initialize = async () => {
+    const initializeServices = async () => {
       try {
-        // Initialize tracking with ATT permission first
-        await initializeTrackingWithPermission();
-      } catch (error) {
-        console.warn("Tracking initialization failed (non-fatal):", error);
-      }
-
-      try {
-        // Then initialize other services
         await firebaseService.initialize();
         authListenerService.startListening();
       } catch (error) {
         console.warn("Firebase/Auth initialization failed (non-fatal):", error);
       }
-
-      setInitializationComplete(true);
     };
 
     const initEncryption = async () => {
       try {
         await initializeEncryption();
-        setEncryptionReady(true);
         console.log("✅ Encryption ready");
       } catch (error) {
         console.error("❌ Failed to initialize encryption:", error);
-        setEncryptionReady(true);
       }
     };
 
+    initializeServices();
     initEncryption();
-    initialize();
+    initializeTrackingWithPermission().catch((error) => {
+      console.warn("Tracking initialization failed (non-fatal):", error);
+    });
 
     return () => {
       authListenerService.stopListening();
@@ -437,7 +426,7 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && initializationComplete) {
+    if (fontsLoaded) {
       if (Platform.OS === "android") {
         NavigationBar.setBackgroundColorAsync("#3F401B").catch(() => { });
         NavigationBar.setButtonStyleAsync("light").catch(() => { });
@@ -445,9 +434,9 @@ export default function RootLayout() {
         StatusBar.setBarStyle("light-content", true);
       }
     }
-  }, [fontsLoaded, initializationComplete]);
+  }, [fontsLoaded]);
 
-  if (!fontsLoaded || !initializationComplete) return null;
+  if (!fontsLoaded) return null;
 
   return (
     <Provider store={store}>

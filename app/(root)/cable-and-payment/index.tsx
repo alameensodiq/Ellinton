@@ -120,7 +120,7 @@ export default function CablePayment() {
     selectedService &&
     selectedProduct &&
     amount &&
-    Number(amount) >= 100;
+    Number(amount.replace(/,/g, "")) >= 100;
 
   const handleContinue = async () => {
     if (!selectedProviderData || !selectedPackageData || !isFormValid) return;
@@ -145,7 +145,7 @@ export default function CablePayment() {
           service: selectedService,
           product: selectedProduct,
           accountId,
-          amount,
+          amount: amount.replace(/,/g, ""),
           providerId: String(selectedProviderData.id),
           providerName: selectedProviderData.name,
           providerSlug: selectedProviderData.slug,

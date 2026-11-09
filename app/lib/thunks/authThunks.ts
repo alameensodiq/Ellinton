@@ -110,7 +110,12 @@ const safeFetch = async (url: string, options: RequestInit = {}) => {
   if (USE_ENCRYPTION) {
     switch (method) {
       case "post":
-        return await encryptedFetch.post(url, body, enhancedHeaders);
+        return await encryptedFetch.post(
+          url,
+          body,
+          enhancedHeaders,
+          options.signal ?? undefined
+        );
       case "put":
         return await encryptedFetch.put(url, body, enhancedHeaders);
       case "patch":
@@ -481,12 +486,17 @@ export const registerUser = createAsyncThunk(
 
 export const registerNewUser = createAsyncThunk(
   "auth/registerNewUser",
-  async (payload: RegisterNewPayload, { rejectWithValue }) => {
+  async (payload: RegisterNewPayload, { rejectWithValue, signal }) => {
+    const requestController = new AbortController();
+    const abortRequest = () => requestController.abort();
+    const timeout = setTimeout(() => requestController.abort(), 45000);
+    signal.addEventListener("abort", abortRequest);
     try {
       const response = await safeFetch(REGISTER_NEW_USERS_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        signal: requestController.signal,
       });
 
       const data = await response.json();
@@ -511,8 +521,13 @@ export const registerNewUser = createAsyncThunk(
       return rejectWithValue({
         status: error?.status || error?.statusCode || 500,
         message:
-          error?.data?.message || error?.message || "Registration error",
+          requestController.signal.aborted
+            ? "Registration timed out. Check your connection and try again."
+            : error?.data?.message || error?.message || "Registration error",
       });
+    } finally {
+      clearTimeout(timeout);
+      signal.removeEventListener("abort", abortRequest);
     }
   }
 );

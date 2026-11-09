@@ -398,7 +398,7 @@ export default function AccountScreen() {
             icon="credit-card-outline"
             iconBg="#EEEEE4"
             iconColor={C.bgMid}
-            title="Saved Beneficiaries & Cards"
+            title="Saved Beneficiaries"
             subtitle="Manage transfer contacts and linked debit cards"
             onPress={() => router.push("/(root)/accounts/beneficiaries-cards" as any)}
           />
@@ -474,7 +474,7 @@ export default function AccountScreen() {
             iconBg="#EEEEE4"
             iconColor={C.bgMid}
             title="Help & Support"
-            subtitle="Live chat, report a transaction dispute, FAQs"
+            subtitle="Contact Support, FAQs"
             onPress={() => router.push("/(root)/accounts/support" as any)}
           />
           <Divider />

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Modal, Dimensions } from "react-native";
+import { View, Modal, Dimensions, ActivityIndicator } from "react-native";
 import Button from "./Button";
 import CustomText from "./CustomText";
 
@@ -10,6 +10,8 @@ interface ErrorModalProps {
   title?: React.ReactNode;
   message?: React.ReactNode;
   buttonText?: string;
+  loading?: boolean;
+  loadingMessage?: string;
   onDismiss: () => void;
 }
 
@@ -39,6 +41,8 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
   title = "Error",
   message = "An error occurred",
   buttonText = "OK",
+  loading = false,
+  loadingMessage = "Please wait...",
   onDismiss,
 }) => {
   return (
@@ -46,27 +50,41 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
       visible={visible}
       transparent={true}
       animationType="fade"
-      onRequestClose={onDismiss}
+      onRequestClose={loading ? () => undefined : onDismiss}
     >
       <View className="flex-1 bg-black/50 justify-center items-center p-5">
         <View
           className="bg-primary-400 rounded-2xl p-6 items-center shadow-lg"
           style={{ width: Math.min(width - 24, 420) }}
         >
-          <CustomText weight="bold" size="lg" className="text-center mb-2">
-            {formatModalText(title)}
-          </CustomText>
+          {loading ? (
+            <>
+              <CustomText weight="bold" size="lg" className="text-center mb-5">
+                {formatModalText(title)}
+              </CustomText>
+              <ActivityIndicator size="large" color="#FFFFFF" />
+              <CustomText size="base" className="text-center mt-4">
+                {loadingMessage}
+              </CustomText>
+            </>
+          ) : (
+            <>
+              <CustomText weight="bold" size="lg" className="text-center mb-2">
+                {formatModalText(title)}
+              </CustomText>
 
-          <CustomText size="lg" className="text-center leading-6 mt-4 mb-6">
-            {formatModalText(message)}
-          </CustomText>
+              <CustomText size="lg" className="text-center leading-6 mt-4 mb-6">
+                {formatModalText(message)}
+              </CustomText>
 
-          <Button
-            title={buttonText}
-            onPress={onDismiss}
-            variant="primary"
-            className="w-full mt-6 bg-accent-100"
-          />
+              <Button
+                title={buttonText}
+                onPress={onDismiss}
+                variant="primary"
+                className="w-full mt-6 bg-accent-100"
+              />
+            </>
+          )}
         </View>
       </View>
     </Modal>

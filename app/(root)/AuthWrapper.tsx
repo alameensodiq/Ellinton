@@ -596,6 +596,7 @@ export default function AuthWrapper() {
   const router = useRouter();
   const segments = useSegments();
   const storedDataRef = useRef<any>(null);
+  const segmentKey = segments.join("/");
 
   useEffect(() => {
     // Initialize Crashlytics - wrapped defensively to prevent crashes
@@ -628,7 +629,10 @@ export default function AuthWrapper() {
       console.log("🔄 Refreshing stored data:", dataStr);
       if (dataStr) {
         const parsedData = JSON.parse(dataStr);
-        setStoredData(parsedData);
+        if (JSON.stringify(storedDataRef.current) !== JSON.stringify(parsedData)) {
+          storedDataRef.current = parsedData;
+          setStoredData(parsedData);
+        }
         console.log("📦 Refreshed persisted data:", {
           mfa_required: parsedData?.mfa_required,
           requires_mfa: parsedData?.requires_mfa,
@@ -652,6 +656,7 @@ export default function AuthWrapper() {
         console.log("📦 Initial data load:", dataStr);
         if (dataStr) {
           const parsedData = JSON.parse(dataStr);
+          storedDataRef.current = parsedData;
           setStoredData(parsedData);
           console.log("📦 Loaded persisted data:", {
             mfa_required: parsedData?.mfa_required,
@@ -691,26 +696,28 @@ export default function AuthWrapper() {
   // Main navigation effect with refresh flag for auth screens
   useEffect(() => {
     if (!ready) return;
+    let isCurrentNavigationCheck = true;
 
     const checkAndNavigate = async () => {
       // ALWAYS refresh data when on current-user or login screens
       const isOnAuthScreen =
-        segments.join("/") === "(auth)/current-user" ||
-        segments.join("/") === "(auth)/login";
+        segmentKey === "(auth)/current-user" ||
+        segmentKey === "(auth)/login";
 
       let currentStoredData = storedData;
       if (isOnAuthScreen) {
         console.log("🔄 On auth screen, refreshing data...");
         const freshData = await refreshStoredData();
+        if (!isCurrentNavigationCheck) return;
         currentStoredData = freshData || storedData;
       }
 
       const inAuthGroup = segments[0] === "(auth)";
       const inRootGroup = segments[0] === "(root)";
-      const isOnLogin = segments.join("/") === "(auth)/login";
-      const isOnCurrentUser = segments.join("/") === "(auth)/current-user";
-      const isOnMultiFactorOtp = segments.join("/") === "(auth)/multifactorotp";
-      const isOnDeviceOtp = segments.join("/") === "(auth)/deviceotp";
+      const isOnLogin = segmentKey === "(auth)/login";
+      const isOnCurrentUser = segmentKey === "(auth)/current-user";
+      const isOnMultiFactorOtp = segmentKey === "(auth)/multifactorotp";
+      const isOnDeviceOtp = segmentKey === "(auth)/deviceotp";
 
       const errors = [
         authError,
@@ -823,9 +830,13 @@ export default function AuthWrapper() {
     };
 
     checkAndNavigate();
+
+    return () => {
+      isCurrentNavigationCheck = false;
+    };
   }, [
     ready,
-    segments,
+    segmentKey,
     authError,
     beneficiariesError,
     accountError,

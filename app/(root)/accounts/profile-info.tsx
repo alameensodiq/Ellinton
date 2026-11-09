@@ -647,6 +647,7 @@ export default function ProfileInfoScreen() {
                   { label: "Gender", value: user?.gender },
                   { label: "Email", value: user?.email },
                   { label: "Phone Number", value: user?.phone },
+                  { label: "Alternative Phone Number", value: user?.alternate_phone },
                 ].map((row, i, arr) => (
                   <View
                     key={row.label}
@@ -757,7 +758,7 @@ export default function ProfileInfoScreen() {
                 style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }}
                 className="rounded-2xl p-5 shadow-sm mt-4"
               >
-                <Field label="Alternate Phone" value={upAltPhone} onChangeText={setUpAltPhone} placeholder={(user as any)?.alternate_phone || "e.g. 08012345678"} keyboardType="phone-pad" />
+                <Field label="Alternate Phone" value={upAltPhone} onChangeText={setUpAltPhone} placeholder={(user as any)?.alternate_phone || "e.g. 08012345678"} keyboardType="phone-pad" maxLength={12} />
                 <SaveButton onPress={() => handleSaveContact("alternate_phone")} saving={savingAltPhone} label="Update Phone" />
               </View>
             </View>
@@ -767,7 +768,7 @@ export default function ProfileInfoScreen() {
           {/* {activeTab === "update_personal" && (
             <View style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1 }} className="rounded-2xl p-5 shadow-sm">
               <Field label="Email Address" value={upEmail} onChangeText={setUpEmail} placeholder={user?.email || "Enter email address"} keyboardType="email-address" />
-              <Field label="Alternate Phone" value={upAltPhone} onChangeText={setUpAltPhone} placeholder={(user as any)?.alternate_phone || "e.g. 08012345678"} keyboardType="phone-pad" />
+              <Field label="Alternate Phone" value={upAltPhone} onChangeText={setUpAltPhone} placeholder={(user as any)?.alternate_phone || "e.g. 08012345678"} keyboardType="phone-pad" maxLength={12} />
               <Dropdown
                 label="Gender"
                 placeholder={user?.gender ? String(user.gender).charAt(0).toUpperCase() + String(user.gender).slice(1) : "Select gender"}

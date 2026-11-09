@@ -326,7 +326,7 @@ const PhoneNumberScreen = () => {
           />
 
           <Button
-            title="Continue"
+            title={isLoading ? "Please wait..." : "Continue"}
             variant="primary"
             onPress={handleContinue}
             className="w-full mt-4 mb-4"

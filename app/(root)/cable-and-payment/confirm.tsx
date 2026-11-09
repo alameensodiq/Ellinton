@@ -71,7 +71,9 @@ export default function ConfirmCablePayment() {
     : customerName || "";
 
   const fee = 0;
-  const totalDebit = Number(rawAmount) + fee;
+  const numericAmount = Number(rawAmount.replace(/,/g, "")) || 0;
+  const formattedAmount = numericAmount.toLocaleString("en-NG");
+  const totalDebit = numericAmount + fee;
 
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduleName, setScheduleName] = useState("");
@@ -216,7 +218,7 @@ export default function ConfirmCablePayment() {
         showsVerticalScrollIndicator={false}
       >
         <AmountCard
-          amount={rawAmount}
+          amount={formattedAmount}
           description={`Payment to ${serviceLabel}`}
         />
 

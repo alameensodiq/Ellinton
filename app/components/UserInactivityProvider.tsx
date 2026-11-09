@@ -1,4 +1,4 @@
-import { useRouter, usePathname } from "expo-router";
+import { usePathname } from "expo-router";
 import { useEffect, useRef, useCallback } from "react";
 import { AppState, AppStateStatus, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -8,7 +8,7 @@ import { auth } from "../firebase";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
 import { useAppDispatch } from "../lib/hooks/useAppDispatch";
 
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 2 min timeout
+const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5-minute inactivity timeout
 const LAST_ACTIVE_KEY = "lastActiveTime";
 
 const KEYS_TO_PRESERVE = new Set([
@@ -37,7 +37,6 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isHandlingLogout = useRef(false);
-  const router = useRouter();
   const pathname = usePathname();
   const dispatch = useAppDispatch();
 
@@ -60,10 +59,10 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
       // this cleanup operation.
       await clearSessionStorage();
 
-      // Update auth state and navigate after the old session storage is clear.
+      // Let AuthWrapper handle the redirect after auth state changes. Keeping
+      // navigation in one place avoids competing route replacements on resume.
       dispatch(logout());
       dispatch(clearError());
-      router.replace("/(auth)/current-user");
 
       // Do not dispatch logoutUser here: its async completion can race with a
       // new login and clear the fresh credentials from Redux.
@@ -72,11 +71,10 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
       console.error("Logout error:", error);
       dispatch(logout());
       dispatch(clearError());
-      router.replace("/(auth)/current-user");
     } finally {
       isHandlingLogout.current = false;
     }
-  }, [dispatch, router]);
+  }, [dispatch]);
 
   const recordStartTime = useCallback(async () => {
     if (isPublicRoute || !isAuthenticated) return;

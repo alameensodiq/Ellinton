@@ -513,7 +513,7 @@ export default function TransferScreen() {
         )}
       </ScrollView>
       <Sheet visible={bankSheetOpen} onClose={() => setBankSheetOpen(false)}>
-        <View style={{ height: 560 }}>
+        <View style={{ height: 310 }}>
           <Text className="text-lg font-semibold mb-4 text-white">
             Select Bank
           </Text>
@@ -548,7 +548,7 @@ export default function TransferScreen() {
         visible={bankSheetOpenellington}
         onClose={() => setBankSheetOpenellington(false)}
       >
-        <View style={{ height: 560 }}>
+        <View style={{ height: 310 }}>
           <Text className="text-lg font-semibold mb-4 text-white">
             Select Bank
           </Text>

@@ -243,8 +243,14 @@ const DeviceOtpScreen = () => {
       setErrorMessage2("");
       setRemainingTime(30);
       startCountdown();
-    } catch {
-      setErrorMessage2("Failed to resend code. Please try again.");
+    } catch (error: unknown) {
+      const backendMessage =
+        typeof error === "string"
+          ? error
+          : error instanceof Error
+            ? error.message
+            : "";
+      setErrorMessage2(backendMessage || "Failed to resend code. Please try again.");
     }
   };
 

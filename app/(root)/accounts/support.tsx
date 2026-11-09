@@ -22,46 +22,102 @@ const SUPPORT_EMAIL = "support@ellingtonbank.com";
 
 interface FAQItem {
   id: string;
-  category: "kyc" | "transfers" | "cards" | "security";
+  category: "account" | "payments" | "security" | "fees" | "support";
   question: string;
   answer: string;
 }
 
 const FAQS: FAQItem[] = [
   {
-    id: "faq_1",
-    category: "kyc",
-    question: "How do I upgrade from Tier 1 to Tier 2?",
+    id: "faq_account_create",
+    category: "account",
+    question: "How do I create an account?",
     answer:
-      "To upgrade to Tier 2, go to Account Limits and verify your National Identity Number (NIN or virtual NIN). Once verified, your daily limit will increase to ₦500,000.",
+      "Download the app, enter your name and phone number, verify your identity with the OTP sent via SMS, set your secure passcode, and you are in!",
   },
   {
-    id: "faq_2",
-    category: "kyc",
-    question: "What documents are accepted for Tier 3 verification?",
+    id: "faq_account_number",
+    category: "account",
+    question: "How do I get my account number?",
     answer:
-      "We accept prepaid/postpaid electricity meter numbers, recent utility bills (EKEDC, IKEDC, water board, LAWMA), stamped tenancy agreements, or 3-month bank statement headers showing your residential address.",
+      "Your account number is automatically generated upon completing your Tier 1 registration.",
   },
   {
-    id: "faq_3",
-    category: "transfers",
-    question: "My transfer was debited but the beneficiary hasn't received funds?",
+    id: "faq_account_upgrade",
+    category: "account",
+    question: "How do I upgrade my account (Tier 1, 2, and 3)?",
     answer:
-      "Inter-bank transfers are processed instantly via NIP. In rare instances of destination bank network delays, funds typically reverse automatically within 24 hours. You can track this in Dispute Resolution below.",
+      "Go to Profile > Account Limits / Upgrade. To move to Tier 1, provide your BVN and complete a liveness check. To move to higher tiers (Tier 2 and Tier 3), enter your NIN or vNIN, and provide supplementary KYC documents such as a valid government ID and proof of address.",
   },
   {
-    id: "faq_4",
+    id: "faq_account_change_codes",
+    category: "account",
+    question: "How do I change my passcode or transaction PIN?",
+    answer:
+      "Navigate to Settings > Security. Select Change Passcode or Change Transaction PIN, enter your current code for verification, and set your new 4-digit or alphanumeric combination.",
+  },
+  {
+    id: "faq_account_forgot_pin",
+    category: "account",
+    question: "What should I do if I forgot my transaction PIN?",
+    answer:
+      "Go to Settings > Security and select Forgot Transaction PIN. Follow the verification prompts, such as entering your passcode or OTP, to securely reset your transaction PIN.",
+  },
+  {
+    id: "faq_payments_airtime_data",
+    category: "payments",
+    question: "How do I buy airtime or data?",
+    answer:
+      "Tap Airtime / Data on your home dashboard, select your preferred mobile network provider, enter the phone number (or pick from your contacts), choose the bundle or amount, and enter your transaction PIN to complete the purchase.",
+  },
+  {
+    id: "faq_payments_statement",
+    category: "payments",
+    question: "How do I generate an account statement?",
+    answer:
+      "Go to your account dashboard, tap Statements or select your account balance to open transaction history. Tap Generate Statement, choose your preferred date range, and select whether you want to export it as a PDF or send it directly to your email.",
+  },
+  {
+    id: "faq_security_data",
     category: "security",
-    question: "What should I do if I forgot my Transaction PIN?",
+    question: "Is my financial data and money safe on the app?",
     answer:
-      "Go to Security & Passcode > Forgot Transaction PIN. An OTP will be sent to your registered phone number to safely set a new 4-digit PIN.",
+      "Yes. We use industry-standard encryption, multi-factor authentication (MFA), and secure tokenization to protect your funds and personal information at all times. All deposits are held securely with licensed partner institutions.",
   },
   {
-    id: "faq_5",
-    category: "cards",
-    question: "How do I fund my Ellington account using a debit card?",
+    id: "faq_security_biometrics",
+    category: "security",
+    question: "How do I enable biometric login (Fingerprint / Face ID)?",
     answer:
-      "Link your Mastercard or Visa debit card under 'Saved Beneficiaries & Cards'. You can then tap Fund Wallet from the home screen for instant funding.",
+      "Go to Settings > Security and toggle on Biometric Login. Follow the on-screen prompts to confirm your device biometrics for quick and secure access.",
+  },
+  {
+    id: "faq_security_lost_phone",
+    category: "security",
+    question: "What should I do if my phone is lost or stolen?",
+    answer:
+      "Send an email to our support desk or call any of our support helplines immediately to temporarily freeze your account.",
+  },
+  {
+    id: "faq_fees_charges",
+    category: "fees",
+    question: "What are the charges and fees for transactions?",
+    answer:
+      "We do not charge any additional or hidden fees. You only pay standard bank charges and applicable stamp duty as regulated.",
+  },
+  {
+    id: "faq_support_contact",
+    category: "support",
+    question: "How can I contact customer support?",
+    answer:
+      "You can reach out to support through our WhatsApp channel, dedicated phone lines, or official support email. Navigate to Account > Help & Support and select the medium you want to use.",
+  },
+  {
+    id: "faq_support_debited_failed",
+    category: "support",
+    question: "What should I do if my transfer fails or my account was debited for a failed transaction?",
+    answer:
+      "Failed transactions and transfers are typically reversed automatically within 24 hours. If the reversal does not reflect automatically, reach out to support by navigating to Account > Help & Support > WhatsApp / Phone / Official Email with your transaction reference number.",
   },
 ];
 
@@ -98,7 +154,7 @@ export default function HelpAndSupportScreen() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [expandedFaqId, setExpandedFaqId] = useState<string | null>("faq_1");
+  const [expandedFaqId, setExpandedFaqId] = useState<string | null>("faq_account_create");
 
   // Dispute modal
   const [disputeModalVisible, setDisputeModalVisible] = useState(false);
@@ -290,7 +346,7 @@ export default function HelpAndSupportScreen() {
 
         {/* FAQS & SELF-SERVICE KNOWLEDGE BASE */}
         <Text className="text-gray-900 text-sm font-outfit-bold mb-2 ml-1">
-          Frequently Asked Questions
+          Frequently Asked Questions (FAQs)
         </Text>
 
         {/* Search Bar */}
@@ -299,20 +355,21 @@ export default function HelpAndSupportScreen() {
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search FAQs (KYC, limits, transfers, card)"
+            placeholder="Search FAQs (account, payments, security, fees)"
             placeholderTextColor="#94A3B8"
             className="flex-1 ml-3 text-xs text-gray-900 font-outfit"
           />
         </View>
 
         {/* Category Pills */}
-        <View className="flex-row gap-2 mb-3">
+        <View className="flex-row flex-wrap gap-2 mb-3">
           {[
             { id: "all", label: "All" },
-            { id: "kyc", label: "KYC & Limits" },
-            { id: "transfers", label: "Transfers" },
+            { id: "account", label: "Account" },
+            { id: "payments", label: "Payments" },
             { id: "security", label: "Security" },
-            { id: "cards", label: "Cards" },
+            { id: "fees", label: "Fees" },
+            { id: "support", label: "Support" },
           ].map((cat) => {
             const isSelected = selectedCategory === cat.id;
             return (

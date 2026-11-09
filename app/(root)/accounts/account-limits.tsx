@@ -189,6 +189,7 @@ export default function AccountLimitsScreen() {
     isCheckingLiveness.current = true;
     const controller = new AbortController();
     let didResultTimeout = false;
+    let didLivenessTimeout = false;
     const resultTimeoutId = setTimeout(() => {
       didResultTimeout = true;
       controller.abort();
@@ -201,25 +202,30 @@ export default function AccountLimitsScreen() {
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (token) headers.Authorization = `Bearer ${token}`;
 
-      const response = await fetch(ONBOARDING_ENDPOINT(request.reference), {
-        method: "GET",
-        headers,
-        signal: controller.signal,
-      });
-      const payload = await response.json().catch(() => ({}));
-      const result = payload?.data ?? payload;
-      const status = String(
-        result?.verification_status ?? result?.liveness_status ?? result?.status ?? ""
-      ).toLowerCase();
-      const verified =
-        response.ok &&
-        payload?.success !== false &&
-        (result?.verified === true ||
-          result?.is_verified === true ||
-          result?.bvn_verified === true ||
-          status === "verified" ||
-          status === "success" ||
-          payload?.success === true);
+      const pollDeadline = Date.now() + FACE_VERIFICATION_TIMEOUT_MS;
+      let response: Response;
+      let payload: any;
+      let result: any;
+      let status = "";
+      do {
+        response = await fetch(ONBOARDING_ENDPOINT(request.reference), {
+          method: "GET",
+          headers,
+          signal: controller.signal,
+        });
+        payload = await response.json().catch(() => ({}));
+        result = payload?.data ?? payload;
+        status = String(result?.status ?? "").toLowerCase();
+
+        if (status !== "pending") break;
+        if (Date.now() >= pollDeadline) {
+          didLivenessTimeout = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, Math.min(2000, pollDeadline - Date.now())));
+      } while (Date.now() < pollDeadline);
+
+      const verified = response.ok && status === "successful";
 
       if (verified) {
         // Refresh the Redux user state so the new BVN/KYC status is reflected
@@ -235,7 +241,9 @@ export default function AccountLimitsScreen() {
         showFbAfterDismiss(
           "error",
           "Verification Failed",
-          result?.message || payload?.message || "Something went wrong, Please try again"
+          didLivenessTimeout
+            ? "BVN liveness check inconclusive please try again"
+            : result?.message || payload?.message || "Something went wrong, Please try again"
         );
       }
     } catch (error: any) {
@@ -243,9 +251,11 @@ export default function AccountLimitsScreen() {
       showFbAfterDismiss(
         "error",
         "Verification Failed",
-        didResultTimeout
-          ? "Verification is taking too long. Please try again."
-          : "Something went wrong, Please try again"
+        didLivenessTimeout
+          ? "BVN liveness check inconclusive please try again"
+          : didResultTimeout
+            ? "Verification is taking too long. Please try again."
+            : "Something went wrong, Please try again"
       );
     } finally {
       clearTimeout(resultTimeoutId);
@@ -737,9 +747,8 @@ export default function AccountLimitsScreen() {
       clearTimeout(timeoutId);
 
       const json = await resp.json().catch(() => ({}));
-      console.log(json)
       if (!resp.ok) {
-        showFb("error", "BVN Verification", "BVN has been used");
+        showFb("error", "BVN Verification", json?.data?.message || json?.message || "BVN has been used");
         setIsVerifyingFace(false);
         return;
       }
@@ -758,18 +767,18 @@ export default function AccountLimitsScreen() {
       const formData: any = {
         sessionToken,
         applicantData: {
-          // firstName: user?.first_name || user?.firstName || "",
-          // middleName: user?.middle_name || user?.middleName || "",
-          // lastName: user?.last_name || user?.lastName || "",
-          // gender: user?.gender || "",
-          // phoneNumber: user?.phone || "",
-          // email: user?.email || "",
-          firstName: "Samson",
+          firstName: user?.first_name || user?.firstName || "",
           middleName: user?.middle_name || user?.middleName || "",
-          lastName: "Jabo",
+          lastName: user?.last_name || user?.lastName || "",
           gender: user?.gender || "",
-          phoneNumber: "+2348000000001",
+          phoneNumber: user?.phone || "",
           email: user?.email || "",
+          // firstName: "Samson",
+          // middleName: user?.middle_name || user?.middleName || "",
+          // lastName: "Jabo",
+          // gender: user?.gender || "",
+          // phoneNumber: "+2348000000001",
+          // email: user?.email || "",
         },
         identityData: { idType: "BVN", idNumber: String(rawBvn) },
         addressData: { address: user?.address_1 || "", city: user?.city || "", lga: user?.local_government || "" },

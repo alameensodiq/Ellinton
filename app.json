@@ -47,11 +47,11 @@
           "fetch"
         ]
       },
-      "buildNumber": "21"
+      "buildNumber": "401"
     },
     "android": {
       "package": "com.ellingtonmfb.app",
-      "versionCode": 154,
+      "versionCode": 159,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",

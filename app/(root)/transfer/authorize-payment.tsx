@@ -10,7 +10,6 @@ import * as LocalAuthentication from "expo-local-authentication";
 import Header from "@/app/components/header-back";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Numpad from "@/app/components/inputs/Numpad";
-import Loading from "@/app/components/Loading";
 import ErrorModal from "@/app/components/ErrorModal";
 
 import {
@@ -100,6 +99,7 @@ export default function AuthorizePayment() {
   }, [rawTransferData]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     dispatch(clearTransfer());
     dispatch(clearError());
 
@@ -328,10 +328,11 @@ export default function AuthorizePayment() {
         />
       </View>
 
-      <Loading visible={isVerifying} />
       <ErrorModal
-        visible={showErrorModal}
-        title="Transfer Failed"
+        visible={isVerifying || showErrorModal}
+        loading={isVerifying}
+        loadingMessage="Processing your transfer..."
+        title={isVerifying ? "Processing Transfer" : "Transfer Failed"}
         message={errorMessage || "Transfer failed. Please try again."}
         onDismiss={handleDismissError}
       />
