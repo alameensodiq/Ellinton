@@ -121,12 +121,19 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
   // Handle app state changes
   useEffect(() => {
     const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+      const previousAppState = appState.current;
+      // Update synchronously before awaiting storage so a quick resume cannot
+      // be missed while the background timestamp is being persisted.
+      appState.current = nextAppState;
+
       if (isPublicRoute || !isAuthenticated) {
-        appState.current = nextAppState;
         return;
       }
 
-      if (nextAppState === "background") {
+      if (
+        nextAppState !== "active" &&
+        previousAppState === "active"
+      ) {
         await recordStartTime();
         if (inactivityTimer.current) {
           clearTimeout(inactivityTimer.current);
@@ -134,14 +141,12 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
         }
       }
 
-      if (nextAppState === "active" && appState.current === "background") {
+      if (nextAppState === "active" && previousAppState !== "active") {
         const didLogout = await checkInactivity();
         if (!didLogout) {
           await resetTimer();
         }
       }
-
-      appState.current = nextAppState;
     };
 
     const subscription = AppState.addEventListener("change", handleAppStateChange);
