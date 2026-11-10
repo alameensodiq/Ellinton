@@ -557,9 +557,9 @@
 // }
 
 import { Stack, useRouter, useSegments } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { useDispatch } from "react-redux";
 import { useEffect, useState, useCallback, useRef } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 import { AppDispatch, RootState } from "../lib/store";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
 import TransactionPinSetupGuard from "@/app/components/TransactionPinSetupGuard";
@@ -682,7 +682,6 @@ export default function AuthWrapper() {
   useEffect(() => {
     if (!isRestoring && !isLoadingData) {
       setReady(true);
-      SplashScreen.hideAsync().catch(() => { });
     }
   }, [isRestoring, isLoadingData]);
 
@@ -855,7 +854,12 @@ export default function AuthWrapper() {
   ]);
 
   if (!ready || isLoadingData) {
-    return null;
+    return (
+      <View className="flex-1 items-center justify-center bg-[#3F401B]">
+        <ActivityIndicator size="large" color="#FFFFFF" />
+        <Text className="mt-4 text-sm text-white">Loading your account…</Text>
+      </View>
+    );
   }
 
   return (

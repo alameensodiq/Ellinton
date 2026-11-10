@@ -213,7 +213,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { store } from "./lib/store";
 import AuthWrapper from "./(root)/AuthWrapper";
 import { logout } from "./lib/slices/authSlice";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { initializeAppsFlyer } from "./lib/analytics/appsflyer";
 import firebaseService from "./lib/firebase.service";
 import authListenerService from "./lib/auth-listener.service";
@@ -238,11 +238,27 @@ Notifications.setNotificationHandler({
 });
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Outfit: require("./assets/fonts/Outfit-Bold.ttf"),
     OutfitMedium: require("./assets/fonts/Outfit-Medium.ttf"),
     OutfitBold: require("./assets/fonts/Outfit-Bold.ttf")
   });
+  const [fontFallbackElapsed, setFontFallbackElapsed] = useState(false);
+
+  // A font-loading problem must not leave the native splash screen visible
+  // indefinitely. The app can render with the system font as a fallback.
+  useEffect(() => {
+    const timeout = setTimeout(() => setFontFallbackElapsed(true), 3000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  const canRenderApp = fontsLoaded || !!fontError || fontFallbackElapsed;
+
+  useEffect(() => {
+    if (canRenderApp) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [canRenderApp]);
 
   // Handle App Tracking Transparency and initialize tracking only after permission
   const initializeTrackingWithPermission = async () => {
@@ -436,7 +452,7 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) return null;
+  if (!canRenderApp) return null;
 
   return (
     <Provider store={store}>
