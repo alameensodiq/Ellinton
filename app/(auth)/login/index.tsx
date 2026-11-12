@@ -15,7 +15,7 @@ import {
   ActivityIndicator,
   Platform
 } from "react-native";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import TextInputField from "@/app/components/inputs/TextInputField";
 import OtpInput from "@/app/components/inputs/OtpInput";
 import Button from "@/app/components/Button";
@@ -24,7 +24,7 @@ import ErrorModal from "@/app/components/ErrorModal";
 import Loading from "@/app/components/Loading";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InfoText from "@/app/components/InfoText";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import CustomText from "@/app/components/CustomText";
@@ -66,84 +66,94 @@ const Login = () => {
   const BiometricIcon = Platform.OS === "ios" ? FaceIcon : FingerprintIcon;
 
   // Auto-fill email and check if user has logged in before & biometric availability
-  useEffect(() => {
-    const checkLoginStatus = async () => {
-      try {
-        const [savedPin, savedEmail, userProfile, loggedInFlag, storedLoginBio] = await Promise.all([
-          AsyncStorage.getItem("userPin"),
-          AsyncStorage.getItem("userEmail"),
-          AsyncStorage.getItem("userProfile"),
-          AsyncStorage.getItem("hasLoggedInBefore"),
-          AsyncStorage.getItem("loginBiometricEnabled"),
+  const checkLoginStatus = useCallback(async () => {
+    try {
+      const [savedPin, savedEmail, userProfile, loggedInFlag, storedLoginBio] = await Promise.all([
+        AsyncStorage.getItem("userPin"),
+        AsyncStorage.getItem("userEmail"),
+        AsyncStorage.getItem("userProfile"),
+        AsyncStorage.getItem("hasLoggedInBefore"),
+        AsyncStorage.getItem("loginBiometricEnabled"),
+      ]);
+
+      const returningUser = Boolean(savedPin || loggedInFlag === "true" || userProfile);
+      setHasLoggedInBefore(returningUser);
+
+      // `userEmail` stores the exact identifier used at the last successful
+      // login. Prefer it over the profile email so a phone-number login is
+      // prefilled with that phone number when the user returns.
+      if (savedEmail) {
+        setEmail(savedEmail);
+      } else if (userProfile) {
+        const parsedUser = JSON.parse(userProfile);
+        if (parsedUser?.email || parsedUser?.phone) {
+          setEmail(parsedUser.email || parsedUser.phone);
+        }
+      }
+
+      // Biometric login is opt-in. Older installations without a stored
+      // preference must not be treated as enrolled.
+      let isLoginBioEnabled = false;
+      if (storedLoginBio !== null) {
+        try {
+          isLoginBioEnabled = JSON.parse(storedLoginBio) === true;
+        } catch {
+          isLoginBioEnabled = storedLoginBio === "true";
+        }
+      }
+
+      if (LocalAuthentication && LocalAuthentication.hasHardwareAsync) {
+        const [hasHardware, isEnrolled] = await Promise.all([
+          LocalAuthentication.hasHardwareAsync(),
+          LocalAuthentication.isEnrolledAsync(),
         ]);
 
-        const returningUser = Boolean(savedPin || loggedInFlag === "true");
-        setHasLoggedInBefore(returningUser);
+        if (hasHardware && isEnrolled) {
+          setIsBiometricAvailable(true);
 
-        // `userEmail` stores the exact identifier used at the last successful
-        // login. Prefer it over the profile email so a phone-number login is
-        // prefilled with that phone number when the user returns.
-        if (savedEmail) {
-          setEmail(savedEmail);
-        } else if (userProfile) {
-          const parsedUser = JSON.parse(userProfile);
-          if (parsedUser?.email) {
-            setEmail(parsedUser.email);
-          }
-        }
+          const supportedTypes =
+            await LocalAuthentication.supportedAuthenticationTypesAsync();
 
-        // Biometric login is opt-in. Older installations without a stored
-        // preference must not be treated as enrolled.
-        let isLoginBioEnabled = false;
-        if (storedLoginBio !== null) {
-          try {
-            isLoginBioEnabled = JSON.parse(storedLoginBio) === true;
-          } catch {
-            isLoginBioEnabled = storedLoginBio === "true";
-          }
-        }
-
-        if (LocalAuthentication && LocalAuthentication.hasHardwareAsync) {
-          const [hasHardware, isEnrolled] = await Promise.all([
-            LocalAuthentication.hasHardwareAsync(),
-            LocalAuthentication.isEnrolledAsync(),
-          ]);
-
-          if (hasHardware && isEnrolled) {
-            setIsBiometricAvailable(true);
-
-            const supportedTypes =
-              await LocalAuthentication.supportedAuthenticationTypesAsync();
-
-            let label = Platform.OS === "ios" ? "Face ID" : "Fingerprint";
-            if (Platform.OS === "ios") {
-              if (
-                supportedTypes.includes(
-                  LocalAuthentication.AuthenticationType.FINGERPRINT
-                )
-              ) {
-                label = "Touch ID";
-              }
-            } else {
-              label = "Fingerprint";
+          let label = Platform.OS === "ios" ? "Face ID" : "Fingerprint";
+          if (Platform.OS === "ios") {
+            if (
+              supportedTypes.includes(
+                LocalAuthentication.AuthenticationType.FINGERPRINT
+              )
+            ) {
+              label = "Touch ID";
             }
-            setBiometricLabel(label);
-
-            if (returningUser && savedPin && isLoginBioEnabled) {
-              setUseBiometric(true);
-            } else {
-              setUseBiometric(false);
-            }
+          } else {
+            label = "Fingerprint";
           }
+          setBiometricLabel(label);
+
+          if (returningUser && savedPin && isLoginBioEnabled) {
+            setUseBiometric(true);
+          } else {
+            setUseBiometric(false);
+          }
+        } else {
+          setIsBiometricAvailable(false);
+          setUseBiometric(false);
         }
-      } catch (e) {
-        console.error("Error checking login status:", e);
-      } finally {
-        setIsCheckingStatus(false);
       }
-    };
-    checkLoginStatus();
+    } catch (e) {
+      console.error("Error checking login status:", e);
+    } finally {
+      setIsCheckingStatus(false);
+    }
   }, []);
+
+  useEffect(() => {
+    checkLoginStatus();
+  }, [checkLoginStatus]);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkLoginStatus();
+    }, [checkLoginStatus])
+  );
 
   useEffect(() => {
     setShowErrorModal(Boolean(error));
@@ -183,18 +193,25 @@ const Login = () => {
 
       await dispatch(loginUser(payload)).unwrap();
 
-      await AsyncStorage.setItem("userPin", pin);
-      await AsyncStorage.setItem("userEmail", trimmedInput);
-      await AsyncStorage.setItem("hasLoggedInBefore", "true");
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await Promise.all([
+        AsyncStorage.setItem("userPin", pin),
+        AsyncStorage.setItem("userEmail", trimmedInput),
+        AsyncStorage.setItem("hasLoggedInBefore", "true"),
+      ]);
 
-      const token = await registerForPushNotificationsAsync();
-      if (token) {
-        const isRegistered = await registerDeviceWithBackend(token);
-        if (isRegistered) {
-          console.log("✅ Push token synced with backend");
+      void (async () => {
+        try {
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            const isRegistered = await registerDeviceWithBackend(token);
+            if (isRegistered) {
+              console.log("✅ Push token synced with backend");
+            }
+          }
+        } catch (pushErr) {
+          console.warn("Push token sync error (non-fatal):", pushErr);
         }
-      }
+      })();
     } catch (error) {
       // console.error("❌ Login failed:", error);
     }
@@ -314,15 +331,19 @@ const Login = () => {
 
       await dispatch(loginUser(payload)).unwrap();
 
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const token = await registerForPushNotificationsAsync();
-      if (token) {
-        const isRegistered = await registerDeviceWithBackend(token);
-        if (isRegistered) {
-          console.log("✅ Push token synced with backend");
+      void (async () => {
+        try {
+          const token = await registerForPushNotificationsAsync();
+          if (token) {
+            const isRegistered = await registerDeviceWithBackend(token);
+            if (isRegistered) {
+              console.log("✅ Push token synced with backend");
+            }
+          }
+        } catch (pushErr) {
+          console.warn("Push token sync error (non-fatal):", pushErr);
         }
-      }
+      })();
     } catch (error: any) {
       console.error("❌ Biometric login failed:", error);
       setCustomError(
@@ -499,7 +520,13 @@ const Login = () => {
           onDismiss={handleDismissError}
         />
 
-        <Loading visible={isLoading} />
+        {isLoading && (
+          <View className="absolute inset-0 z-50 bg-black/50 justify-center items-center">
+            <View className="bg-primary-100 rounded-lg p-6">
+              <ActivityIndicator size="large" color="white" />
+            </View>
+          </View>
+        )}
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );

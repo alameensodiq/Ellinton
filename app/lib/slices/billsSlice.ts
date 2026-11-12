@@ -148,7 +148,22 @@ const billsSlice = createSlice({
         state.isLoading = false;
         state.packagesStatus = "failed";
         state.error = action.payload as string;
-      });
+      })
+      .addMatcher(
+        (action) =>
+          action.type === "auth/logout" ||
+          action.type === "auth/setUserOnly" ||
+          action.type === "auth/setCredentials" ||
+          action.type === "auth/loginUser/pending" ||
+          action.type === "auth/loginUser/fulfilled" ||
+          action.type === "auth/logoutUser/fulfilled" ||
+          action.type === "auth/verify-mfa-otp/fulfilled" ||
+          action.type === "auth/verify-device/fulfilled",
+        (state) => {
+          state.error = null;
+          state.isLoading = false;
+        }
+      );
   },
 });
 

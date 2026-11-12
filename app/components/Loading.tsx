@@ -12,7 +12,7 @@ const Loading: React.FC<LoadingProps> = ({ visible }) => {
     <Modal
       transparent
       visible={visible}
-      animationType="fade"
+      animationType="none"
       statusBarTranslucent
     >
       <View className="flex-1 bg-black/50 justify-center items-center">

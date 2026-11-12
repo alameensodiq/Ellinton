@@ -64,6 +64,9 @@ export default function SecurityScreen() {
   const [loginBiometric, setLoginBiometric] = useState(false);
   const [transBiometric, setTransBiometric] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showLoginPasscodeModal, setShowLoginPasscodeModal] = useState(false);
+  const [loginPasscodeValue, setLoginPasscodeValue] = useState("");
+  const [loginPasscodeError, setLoginPasscodeError] = useState("");
   const [loginBiometricConfirmationVisible, setLoginBiometricConfirmationVisible] = useState(false);
   const [biometricNotice, setBiometricNotice] = useState<{ title: string; message: string } | null>(null);
   const [pinValue, setPinValue] = useState("");
@@ -84,12 +87,32 @@ export default function SecurityScreen() {
 
   const loadBiometrics = async () => {
     try {
-      const [storedTrans, storedLogin] = await Promise.all([
+      const [storedTrans, storedLogin, storedUserPin] = await Promise.all([
         AsyncStorage.getItem(TRANS_BIOMETRIC_KEY),
         AsyncStorage.getItem(LOGIN_BIOMETRIC_KEY),
+        AsyncStorage.getItem("userPin"),
       ]);
-      setTransBiometric(storedTrans === "true");
-      setLoginBiometric(storedLogin === "true");
+      const isTransEnabled =
+        storedTrans === "true" ||
+        (() => {
+          try {
+            return JSON.parse(storedTrans || "false") === true;
+          } catch {
+            return false;
+          }
+        })();
+      const isLoginEnabled =
+        Boolean(storedUserPin) &&
+        (storedLogin === "true" ||
+          (() => {
+            try {
+              return JSON.parse(storedLogin || "false") === true;
+            } catch {
+              return false;
+            }
+          })());
+      setTransBiometric(isTransEnabled);
+      setLoginBiometric(isLoginEnabled);
     } catch (e) { console.log(e); }
   };
 
@@ -123,14 +146,14 @@ export default function SecurityScreen() {
     setLoginBiometricConfirmationVisible(false);
     const biometricName = Platform.OS === "ios" ? "Face ID" : "biometrics";
     try {
-      const [hasHardware, isEnrolled, supportedTypes] = await Promise.all([
+      const [hasHardware, isEnrolled, supportedTypes, savedPin, savedEmail] = await Promise.all([
         LocalAuthentication.hasHardwareAsync(),
         LocalAuthentication.isEnrolledAsync(),
         LocalAuthentication.supportedAuthenticationTypesAsync(),
+        AsyncStorage.getItem("userPin"),
+        AsyncStorage.getItem("userEmail"),
       ]);
-      const supportsRequiredBiometric = Platform.OS === "ios"
-        ? supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
-        : supportedTypes.length > 0;
+      const supportsRequiredBiometric = supportedTypes.length > 0;
       if (!hasHardware || !isEnrolled || !supportsRequiredBiometric) {
         setBiometricNotice({
           title: `${biometricName} required`,
@@ -151,10 +174,61 @@ export default function SecurityScreen() {
         return;
       }
 
-      await AsyncStorage.setItem(LOGIN_BIOMETRIC_KEY, JSON.stringify(true));
+      if (!savedPin) {
+        setLoginPasscodeValue("");
+        setLoginPasscodeError("");
+        setShowLoginPasscodeModal(true);
+        return;
+      }
+
+      const pairsToPersist: [string, string][] = [
+        [LOGIN_BIOMETRIC_KEY, JSON.stringify(true)],
+        ["hasLoggedInBefore", "true"],
+      ];
+      if (user) {
+        pairsToPersist.push(["userProfile", JSON.stringify(user)]);
+        const fallbackIdentifier = (user.email || user.phone || "").trim();
+        if (!savedEmail && fallbackIdentifier) {
+          pairsToPersist.push(["userEmail", fallbackIdentifier]);
+        }
+      }
+      await AsyncStorage.multiSet(pairsToPersist);
       setLoginBiometric(true);
     } catch {
       setLoginBiometric(false);
+    }
+  };
+
+  const handleLoginPasscodeSubmit = async () => {
+    if (loginPasscodeValue.length !== 6) {
+      setLoginPasscodeError("Please enter your 6-digit login passcode");
+      return;
+    }
+    try {
+      const savedEmail = await AsyncStorage.getItem("userEmail");
+      const pairsToPersist: [string, string][] = [
+        ["userPin", loginPasscodeValue],
+        [LOGIN_BIOMETRIC_KEY, JSON.stringify(true)],
+        ["hasLoggedInBefore", "true"],
+      ];
+      if (user) {
+        pairsToPersist.push(["userProfile", JSON.stringify(user)]);
+        const fallbackIdentifier = (user.email || user.phone || "").trim();
+        if (!savedEmail && fallbackIdentifier) {
+          pairsToPersist.push(["userEmail", fallbackIdentifier]);
+        }
+      }
+      await AsyncStorage.multiSet(pairsToPersist);
+      setLoginBiometric(true);
+      setShowLoginPasscodeModal(false);
+      setLoginPasscodeValue("");
+      setLoginPasscodeError("");
+      setBiometricNotice({
+        title: "Biometric Login enabled",
+        message: "You can now sign in with Face ID or Fingerprint.",
+      });
+    } catch {
+      setLoginPasscodeError("Could not save biometric preference. Please try again.");
     }
   };
 
@@ -428,6 +502,66 @@ export default function SecurityScreen() {
             >
               <Text style={{ color: C.white, fontFamily: "OutfitBold", fontSize: 14 }}>OK</Text>
             </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* LOGIN PASSCODE MODAL (when userPin is not yet stored locally) */}
+      <Modal
+        visible={showLoginPasscodeModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowLoginPasscodeModal(false);
+          setLoginPasscodeValue("");
+          setLoginPasscodeError("");
+          setLoginBiometric(false);
+        }}
+      >
+        <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "center", alignItems: "center", paddingHorizontal: 24 }}>
+          <View style={{ backgroundColor: "#fff", borderRadius: 20, padding: 20, width: "100%", maxWidth: 380, alignItems: "center" }}>
+            <View style={{ backgroundColor: "rgba(150,152,65,0.15)", width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+              <MaterialCommunityIcons name="face-recognition" size={28} color="#969841" />
+            </View>
+            <Text style={{ color: C.textPrimary, fontSize: 18, fontFamily: "OutfitBold", marginBottom: 4 }}>Confirm Login Passcode</Text>
+            <Text style={{ color: C.textSub, fontSize: 12, fontFamily: "Outfit", textAlign: "center", marginBottom: 24, paddingHorizontal: 16 }}>
+              Enter your 6-digit login passcode to link {Platform.OS === "ios" ? "Face ID" : "Fingerprint"} to your account.
+            </Text>
+            <OtpInput
+              digitCount={6}
+              value={loginPasscodeValue}
+              onChange={(val) => {
+                setLoginPasscodeValue(val);
+                setLoginPasscodeError("");
+              }}
+              secure
+              autoFocus
+              inputStyle="w-11 h-12 text-lg"
+            />
+            {loginPasscodeError ? (
+              <Text style={{ color: "#DC2626", fontSize: 12, fontFamily: "Outfit", textAlign: "center", marginTop: 12 }}>
+                {loginPasscodeError}
+              </Text>
+            ) : null}
+            <View style={{ flexDirection: "row", width: "100%", marginTop: 24, gap: 10 }}>
+              <Pressable
+                onPress={() => {
+                  setShowLoginPasscodeModal(false);
+                  setLoginPasscodeValue("");
+                  setLoginPasscodeError("");
+                  setLoginBiometric(false);
+                }}
+                style={{ flex: 1, borderColor: "#E8E5DC", borderWidth: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center" }}
+              >
+                <Text style={{ color: C.textPrimary, fontFamily: "OutfitBold", fontSize: 14 }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleLoginPasscodeSubmit}
+                style={{ flex: 1, backgroundColor: "#969841", paddingVertical: 12, borderRadius: 12, alignItems: "center" }}
+              >
+                <Text style={{ color: "#fff", fontFamily: "OutfitBold", fontSize: 14 }}>Enable</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </Modal>

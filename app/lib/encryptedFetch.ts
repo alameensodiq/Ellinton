@@ -26,18 +26,18 @@ class EncryptedFetch {
   ): Promise<Response> {
     const requestOptions = { ...options };
 
-    this.generatedIV = null;
-    this.generatedReversedIV = null;
+    let requestIv: string | null = null;
 
     if (!skipEncryption && requestOptions.body &&
       (requestOptions.method === 'POST' || requestOptions.method === 'PUT' || requestOptions.method === 'PATCH')) {
 
       try {
-        // Generate the exact IV we will use
+        // Generate the exact IV we will use for this request
         const originalIv = encryptionClient.generateIV();
         const reversedIv = this.reverseString(originalIv);
 
-        // Store the exact IV we generated
+        // Store the exact IV locally for this request as well as on the instance
+        requestIv = originalIv;
         this.generatedIV = originalIv;
         this.generatedReversedIV = reversedIv;
 
@@ -100,7 +100,10 @@ class EncryptedFetch {
       if (responseIvHeader) {
         ivToUse = responseIvHeader;
       }
-      // PRIORITY 2: If no response header, use the original IV we generated
+      // PRIORITY 2: If no response header, use the original IV generated for this request
+      else if (requestIv) {
+        ivToUse = requestIv;
+      }
       else if (this.generatedIV) {
         ivToUse = this.generatedIV;
       }

@@ -409,13 +409,10 @@ const persistToken = async (token: string) => {
       return;
     }
 
-    await AsyncStorage.setItem("authToken", token);
-
-    // Verify immediately
-    const savedToken = await AsyncStorage.getItem("authToken");
-    if (savedToken === token) {
-    } else {
-    }
+    await Promise.all([
+      AsyncStorage.setItem("authToken", token),
+      AsyncStorage.setItem("lastActiveTime", Date.now().toString()),
+    ]);
   } catch (error) { }
 };
 
@@ -559,6 +556,14 @@ export const NewUserPasscode = createAsyncThunk(
         await persistUserProfile(apiData.user);
       }
 
+      if (payload.passcode) {
+        await AsyncStorage.setItem("userPin", payload.passcode);
+        await AsyncStorage.setItem("hasLoggedInBefore", "true");
+      }
+      if (payload.phone) {
+        await AsyncStorage.setItem("userEmail", payload.phone);
+      }
+
       const accessToken = apiData?.access_token || apiData?.token;
       if (accessToken) {
         await persistToken(accessToken);
@@ -615,11 +620,20 @@ export const loginUser = createAsyncThunk(
       const requiresTransactionPinSetup =
         apiData.requires_transaction_pin_setup ?? false;
 
+      const loginIdentifier = (payload.email || payload.phone || "").trim();
+
       await Promise.all([
         persistUserProfile(user),
         persistToken(token),
         persistData(apiData),
         persistChallenge(challenge),
+        payload.passcode
+          ? AsyncStorage.setItem("userPin", payload.passcode)
+          : Promise.resolve(),
+        loginIdentifier
+          ? AsyncStorage.setItem("userEmail", loginIdentifier)
+          : Promise.resolve(),
+        AsyncStorage.setItem("hasLoggedInBefore", "true"),
       ]);
 
       const verifyToken = await AsyncStorage.getItem("authToken");
@@ -1043,6 +1057,7 @@ export const DeviceOtp = createAsyncThunk(
         console.log("✅ Updated main data object with cleared flags");
 
         await AsyncStorage.setItem("deviceVerified", "true");
+        await AsyncStorage.setItem("lastActiveTime", Date.now().toString());
         console.log("✅ Set deviceVerified flag");
       } catch (storageError) {
         console.error("⚠️ Storage error:", storageError);
@@ -1502,53 +1517,76 @@ export const getUserProfile = createAsyncThunk(
 
 export const restoreAuth = createAsyncThunk(
   "auth/restoreAuth",
-  async (_, { dispatch, rejectWithValue, getState }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
       console.log("🔐 restoreAuth: Starting...");
 
-      const [token, userProfileStr] = await Promise.all([
+      const [token, userProfileStr, lastActiveTime] = await Promise.all([
         AsyncStorage.getItem("authToken"),
         AsyncStorage.getItem("userProfile"),
+        AsyncStorage.getItem("lastActiveTime"),
       ]);
 
-      // console.log("🔐 restoreAuth: Token found?", !!token);
-      // console.log("🔐 restoreAuth: User profile found?", !!userProfileStr);
+      const SESSION_TIMEOUT_MS = 5 * 60 * 1000;
+      const isSessionTimedOut =
+        !lastActiveTime ||
+        Number.isNaN(Number(lastActiveTime)) ||
+        Date.now() - Number(lastActiveTime) >= SESSION_TIMEOUT_MS;
 
       if (userProfileStr) {
         const user = JSON.parse(userProfileStr) as User;
 
-        if (token) {
+        if (token && !isSessionTimedOut) {
           console.log(
-            "🔐 restoreAuth: Both token and user found, restoring session"
+            "🔐 restoreAuth: Active token and user found, validating session"
           );
-          dispatch(setCredentials({ token, user, isAuthenticated: true }));
+          // Provide token for getUserProfile without marking session as authenticated yet
+          dispatch(setCredentials({ token, user, isAuthenticated: false }));
 
           try {
-            await dispatch(getUserProfile()).unwrap();
+            const profileResult = await dispatch(getUserProfile()).unwrap();
+            const validatedUser = profileResult?.user || user;
+            await AsyncStorage.setItem("lastActiveTime", Date.now().toString());
+            dispatch(
+              setCredentials({
+                token,
+                user: validatedUser,
+                isAuthenticated: true,
+              })
+            );
             console.log("🔐 restoreAuth: User profile validated successfully");
-            return { token, user };
+            return { token, user: validatedUser };
           } catch (error) {
-            // console.error(
-            //   "🔐 restoreAuth: Token validation failed, but keeping user data",
-            //   error
-            // );
-            // Don't clear token here - just return user without token
+            await AsyncStorage.multiRemove(["authToken", "data", "challenge"]).catch(
+              () => {}
+            );
             dispatch(setUserOnly({ user }));
             return { user };
           }
         } else {
-          console.log("🔐 restoreAuth: No token, setting user only");
+          if (token) {
+            console.log("🔐 restoreAuth: Session timed out while closed, clearing token");
+            await AsyncStorage.multiRemove(["authToken", "data", "challenge"]).catch(
+              () => {}
+            );
+          }
           dispatch(setUserOnly({ user }));
           return { user };
         }
       } else {
         console.log("🔐 restoreAuth: No user profile found");
-        // Don't clear token if no user profile - just return
+        if (token) {
+          await AsyncStorage.multiRemove(["authToken", "data", "challenge"]).catch(
+            () => {}
+          );
+        }
         return rejectWithValue("No user profile found");
       }
     } catch (error: any) {
       console.error("🔐 restoreAuth: Error during restore", error);
-      // Don't clear token on error - just return
+      await AsyncStorage.multiRemove(["authToken", "data", "challenge"]).catch(
+        () => {}
+      );
       return rejectWithValue(error.message || "Restore auth error");
     }
   }
@@ -2215,6 +2253,11 @@ export const setupPasscode = createAsyncThunk(
         );
       }
 
+      if (payload.passcode) {
+        await AsyncStorage.setItem("userPin", payload.passcode);
+        await AsyncStorage.setItem("hasLoggedInBefore", "true");
+      }
+
       return {
         message:
           data?.data?.message || data?.message || "Passcode setup successfully",
@@ -2260,11 +2303,14 @@ export const logoutUser = createAsyncThunk(
         );
       }
 
-      await clearAuthToken();
+      await AsyncStorage.multiRemove(["authToken", "data", "challenge"]);
 
       return { message: "Logged out successfully" };
     } catch (error: any) {
       console.error("🔐 Logout - Error:", error);
+      await AsyncStorage.multiRemove(["authToken", "data", "challenge"]).catch(
+        () => {}
+      );
       return rejectWithValue(
         error.data?.message || error.message || "Logout error"
       );
@@ -2368,6 +2414,11 @@ export const resetPasscode = createAsyncThunk(
         );
       }
 
+      if (payload.newPasscode) {
+        await AsyncStorage.setItem("userPin", payload.newPasscode);
+        await AsyncStorage.setItem("hasLoggedInBefore", "true");
+      }
+
       return {
         message:
           data?.data?.message || data?.message || "Passcode reset successfully",
@@ -2410,7 +2461,11 @@ export const changePasscode = createAsyncThunk(
         );
       }
 
-      await clearAuthToken();
+      if (payload.newPasscode) {
+        await AsyncStorage.setItem("userPin", payload.newPasscode);
+        await AsyncStorage.setItem("hasLoggedInBefore", "true");
+      }
+      await AsyncStorage.multiRemove(["authToken", "data", "challenge"]);
       return {
         message:
           data?.data?.message ||

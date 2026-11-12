@@ -1,0 +1,32 @@
+diff --git a/node_modules/image-size/dist/cjs/lookup.js b/node_modules/image-size/dist/cjs/lookup.js
+index 2196fc0..6acbe03 100644
+--- a/node_modules/image-size/dist/cjs/lookup.js
++++ b/node_modules/image-size/dist/cjs/lookup.js
+@@ -8,6 +8,9 @@ const globalOptions = {
+     disabledTypes: [],
+ };
+ function imageSize(input) {
++    if (typeof input === 'string') {
++        input = require('fs').readFileSync(input);
++    }
+     const type = (0, detector_1.detector)(input);
+     if (typeof type !== 'undefined') {
+         if (globalOptions.disabledTypes.indexOf(type) > -1) {
+diff --git a/node_modules/image-size/dist/esm/lookup.js b/node_modules/image-size/dist/esm/lookup.js
+index b4351c2..6aeccfd 100644
+--- a/node_modules/image-size/dist/esm/lookup.js
++++ b/node_modules/image-size/dist/esm/lookup.js
+@@ -1,9 +1,13 @@
++import fs from 'node:fs';
+ import { detector } from './detector.js';
+ import { typeHandlers } from './types/index.js';
+ const globalOptions = {
+     disabledTypes: [],
+ };
+ export function imageSize(input) {
++    if (typeof input === 'string') {
++        input = fs.readFileSync(input);
++    }
+     const type = detector(input);
+     if (typeof type !== 'undefined') {
+         if (globalOptions.disabledTypes.indexOf(type) > -1) {

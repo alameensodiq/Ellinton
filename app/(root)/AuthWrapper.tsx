@@ -564,6 +564,7 @@ import { AppDispatch, RootState } from "../lib/store";
 import { useAppSelector } from "../lib/hooks/useAppSelector";
 import TransactionPinSetupGuard from "@/app/components/TransactionPinSetupGuard";
 import { restoreAuth } from "../lib/thunks/authThunks";
+import { clearError, logout } from "../lib/slices/authSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import crashlytics from "@react-native-firebase/crashlytics";
 
@@ -641,6 +642,9 @@ export default function AuthWrapper() {
           requires_device_verification: parsedData?.requires_device_verification
         });
         return parsedData;
+      } else if (storedDataRef.current !== null) {
+        storedDataRef.current = null;
+        setStoredData(null);
       }
     } catch (error) {
       console.error("Failed to refresh stored data:", error);
@@ -703,12 +707,12 @@ export default function AuthWrapper() {
         segmentKey === "(auth)/current-user" ||
         segmentKey === "(auth)/login";
 
-      let currentStoredData = storedData;
+      let currentStoredData = storedDataRef.current;
       if (isOnAuthScreen) {
         console.log("🔄 On auth screen, refreshing data...");
         const freshData = await refreshStoredData();
         if (!isCurrentNavigationCheck) return;
-        currentStoredData = freshData || storedData;
+        currentStoredData = freshData;
       }
 
       const inAuthGroup = segments[0] === "(auth)";
@@ -824,6 +828,13 @@ export default function AuthWrapper() {
         !isOnMultiFactorOtp &&
         !isOnDeviceOtp
       ) {
+        await AsyncStorage.multiRemove(["authToken", "data", "challenge"]).catch(
+          () => {}
+        );
+        storedDataRef.current = null;
+        setStoredData(null);
+        dispatch(logout());
+        dispatch(clearError());
         router.replace(user ? "/(auth)/current-user" : "/(auth)/login");
       }
     };

@@ -10,15 +10,22 @@ import { useAppDispatch } from "../lib/hooks/useAppDispatch";
 
 const INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5-minute inactivity timeout
 const LAST_ACTIVE_KEY = "lastActiveTime";
+const STORAGE_WRITE_THROTTLE_MS = 10 * 1000;
 
 const KEYS_TO_PRESERVE = new Set([
   "userPin",
   "userEmail",
   "userProfile",
+  "userAccountNumber",
   "hasLoggedInBefore",
+  "loginBiometricEnabled",
   "transBiometricEnabled",
   "transBiometricPin",
   "deviceIdBackup",
+  "deviceVerified",
+  "app_theme",
+  "user_linked_cards",
+  "user_employment_details",
 ]);
 
 const clearSessionStorage = async () => {
@@ -37,6 +44,9 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
   const appState = useRef<AppStateStatus>(AppState.currentState);
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isHandlingLogout = useRef(false);
+  const lastActiveTimeRef = useRef<number>(Date.now());
+  const lastPersistedTimeRef = useRef<number>(0);
+  const wasAuthenticatedRef = useRef<boolean>(false);
   const pathname = usePathname();
   const dispatch = useAppDispatch();
 
@@ -76,22 +86,42 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
     }
   }, [dispatch]);
 
-  const recordStartTime = useCallback(async () => {
-    if (isPublicRoute || !isAuthenticated) return;
-    try {
-      await AsyncStorage.setItem(LAST_ACTIVE_KEY, Date.now().toString());
-    } catch (error) {
-      console.error("Error recording start time:", error);
-    }
-  }, [isPublicRoute, isAuthenticated]);
+  const recordStartTime = useCallback(
+    async (forcePersist = false) => {
+      if (!isAuthenticated) return;
+      const now = Date.now();
+      lastActiveTimeRef.current = now;
+
+      if (
+        !forcePersist &&
+        now - lastPersistedTimeRef.current < STORAGE_WRITE_THROTTLE_MS
+      ) {
+        return;
+      }
+
+      lastPersistedTimeRef.current = now;
+      try {
+        await AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString());
+      } catch (error) {
+        console.error("Error recording start time:", error);
+      }
+    },
+    [isAuthenticated]
+  );
 
   const checkInactivity = useCallback(async () => {
-    if (isPublicRoute || !isAuthenticated) return;
+    if (isPublicRoute || !isAuthenticated) return false;
 
     try {
-      const lastActiveTime = await AsyncStorage.getItem(LAST_ACTIVE_KEY);
-      if (lastActiveTime) {
-        const inactiveDuration = Date.now() - Number(lastActiveTime);
+      const storedLastActive = await AsyncStorage.getItem(LAST_ACTIVE_KEY);
+      const parsedStored = storedLastActive ? Number(storedLastActive) : 0;
+      const effectiveLastActive = Math.max(
+        lastActiveTimeRef.current,
+        Number.isNaN(parsedStored) ? 0 : parsedStored
+      );
+
+      if (effectiveLastActive > 0) {
+        const inactiveDuration = Date.now() - effectiveLastActive;
         if (inactiveDuration >= INACTIVITY_TIMEOUT) {
           await handleLogout();
           return true;
@@ -104,19 +134,33 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
     return false;
   }, [isPublicRoute, isAuthenticated, handleLogout]);
 
-  const resetTimer = useCallback(async () => {
-    if (isPublicRoute || !isAuthenticated) return;
+  const resetTimer = useCallback(
+    async (forcePersist = false) => {
+      if (isPublicRoute || !isAuthenticated) return;
 
-    await recordStartTime();
+      await recordStartTime(forcePersist);
 
-    if (inactivityTimer.current) {
-      clearTimeout(inactivityTimer.current);
+      if (inactivityTimer.current) {
+        clearTimeout(inactivityTimer.current);
+      }
+
+      inactivityTimer.current = setTimeout(() => {
+        checkInactivity();
+      }, INACTIVITY_TIMEOUT);
+    },
+    [isPublicRoute, isAuthenticated, recordStartTime, checkInactivity]
+  );
+
+  // Immediately stamp fresh activity time whenever user transitions to authenticated
+  useEffect(() => {
+    if (isAuthenticated && !wasAuthenticatedRef.current) {
+      const now = Date.now();
+      lastActiveTimeRef.current = now;
+      lastPersistedTimeRef.current = now;
+      AsyncStorage.setItem(LAST_ACTIVE_KEY, now.toString()).catch(() => {});
     }
-
-    inactivityTimer.current = setTimeout(() => {
-      checkInactivity();
-    }, INACTIVITY_TIMEOUT);
-  }, [isPublicRoute, isAuthenticated, recordStartTime, checkInactivity]);
+    wasAuthenticatedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
 
   // Handle app state changes
   useEffect(() => {
@@ -134,7 +178,7 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
         nextAppState !== "active" &&
         previousAppState === "active"
       ) {
-        await recordStartTime();
+        await recordStartTime(true);
         if (inactivityTimer.current) {
           clearTimeout(inactivityTimer.current);
           inactivityTimer.current = null;
@@ -144,7 +188,7 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
       if (nextAppState === "active" && previousAppState !== "active") {
         const didLogout = await checkInactivity();
         if (!didLogout) {
-          await resetTimer();
+          await resetTimer(true);
         }
       }
     };
@@ -174,7 +218,7 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
 
   const handleInteractionCapture = useCallback(() => {
     if (!isPublicRoute && isAuthenticated) {
-      resetTimer();
+      resetTimer(false);
     }
 
     return false;
@@ -184,7 +228,6 @@ const UserInactivityProvider = ({ children }: { children: React.ReactNode }) => 
     <View
       style={{ flex: 1 }}
       onStartShouldSetResponderCapture={handleInteractionCapture}
-      onMoveShouldSetResponderCapture={handleInteractionCapture}
     >
       {children}
     </View>

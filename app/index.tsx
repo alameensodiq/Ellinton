@@ -88,22 +88,19 @@ export default function Index() {
   if (checkingStorage) return null;
 const handleAuthNavigation = async (path: string) => {
   try {
-    // 1. Unregister device first
-    // await notificationService.unregisterDeviceFromBackend();
-    
-    // 2. Sign out from Firebase
-    // await signOut(auth);
-    
-    // 3. Clear Redux state
+    await AsyncStorage.multiRemove(["authToken", "data", "challenge"]).catch(
+      () => {}
+    );
+
+    // Clear Redux state
     dispatch(logout());
     dispatch(clearError());
-    
-    // 4. Navigate
+
+    // Navigate
     router.push(path as any);
-    
   } catch (error) {
     console.error("Logout error:", error);
-    // Still clear state and navigate even if unregister fails
+    // Still clear state and navigate even if cleanup fails
     dispatch(logout());
     dispatch(clearError());
     router.push(path as any);

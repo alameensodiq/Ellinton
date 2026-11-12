@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/firebase";
 import { getUserProfile, logoutUser, MfaReset } from "@/app/lib/thunks/authThunks";
+import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { fetchAccountInfo } from "@/app/lib/thunks/accountThunks";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
@@ -154,16 +155,17 @@ export default function AccountScreen() {
   const handleSignOut = async () => {
     setLoggingOut(true);
     try {
-      await AsyncStorage.removeItem("authToken");
+      await AsyncStorage.multiRemove(["authToken", "data", "challenge"]);
       await dispatch(logoutUser()).unwrap();
-      await signOut(auth);
-      setSignOutModalVisible(false);
-      router.replace("/(auth)/current-user");
+      await signOut(auth).catch(() => {});
     } catch (e) {
-      setSignOutModalVisible(false);
-      router.replace("/(auth)/current-user");
+      // Proceed with local logout even if backend call fails
     } finally {
+      dispatch(logout());
+      dispatch(clearError());
+      setSignOutModalVisible(false);
       setLoggingOut(false);
+      router.replace("/(auth)/current-user");
     }
   };
 

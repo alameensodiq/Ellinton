@@ -18,6 +18,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../lib/store";
 import { logoutUser, MfaReset } from "../lib/thunks/authThunks";
+import { clearError, logout } from "../lib/slices/authSlice";
 import { useRouter } from "expo-router";
 
 import Sheet from "./Sheet";
@@ -219,15 +220,16 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem("authToken");
+      await AsyncStorage.multiRemove(["authToken", "data", "challenge"]);
       await dispatch(logoutUser()).unwrap();
-      await signOut(auth);
-      onClose();
-
-      // 4. Navigate to login screen
-      router.replace("/(auth)/current-user");
+      await signOut(auth).catch(() => {});
     } catch (err: any) {
-      // console.error("Logout failed:", err);
+      // Proceed with local logout even if backend call fails
+    } finally {
+      dispatch(logout());
+      dispatch(clearError());
+      onClose();
+      router.replace("/(auth)/current-user");
     }
   };
 
@@ -353,7 +355,10 @@ const BottomMenu: React.FC<BottomMenuProps> = ({
           return;
         }
 
-        await AsyncStorage.setItem(LOGIN_BIOMETRIC_KEY, JSON.stringify(true));
+        await Promise.all([
+          AsyncStorage.setItem(LOGIN_BIOMETRIC_KEY, JSON.stringify(true)),
+          AsyncStorage.setItem("hasLoggedInBefore", "true"),
+        ]);
         setLoginBiometric(true);
       } catch (err: any) {
         console.error("Biometrics check error:", err);

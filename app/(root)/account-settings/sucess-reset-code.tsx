@@ -8,7 +8,7 @@ import CustomText from "@/app/components/CustomText";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { logoutUser } from "@/app/lib/thunks/authThunks";
-import { clearError } from "@/app/lib/slices/authSlice";
+import { clearError, logout } from "@/app/lib/slices/authSlice";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/firebase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -22,24 +22,19 @@ const Success = () => {
 
 const handleClose = async () => {
   try {
-    // 1. Logout from your backend
-     await AsyncStorage.clear();
+    // 1. Only remove active session tokens; preserve userPin, loginBiometricEnabled, userProfile, etc.
+    await AsyncStorage.multiRemove(["authToken", "data", "challenge"]);
     await dispatch(logoutUser()).unwrap();
-    
-    // 2. Unregister device from backend
-    // await notificationService.unregisterDeviceFromBackend();
-    
-    // 3. Sign out from Firebase
-    await signOut(auth);
-    
-    // 4. Clear Redux error (dispatch it!)
-    dispatch(clearError());
-    
+
+    // 2. Sign out from Firebase
+    await signOut(auth).catch(() => {});
+
     console.log("✅ Logout successful");
-    
   } catch (error) {
     console.error("❌ Logout error:", error);
   } finally {
+    dispatch(logout());
+    dispatch(clearError());
     // Always navigate away
     router.replace("/(auth)/current-user");
   }

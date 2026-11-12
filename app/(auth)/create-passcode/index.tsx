@@ -65,9 +65,7 @@ const CreatePasscodeScreen = () => {
         LocalAuthentication.isEnrolledAsync(),
         LocalAuthentication.supportedAuthenticationTypesAsync(),
       ]);
-      const supportsRequiredBiometric = Platform.OS === "ios"
-        ? supportedTypes.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)
-        : supportedTypes.length > 0;
+      const supportsRequiredBiometric = supportedTypes.length > 0;
       if (!hasHardware || !isEnrolled || !supportsRequiredBiometric) {
         setEnableBiometric(false);
         setBiometricNoticeVisible(true);
@@ -112,7 +110,9 @@ const CreatePasscodeScreen = () => {
       // Persist the login preference only after passcode creation succeeds.
       await AsyncStorage.multiSet([
         ["userPin", passcode],
-        ["loginBiometricEnabled", String(enableBiometric)],
+        ["hasLoggedInBefore", "true"],
+        ["loginBiometricEnabled", JSON.stringify(enableBiometric)],
+        ...(phone ? ([["userEmail", String(phone)]] as [string, string][]) : []),
       ]);
 
       router.push({

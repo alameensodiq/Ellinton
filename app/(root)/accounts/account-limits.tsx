@@ -27,7 +27,21 @@ import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { isValidDocumentDataUri, normalizeDataUri, prepareImageForUpload } from "@/app/lib/imageUpload";
-import { fetchProfileCompletion, getUserProfile, submitDocUpload, submitGovernmentId, submitProofOfAddress, GovernmentIdType, ProofOfAddressType, type ProfileCompletion } from "@/app/lib/thunks/authThunks";
+import {
+  fetchProfileCompletion,
+  getUserProfile,
+  submitDocUpload,
+  submitGovernmentId,
+  submitProofOfAddress,
+  createUserTransactionPin,
+  updateResidentialAddress,
+  updateFinancialProfile,
+  updateNextOfKin,
+  GovernmentIdType,
+  ProofOfAddressType,
+  type ProfileCompletion,
+} from "@/app/lib/thunks/authThunks";
+import { stateOptions as NIGERIA_STATE_OPTIONS } from "@/app/lib/utils";
 
 // ─── App Colors ──────────────────────────────────────────────────────────────
 const C = {
@@ -150,12 +164,157 @@ const getIdentificationNumberMaxLength = (type: GovernmentIdType) => {
   }
 };
 
+const EMPLOYMENT_STATUS_CHIPS = [
+  { value: "employed", label: "Employed" },
+  { value: "self_employed", label: "Self-Employed" },
+  { value: "business_owner", label: "Business Owner" },
+  { value: "student", label: "Student" },
+  { value: "unemployed", label: "Unemployed" },
+];
+
+const NOK_RELATIONSHIP_CHIPS = [
+  { value: "Spouse", label: "Spouse" },
+  { value: "Parent", label: "Parent" },
+  { value: "Sibling", label: "Sibling" },
+  { value: "Child", label: "Child" },
+  { value: "Next of Kin", label: "Next of Kin" },
+];
+
+const getPrereqFieldConfig = (field: string) => {
+  switch (field) {
+    case "address_1":
+      return {
+        label: "Residential Address",
+        placeholder: "Enter street address",
+        icon: "home-map-marker",
+        keyboardType: "default",
+      };
+    case "city":
+      return {
+        label: "City",
+        placeholder: "Enter city",
+        icon: "city-variant-outline",
+        keyboardType: "default",
+      };
+    case "state":
+      return {
+        label: "State",
+        placeholder: "Enter state (e.g. Lagos)",
+        icon: "map-marker-outline",
+        keyboardType: "default",
+      };
+    case "landmark":
+      return {
+        label: "Landmark",
+        placeholder: "Nearest landmark",
+        icon: "sign-direction",
+        keyboardType: "default",
+      };
+    case "transaction_pin":
+      return {
+        label: "Transaction PIN",
+        placeholder: "Enter 4-digit PIN",
+        icon: "shield-key-outline",
+        keyboardType: "numeric",
+        maxLength: 4,
+        secureTextEntry: true,
+      };
+    case "state_of_origin":
+      return {
+        label: "State of Origin",
+        placeholder: "Enter state of origin",
+        icon: "map-outline",
+        keyboardType: "default",
+      };
+    case "lga_of_origin":
+      return {
+        label: "LGA of Origin",
+        placeholder: "Enter LGA of origin",
+        icon: "map-marker-radius-outline",
+        keyboardType: "default",
+      };
+    case "employment_status":
+      return {
+        label: "Employment Status",
+        placeholder: "Select or enter employment status",
+        icon: "briefcase-outline",
+        keyboardType: "default",
+      };
+    case "industry":
+      return {
+        label: "Industry / Sector",
+        placeholder: "e.g. Technology, Banking, Retail",
+        icon: "domain",
+        keyboardType: "default",
+      };
+    case "employer":
+      return {
+        label: "Employer",
+        placeholder: "Enter employer or business name",
+        icon: "office-building-outline",
+        keyboardType: "default",
+      };
+    case "estimated_monthly_income":
+      return {
+        label: "Estimated Monthly Income (₦)",
+        placeholder: "e.g. 250000",
+        icon: "cash-multiple",
+        keyboardType: "numeric",
+      };
+    case "next_of_kin.name":
+    case "next_of_kin_name":
+      return {
+        label: "Next of Kin Name",
+        placeholder: "First and Last Name",
+        icon: "account-child-outline",
+        keyboardType: "default",
+      };
+    case "next_of_kin.relationship":
+    case "next_of_kin_relationship":
+      return {
+        label: "Next of Kin Relationship",
+        placeholder: "Select or enter relationship",
+        icon: "heart-outline",
+        keyboardType: "default",
+      };
+    case "next_of_kin.phone":
+    case "next_of_kin_phone":
+      return {
+        label: "Next of Kin Phone",
+        placeholder: "e.g. 08012345678",
+        icon: "phone-outline",
+        keyboardType: "phone-pad",
+        maxLength: 11,
+      };
+    case "next_of_kin.address_1":
+    case "next_of_kin_address_1":
+    case "next_of_kin_address":
+      return {
+        label: "Next of Kin Address",
+        placeholder: "Enter next of kin address",
+        icon: "home-outline",
+        keyboardType: "default",
+      };
+    default:
+      return {
+        label: field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+        placeholder: `Enter ${field.replace(/_/g, " ")}`,
+        icon: "circle-small",
+        keyboardType: "default",
+      };
+  }
+};
+
 export default function AccountLimitsScreen() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const token = useAppSelector((state) => (state as any).auth.token);
   const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion | null>(null);
+  const [prereqModalVisible, setPrereqModalVisible] = useState(false);
+  const [prereqInputs, setPrereqInputs] = useState<Record<string, string>>({});
+  const [submittingPrereqField, setSubmittingPrereqField] = useState<string | null>(null);
+  const [prereqErrors, setPrereqErrors] = useState<Record<string, string>>({});
 
   const [isVerifyingFace, setIsVerifyingFace] = useState(false);
   const livenessRequest = useRef<{ reference: string; bvn: string } | null>(null);
@@ -270,8 +429,12 @@ export default function AccountLimitsScreen() {
   const kycLevel = hasAccount ? (user?.kyc_level || 1) : 0;
 
   const missingProfileFields = profileCompletion?.missing_fields ?? [];
+  const completionPct = Math.min(
+    100,
+    Math.max(0, Math.round(profileCompletion?.completion_percentage ?? 0))
+  );
   const isProfileComplete =
-    profileCompletion?.completion_percentage === 100 &&
+    completionPct === 100 &&
     missingProfileFields.length === 0;
   const hasVerifiedBvn =
     user?.bvn_verified === true;
@@ -291,6 +454,516 @@ export default function AccountLimitsScreen() {
 
       });
   }, [dispatch]);
+
+  useEffect(() => {
+    if (prereqModalVisible && user) {
+      setPrereqInputs((prev) => ({
+        address_1: prev.address_1 ?? user.address_1 ?? "",
+        city: prev.city ?? user.city ?? "",
+        state: prev.state ?? user.state ?? "",
+        landmark: prev.landmark ?? (user as any).landmark ?? "",
+        state_of_origin: prev.state_of_origin ?? (user as any).state_of_origin ?? "",
+        lga_of_origin: prev.lga_of_origin ?? (user as any).lga_of_origin ?? "",
+        employment_status: prev.employment_status ?? (user as any).employment_status ?? "",
+        industry: prev.industry ?? (user as any).industry ?? "",
+        employer: prev.employer ?? (user as any).employer ?? "",
+        estimated_monthly_income:
+          prev.estimated_monthly_income ??
+          ((user as any).estimated_monthly_income ? String((user as any).estimated_monthly_income) : ""),
+        nok_first_name: prev.nok_first_name ?? (user as any).next_of_kin?.first_name ?? "",
+        nok_last_name: prev.nok_last_name ?? (user as any).next_of_kin?.last_name ?? "",
+        "next_of_kin.relationship": prev["next_of_kin.relationship"] ?? (user as any).next_of_kin?.relationship ?? "",
+        "next_of_kin.phone": prev["next_of_kin.phone"] ?? (user as any).next_of_kin?.phone ?? "",
+        "next_of_kin.address_1": prev["next_of_kin.address_1"] ?? (user as any).next_of_kin?.address_1 ?? "",
+        ...prev,
+      }));
+    }
+  }, [prereqModalVisible, user]);
+
+  const handleSubmitPrereqField = async (field: string) => {
+    setSubmittingPrereqField(field);
+    setPrereqErrors((prev) => ({ ...prev, [field]: "" }));
+
+    try {
+      if (field === "transaction_pin") {
+        const pin = (prereqInputs["transaction_pin"] || "").trim();
+        if (!pin || pin.length !== 4) {
+          setPrereqErrors((prev) => ({ ...prev, [field]: "Please enter a 4-digit PIN." }));
+          setSubmittingPrereqField(null);
+          return;
+        }
+        if (!user?.id) {
+          setPrereqErrors((prev) => ({ ...prev, [field]: "User profile is missing. Please reload." }));
+          setSubmittingPrereqField(null);
+          return;
+        }
+        await dispatch(createUserTransactionPin({ userId: user.id, pin })).unwrap();
+      } else if (
+        field === "address_1" ||
+        field === "city" ||
+        field === "state" ||
+        field === "landmark" ||
+        field === "state_of_origin" ||
+        field === "lga_of_origin"
+      ) {
+        const val = (prereqInputs[field] || "").trim();
+        if (!val) {
+          setPrereqErrors((prev) => ({ ...prev, [field]: "Please enter a value before saving." }));
+          setSubmittingPrereqField(null);
+          return;
+        }
+        const stateOption = NIGERIA_STATE_OPTIONS.find(
+          (opt) => opt.value.toLowerCase() === val.toLowerCase() || opt.label.toLowerCase() === val.toLowerCase()
+        );
+        const resolvedVal = (field === "state" || field === "state_of_origin") && stateOption ? stateOption.label : val;
+
+        const payload: Record<string, string> = {
+          address_1: field === "address_1" ? resolvedVal : (user?.address_1 || ""),
+          city: field === "city" ? resolvedVal : (user?.city || ""),
+          state: field === "state" ? resolvedVal : (user?.state || ""),
+          landmark: field === "landmark" ? resolvedVal : ((user as any)?.landmark || ""),
+          state_of_origin: field === "state_of_origin" ? resolvedVal : ((user as any)?.state_of_origin || ""),
+          lga_of_origin: field === "lga_of_origin" ? resolvedVal : ((user as any)?.lga_of_origin || ""),
+        };
+        const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([, v]) => !!v));
+        await dispatch(updateResidentialAddress(cleanPayload)).unwrap();
+      } else if (
+        field === "employment_status" ||
+        field === "industry" ||
+        field === "employer" ||
+        field === "estimated_monthly_income"
+      ) {
+        const val = (prereqInputs[field] || "").trim();
+        if (!val) {
+          setPrereqErrors((prev) => ({ ...prev, [field]: "Please enter a value before saving." }));
+          setSubmittingPrereqField(null);
+          return;
+        }
+        const payload: any = {
+          employment_status: field === "employment_status" ? val : ((user as any)?.employment_status || undefined),
+          industry: field === "industry" ? val : ((user as any)?.industry || undefined),
+          employer: field === "employer" ? val : ((user as any)?.employer || undefined),
+        };
+        if (field === "estimated_monthly_income") {
+          const num = Number(val.replace(/[^0-9]/g, ""));
+          if (!num || isNaN(num)) {
+            setPrereqErrors((prev) => ({ ...prev, [field]: "Please enter a valid numeric income amount." }));
+            setSubmittingPrereqField(null);
+            return;
+          }
+          payload.estimated_monthly_income = num;
+        } else if ((user as any)?.estimated_monthly_income) {
+          payload.estimated_monthly_income = Number((user as any).estimated_monthly_income);
+        }
+        Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
+        await dispatch(updateFinancialProfile(payload)).unwrap();
+      } else if (
+        field === "next_of_kin.name" ||
+        field === "next_of_kin_name" ||
+        field === "next_of_kin.relationship" ||
+        field === "next_of_kin_relationship" ||
+        field === "next_of_kin.phone" ||
+        field === "next_of_kin_phone" ||
+        field === "next_of_kin.address_1" ||
+        field === "next_of_kin_address_1" ||
+        field === "next_of_kin_address"
+      ) {
+        const kin = (user as any)?.next_of_kin || {};
+        const payload: Record<string, string> = {
+          first_name: kin.first_name || "",
+          last_name: kin.last_name || "",
+          relationship: kin.relationship || "",
+          phone: kin.phone || "",
+          address_1: kin.address_1 || "",
+        };
+
+        if (field === "next_of_kin.name" || field === "next_of_kin_name") {
+          const firstName = (prereqInputs["nok_first_name"] || "").trim();
+          const lastName = (prereqInputs["nok_last_name"] || "").trim();
+          if (!firstName || !lastName) {
+            setPrereqErrors((prev) => ({ ...prev, [field]: "Both first and last name are required." }));
+            setSubmittingPrereqField(null);
+            return;
+          }
+          payload.first_name = firstName;
+          payload.last_name = lastName;
+        } else if (field === "next_of_kin.relationship" || field === "next_of_kin_relationship") {
+          const rel = (prereqInputs[field] || "").trim();
+          if (!rel) {
+            setPrereqErrors((prev) => ({ ...prev, [field]: "Please select or enter relationship." }));
+            setSubmittingPrereqField(null);
+            return;
+          }
+          payload.relationship = rel;
+        } else if (field === "next_of_kin.phone" || field === "next_of_kin_phone") {
+          const phone = (prereqInputs[field] || "").trim();
+          if (!phone || phone.length < 10) {
+            setPrereqErrors((prev) => ({ ...prev, [field]: "Please enter a valid phone number." }));
+            setSubmittingPrereqField(null);
+            return;
+          }
+          payload.phone = phone;
+        } else if (
+          field === "next_of_kin.address_1" ||
+          field === "next_of_kin_address_1" ||
+          field === "next_of_kin_address"
+        ) {
+          const addr = (prereqInputs[field] || "").trim();
+          if (!addr) {
+            setPrereqErrors((prev) => ({ ...prev, [field]: "Please enter an address." }));
+            setSubmittingPrereqField(null);
+            return;
+          }
+          payload.address_1 = addr;
+        }
+
+        const cleanPayload = Object.fromEntries(Object.entries(payload).filter(([, v]) => !!v));
+        await dispatch(updateNextOfKin(cleanPayload)).unwrap();
+      } else {
+        const val = (prereqInputs[field] || "").trim();
+        if (!val) {
+          setPrereqErrors((prev) => ({ ...prev, [field]: "Please enter a value before saving." }));
+          setSubmittingPrereqField(null);
+          return;
+        }
+        await dispatch(updateResidentialAddress({ [field]: val })).unwrap();
+      }
+
+      await dispatch(getUserProfile()).unwrap().catch(() => {});
+      const updatedCompletion = await dispatch(fetchProfileCompletion()).unwrap().catch(() => null);
+      if (updatedCompletion) {
+        setProfileCompletion(updatedCompletion);
+      }
+    } catch (err: any) {
+      const msg = typeof err === "string" ? err : err?.data?.message || err?.message || "Failed to update field.";
+      setPrereqErrors((prev) => ({ ...prev, [field]: msg }));
+    } finally {
+      setSubmittingPrereqField(null);
+    }
+  };
+
+  const renderPrereqFieldInput = (field: string) => {
+    const config = getPrereqFieldConfig(field);
+    const isSubmitting = submittingPrereqField === field;
+    const error = prereqErrors[field];
+
+    if (field === "next_of_kin.name" || field === "next_of_kin_name") {
+      return (
+        <View
+          key={field}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.22)",
+            borderRadius: 14,
+            padding: 12,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.08)",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <MaterialCommunityIcons name="account-child-outline" size={18} color={C.gold} />
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 13, flex: 1 }}>
+              Next of Kin Name
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+            <TextInput
+              value={prereqInputs["nok_first_name"] || ""}
+              onChangeText={(t) => {
+                setPrereqInputs((prev) => ({ ...prev, nok_first_name: t }));
+                setPrereqErrors((prev) => ({ ...prev, [field]: "" }));
+              }}
+              placeholder="First Name"
+              placeholderTextColor="#9A9B7A"
+              style={{
+                flex: 1,
+                backgroundColor: "#FAFAF5",
+                borderColor: C.cardBorder,
+                borderWidth: 1,
+                borderRadius: 10,
+                paddingHorizontal: 10,
+                paddingVertical: Platform.OS === "ios" ? 9 : 7,
+                color: C.textPrimary,
+                fontFamily: "Outfit",
+                fontSize: 13,
+              }}
+            />
+            <TextInput
+              value={prereqInputs["nok_last_name"] || ""}
+              onChangeText={(t) => {
+                setPrereqInputs((prev) => ({ ...prev, nok_last_name: t }));
+                setPrereqErrors((prev) => ({ ...prev, [field]: "" }));
+              }}
+              placeholder="Last Name"
+              placeholderTextColor="#9A9B7A"
+              style={{
+                flex: 1,
+                backgroundColor: "#FAFAF5",
+                borderColor: C.cardBorder,
+                borderWidth: 1,
+                borderRadius: 10,
+                paddingHorizontal: 10,
+                paddingVertical: Platform.OS === "ios" ? 9 : 7,
+                color: C.textPrimary,
+                fontFamily: "Outfit",
+                fontSize: 13,
+              }}
+            />
+          </View>
+          <Pressable
+            onPress={() => handleSubmitPrereqField(field)}
+            disabled={isSubmitting || !prereqInputs["nok_first_name"]?.trim() || !prereqInputs["nok_last_name"]?.trim()}
+            style={{
+              backgroundColor: C.bgDark,
+              borderRadius: 10,
+              paddingVertical: 9,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: isSubmitting || !prereqInputs["nok_first_name"]?.trim() || !prereqInputs["nok_last_name"]?.trim() ? 0.6 : 1,
+            }}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 12 }}>Save Next of Kin Name</Text>
+            )}
+          </Pressable>
+          {error ? (
+            <Text style={{ color: "#EF4444", fontSize: 11, fontFamily: "Outfit", marginTop: 4 }}>{error}</Text>
+          ) : null}
+        </View>
+      );
+    }
+
+    if (field === "employment_status") {
+      return (
+        <View
+          key={field}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.22)",
+            borderRadius: 14,
+            padding: 12,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.08)",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <MaterialCommunityIcons name="briefcase-outline" size={18} color={C.gold} />
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 13, flex: 1 }}>
+              Employment Status
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+            {EMPLOYMENT_STATUS_CHIPS.map((chip) => {
+              const isSelected = prereqInputs[field] === chip.value;
+              return (
+                <Pressable
+                  key={chip.value}
+                  onPress={() => {
+                    setPrereqInputs((prev) => ({ ...prev, [field]: chip.value }));
+                    setPrereqErrors((prev) => ({ ...prev, [field]: "" }));
+                  }}
+                  style={{
+                    backgroundColor: isSelected ? C.gold : "rgba(255,255,255,0.12)",
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text style={{ color: isSelected ? "#2A2B0F" : "#FFFFFF", fontFamily: "OutfitMedium", fontSize: 11 }}>
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable
+            onPress={() => handleSubmitPrereqField(field)}
+            disabled={isSubmitting || !prereqInputs[field]}
+            style={{
+              backgroundColor: C.bgDark,
+              borderRadius: 10,
+              paddingVertical: 9,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: isSubmitting || !prereqInputs[field] ? 0.6 : 1,
+            }}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 12 }}>Save Employment Status</Text>
+            )}
+          </Pressable>
+          {error ? (
+            <Text style={{ color: "#EF4444", fontSize: 11, fontFamily: "Outfit", marginTop: 4 }}>{error}</Text>
+          ) : null}
+        </View>
+      );
+    }
+
+    if (field === "next_of_kin.relationship" || field === "next_of_kin_relationship") {
+      return (
+        <View
+          key={field}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.22)",
+            borderRadius: 14,
+            padding: 12,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.08)",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <MaterialCommunityIcons name="heart-outline" size={18} color={C.gold} />
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 13, flex: 1 }}>
+              Next of Kin Relationship
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+            {NOK_RELATIONSHIP_CHIPS.map((chip) => {
+              const isSelected = prereqInputs[field] === chip.value;
+              return (
+                <Pressable
+                  key={chip.value}
+                  onPress={() => {
+                    setPrereqInputs((prev) => ({ ...prev, [field]: chip.value }));
+                    setPrereqErrors((prev) => ({ ...prev, [field]: "" }));
+                  }}
+                  style={{
+                    backgroundColor: isSelected ? C.gold : "rgba(255,255,255,0.12)",
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderRadius: 8,
+                  }}
+                >
+                  <Text style={{ color: isSelected ? "#2A2B0F" : "#FFFFFF", fontFamily: "OutfitMedium", fontSize: 11 }}>
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+            <TextInput
+              value={prereqInputs[field] || ""}
+              onChangeText={(t) => {
+                setPrereqInputs((prev) => ({ ...prev, [field]: t }));
+                setPrereqErrors((prev) => ({ ...prev, [field]: "" }));
+              }}
+              placeholder="Or type relationship"
+              placeholderTextColor="#9A9B7A"
+              style={{
+                flex: 1,
+                backgroundColor: "#FAFAF5",
+                borderColor: C.cardBorder,
+                borderWidth: 1,
+                borderRadius: 10,
+                paddingHorizontal: 10,
+                paddingVertical: Platform.OS === "ios" ? 9 : 7,
+                color: C.textPrimary,
+                fontFamily: "Outfit",
+                fontSize: 13,
+              }}
+            />
+            <Pressable
+              onPress={() => handleSubmitPrereqField(field)}
+              disabled={isSubmitting || !prereqInputs[field]?.trim()}
+              style={{
+                backgroundColor: C.bgDark,
+                borderRadius: 10,
+                paddingVertical: Platform.OS === "ios" ? 10 : 8,
+                paddingHorizontal: 14,
+                alignItems: "center",
+                justifyContent: "center",
+                opacity: isSubmitting || !prereqInputs[field]?.trim() ? 0.6 : 1,
+              }}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 12 }}>Save</Text>
+              )}
+            </Pressable>
+          </View>
+          {error ? (
+            <Text style={{ color: "#EF4444", fontSize: 11, fontFamily: "Outfit", marginTop: 4 }}>{error}</Text>
+          ) : null}
+        </View>
+      );
+    }
+
+    return (
+      <View
+        key={field}
+        style={{
+          backgroundColor: "rgba(0,0,0,0.22)",
+          borderRadius: 14,
+          padding: 12,
+          marginBottom: 10,
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.08)",
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <MaterialCommunityIcons name={config.icon as any} size={18} color={C.gold} />
+          <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 13, flex: 1 }}>
+            {config.label}
+          </Text>
+        </View>
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+          <TextInput
+            value={prereqInputs[field] || ""}
+            onChangeText={(t) => {
+              setPrereqInputs((prev) => ({ ...prev, [field]: t }));
+              setPrereqErrors((prev) => ({ ...prev, [field]: "" }));
+            }}
+            placeholder={config.placeholder}
+            placeholderTextColor="#9A9B7A"
+            keyboardType={config.keyboardType as any}
+            maxLength={config.maxLength}
+            secureTextEntry={config.secureTextEntry}
+            style={{
+              flex: 1,
+              backgroundColor: "#FAFAF5",
+              borderColor: C.cardBorder,
+              borderWidth: 1,
+              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: Platform.OS === "ios" ? 9 : 7,
+              color: C.textPrimary,
+              fontFamily: "Outfit",
+              fontSize: 13,
+            }}
+          />
+          <Pressable
+            onPress={() => handleSubmitPrereqField(field)}
+            disabled={isSubmitting || !prereqInputs[field]?.trim()}
+            style={{
+              backgroundColor: C.bgDark,
+              borderRadius: 10,
+              paddingVertical: Platform.OS === "ios" ? 10 : 8,
+              paddingHorizontal: 14,
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: isSubmitting || !prereqInputs[field]?.trim() ? 0.6 : 1,
+            }}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 12 }}>Save</Text>
+            )}
+          </Pressable>
+        </View>
+        {error ? (
+          <Text style={{ color: "#EF4444", fontSize: 11, fontFamily: "Outfit", marginTop: 4 }}>{error}</Text>
+        ) : null}
+      </View>
+    );
+  };
   // ── Feedback modal state
   type FBType = "success" | "error" | "info";
   const [fb, setFb] = useState<{ visible: boolean; type: FBType; title: string; msg: string }>(
@@ -306,7 +979,6 @@ export default function AccountLimitsScreen() {
   };
 
 
-  const [prereqModalVisible, setPrereqModalVisible] = useState(false);
   const [utilityModalVisible, setUtilityModalVisible] = useState(false);
   const [govtIdModalVisible, setGovtIdModalVisible] = useState(false);
   const [documentPickerTarget, setDocumentPickerTarget] = useState<"utility" | "govtid" | null>(null);
@@ -1158,34 +1830,83 @@ export default function AccountLimitsScreen() {
         visible={prereqModalVisible}
         onClose={() => setPrereqModalVisible(false)}
         title="Complete Profile First"
-        buttonText="Go to Profile Information"
+        buttonText={isProfileComplete ? "Continue" : "Click here to fill all details"}
         onConfirm={() => {
           setPrereqModalVisible(false);
-          router.push("/(root)/accounts/profile-info" as any);
+          if (!isProfileComplete) {
+            router.push("/(root)/accounts/profile-info" as any);
+          }
         }}
       >
         <View className="py-2 items-center">
           <View style={{ backgroundColor: "rgba(251,205,88,0.15)" }} className="w-14 h-14 rounded-full justify-center items-center mb-4">
             <MaterialCommunityIcons name="lock-alert" size={30} color="#ca8a04" />
           </View>
-          <Text style={{ color: C.textPrimary }} className="text-base font-outfit-bold text-center mb-2">
+          <Text style={{ color: "#FFFFFF" }} className="text-base font-outfit-bold text-center mb-2">
             Complete Your Profile First
           </Text>
-          <Text style={{ color: C.textSub }} className="text-xs font-outfit text-center leading-5 px-2 mb-4">
+          <Text style={{ color: "#D1D1D1" }} className="text-xs font-outfit text-center leading-5 px-2 mb-4">
             Complete these profile details before uploading your utility bill or Government-issued ID:
           </Text>
+
+          {/* Completion Percentage Bar */}
+          <View
+            style={{
+              width: "100%",
+              marginBottom: 16,
+              backgroundColor: "rgba(0,0,0,0.22)",
+              borderRadius: 14,
+              padding: 12,
+              borderWidth: 1,
+              borderColor: "rgba(255,255,255,0.08)",
+            }}
+          >
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <Text style={{ color: "#FFFFFF", fontFamily: "OutfitMedium", fontSize: 13 }}>
+                Profile Completion
+              </Text>
+              <Text style={{ color: completionPct === 100 ? C.green : C.gold, fontFamily: "OutfitBold", fontSize: 14 }}>
+                {completionPct}%
+              </Text>
+            </View>
+            <View style={{ height: 8, width: "100%", backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 4, overflow: "hidden" }}>
+              <View
+                style={{
+                  height: "100%",
+                  width: `${completionPct}%`,
+                  backgroundColor: completionPct === 100 ? C.green : C.gold,
+                  borderRadius: 4,
+                }}
+              />
+            </View>
+          </View>
+
+          {/* Missing profile fields inputs & submit buttons */}
           <View style={{ width: "100%", gap: 8 }}>
-            {missingProfileFields.length > 0 ? missingProfileFields.map((field) => (
-              <View key={field} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                <MaterialCommunityIcons name="circle-small" size={20} color={C.bgDark} />
-                <Text style={{ color: "#fff", fontFamily: "Outfit", fontSize: 13, flex: 1 }}>
-                  {field.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}
+            {missingProfileFields.length > 0 ? (
+              missingProfileFields.map((field) => renderPrereqFieldInput(field))
+            ) : (
+              <View style={{ width: "100%", alignItems: "center", paddingVertical: 12 }}>
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: "rgba(33,209,132,0.15)",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: 10,
+                  }}
+                >
+                  <MaterialCommunityIcons name="check-circle" size={28} color={C.green} />
+                </View>
+                <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 14, marginBottom: 4, textAlign: "center" }}>
+                  Profile Completed!
+                </Text>
+                <Text style={{ color: "#D1D1D1", fontFamily: "Outfit", fontSize: 12, textAlign: "center", lineHeight: 18 }}>
+                  All profile details are complete. You can now proceed to upload your documents.
                 </Text>
               </View>
-            )) : (
-              <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 12, textAlign: "center" }}>
-                Your profile is incomplete. Review and complete the information in Profile Information.
-              </Text>
             )}
           </View>
         </View>

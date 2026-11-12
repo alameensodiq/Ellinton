@@ -11,7 +11,10 @@ class EncryptionClient {
   // FIXED ENCRYPTION KEY - MUST MATCH BACKEND
   private readonly FIXED_SECRET_KEY = "12345678909876543212345678909876";
 
-  private constructor() {}
+  private constructor() {
+    this.aesKey = CryptoJS.enc.Utf8.parse(this.FIXED_SECRET_KEY);
+    this.isInitialized = true;
+  }
 
   static getInstance(): EncryptionClient {
     if (!EncryptionClient.instance) {
@@ -67,6 +70,9 @@ class EncryptionClient {
 
   async encrypt(data: string, iv: string): Promise<string> {
     if (!this.isInitialized || !this.aesKey) {
+      await this.initialize();
+    }
+    if (!this.aesKey) {
       throw new Error("Encryption not initialized. Call initialize() first.");
     }
 
@@ -98,6 +104,9 @@ class EncryptionClient {
 
   async decrypt(data: string, iv: string): Promise<any> {
     if (!this.isInitialized || !this.aesKey) {
+      await this.initialize();
+    }
+    if (!this.aesKey) {
       throw new Error("Encryption not initialized. Call initialize() first.");
     }
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   Vibration,
   Platform,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -17,35 +18,46 @@ import OtpInput from "@/app/components/inputs/OtpInput";
 import Numpad from "@/app/components/inputs/Numpad";
 import CustomText from "@/app/components/CustomText";
 import InfoText from "@/app/components/InfoText";
-import Loading from "@/app/components/Loading";
+import ErrorModal from "@/app/components/ErrorModal";
 
 import { loginUser } from "@/app/lib/thunks/authThunks";
+import { clearError } from "@/app/lib/slices/authSlice";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import {
   registerDeviceWithBackend,
   registerForPushNotificationsAsync,
 } from "@/app/lib/notification.service";
-import { getDeviceId } from "@/app/lib/utils";
+import { getDeviceId, formatPhoneNumber } from "@/app/lib/utils";
 import { svgIcons } from "@/app/assets/icons/icons";
 
 export default function CurrentUser() {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, isLoading, isRestoring } = useAppSelector(
+  const { user, isLoading, isRestoring, error: authError } = useAppSelector(
     (state) => state.auth
   );
 
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [customError, setCustomError] = useState("");
+  const [savedIdentifier, setSavedIdentifier] = useState("");
   const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState(
     Platform.OS === "ios" ? "Face ID" : "Fingerprint"
   );
   const [showPasscode, setShowPasscode] = useState(false);
   const [isCheckingBiometrics, setIsCheckingBiometrics] = useState(true);
+  const [isBiometricAuthenticating, setIsBiometricAuthenticating] = useState(false);
+  const biometricAuthenticationInProgress = useRef(false);
 
-  const userIdentifier = user?.email || user?.phone || "";
+  const userIdentifier = (
+    user?.email ||
+    user?.phone ||
+    savedIdentifier ||
+    ""
+  ).trim();
   const FingerprintIcon = svgIcons.fingerprint;
   const FaceIcon = svgIcons.faceicon;
   const BiometricIcon = Platform.OS === "ios" ? FaceIcon : FingerprintIcon;
@@ -65,6 +77,12 @@ export default function CurrentUser() {
     setError(false);
   };
 
+  const handleDismissError = () => {
+    setShowErrorModal(false);
+    setCustomError("");
+    dispatch(clearError());
+  };
+
   const getInitials = (name: string) => {
     const names = name.split(" ");
     return names
@@ -76,10 +94,33 @@ export default function CurrentUser() {
 
   const handleBiometricAuth = useCallback(
     async (pinOverride?: string) => {
+      if (biometricAuthenticationInProgress.current || isLoading) {
+        return;
+      }
+
+      biometricAuthenticationInProgress.current = true;
+      setIsBiometricAuthenticating(true);
+
       try {
-        const savedPin =
-          pinOverride || (await AsyncStorage.getItem("userPin"));
-        if (!savedPin || !userIdentifier || isLoading) return;
+        const [savedPin, storedEmail, storedProfile] = await Promise.all([
+          pinOverride ? Promise.resolve(pinOverride) : AsyncStorage.getItem("userPin"),
+          AsyncStorage.getItem("userEmail"),
+          AsyncStorage.getItem("userProfile"),
+        ]);
+
+        const parsedProfile = storedProfile ? JSON.parse(storedProfile) : null;
+        const targetIdentifier = (
+          userIdentifier ||
+          storedEmail ||
+          parsedProfile?.email ||
+          parsedProfile?.phone ||
+          ""
+        ).trim();
+
+        if (!savedPin || !targetIdentifier) {
+          setShowPasscode(true);
+          return;
+        }
 
         const authResult = await LocalAuthentication.authenticateAsync({
           promptMessage: `Log in with ${biometricLabel}`,
@@ -89,22 +130,45 @@ export default function CurrentUser() {
 
         if (authResult.success) {
           const deviceId = await getDeviceId();
-          const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userIdentifier) || userIdentifier.includes("@");
+          const isEmail =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetIdentifier) ||
+            targetIdentifier.includes("@");
           const payload = isEmail
-            ? { email: userIdentifier.toLowerCase(), passcode: savedPin, device_id: deviceId }
-            : { phone: userIdentifier, passcode: savedPin, device_id: deviceId };
-
-          console.log(payload)
+            ? {
+                email: targetIdentifier.toLowerCase(),
+                passcode: savedPin,
+                device_id: deviceId,
+              }
+            : {
+                phone: formatPhoneNumber(targetIdentifier),
+                passcode: savedPin,
+                device_id: deviceId,
+              };
 
           await dispatch(loginUser(payload)).unwrap();
 
-          const token = await registerForPushNotificationsAsync();
-          if (token) {
-            await registerDeviceWithBackend(token);
-          }
+          void (async () => {
+            try {
+              const token = await registerForPushNotificationsAsync();
+              if (token) {
+                await registerDeviceWithBackend(token);
+              }
+            } catch (pushErr) {
+              console.warn("Push token sync error (non-fatal):", pushErr);
+            }
+          })();
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Biometric authentication failed:", err);
+        setCustomError(
+          typeof err === "string"
+            ? err
+            : err?.message || "Biometric login failed. Please try again or use your passcode."
+        );
+        setShowErrorModal(true);
+      } finally {
+        biometricAuthenticationInProgress.current = false;
+        setIsBiometricAuthenticating(false);
       }
     },
     [biometricLabel, dispatch, userIdentifier, isLoading]
@@ -116,61 +180,82 @@ export default function CurrentUser() {
     }
   }, [isRestoring, user, router]);
 
-  useEffect(() => {
-    const checkBiometricSupport = async () => {
-      try {
-        if (!LocalAuthentication || !LocalAuthentication.hasHardwareAsync)
-          return;
+  const checkBiometricSupport = useCallback(async () => {
+    try {
+      const [savedPin, storedLoginBio, storedEmail] = await Promise.all([
+        AsyncStorage.getItem("userPin"),
+        AsyncStorage.getItem("loginBiometricEnabled"),
+        AsyncStorage.getItem("userEmail"),
+      ]);
 
-        const [hasHardware, isEnrolled, savedPin, storedLoginBio] = await Promise.all([
-          LocalAuthentication.hasHardwareAsync(),
-          LocalAuthentication.isEnrolledAsync(),
-          AsyncStorage.getItem("userPin"),
-          AsyncStorage.getItem("loginBiometricEnabled"),
-        ]);
-
-        // Biometric login is opt-in; no saved preference means it is off.
-        let isLoginBioEnabled = false;
-        if (storedLoginBio !== null) {
-          try {
-            isLoginBioEnabled = JSON.parse(storedLoginBio) === true;
-          } catch {
-            isLoginBioEnabled = storedLoginBio === "true";
-          }
-        }
-
-        if (hasHardware && isEnrolled && savedPin && isLoginBioEnabled) {
-          setIsBiometricAvailable(true);
-          const supportedTypes =
-            await LocalAuthentication.supportedAuthenticationTypesAsync();
-
-          let label = Platform.OS === "ios" ? "Face ID" : "Fingerprint";
-          if (Platform.OS === "ios") {
-            if (
-              supportedTypes.includes(
-                LocalAuthentication.AuthenticationType.FINGERPRINT
-              )
-            ) {
-              label = "Touch ID";
-            }
-          } else {
-            label = "Fingerprint";
-          }
-          setBiometricLabel(label);
-        }
-      } catch (err) {
-        console.error("Error checking biometric login:", err);
-      } finally {
-        setIsCheckingBiometrics(false);
+      if (storedEmail) {
+        setSavedIdentifier(storedEmail);
       }
-    };
 
-    if (user && userIdentifier) {
+      if (!LocalAuthentication || !LocalAuthentication.hasHardwareAsync) {
+        setIsBiometricAvailable(false);
+        return;
+      }
+
+      const [hasHardware, isEnrolled] = await Promise.all([
+        LocalAuthentication.hasHardwareAsync(),
+        LocalAuthentication.isEnrolledAsync(),
+      ]);
+
+      // Biometric login is opt-in; no saved preference means it is off.
+      let isLoginBioEnabled = false;
+      if (storedLoginBio !== null) {
+        try {
+          isLoginBioEnabled = JSON.parse(storedLoginBio) === true;
+        } catch {
+          isLoginBioEnabled = storedLoginBio === "true";
+        }
+      }
+
+      if (hasHardware && isEnrolled && savedPin && isLoginBioEnabled) {
+        setIsBiometricAvailable(true);
+        setShowPasscode(false);
+        const supportedTypes =
+          await LocalAuthentication.supportedAuthenticationTypesAsync();
+
+        let label = Platform.OS === "ios" ? "Face ID" : "Fingerprint";
+        if (Platform.OS === "ios") {
+          if (
+            supportedTypes.includes(
+              LocalAuthentication.AuthenticationType.FINGERPRINT
+            )
+          ) {
+            label = "Touch ID";
+          }
+        } else {
+          label = "Fingerprint";
+        }
+        setBiometricLabel(label);
+      } else {
+        setIsBiometricAvailable(false);
+      }
+    } catch (err) {
+      console.error("Error checking biometric login:", err);
+    } finally {
+      setIsCheckingBiometrics(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) {
       checkBiometricSupport();
     } else {
       setIsCheckingBiometrics(false);
     }
-  }, [user, userIdentifier]);
+  }, [user, checkBiometricSupport]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (user) {
+        checkBiometricSupport();
+      }
+    }, [user, checkBiometricSupport])
+  );
 
   useEffect(() => {
     if (passcode.length === 6 && !isLoading) {
@@ -185,30 +270,43 @@ export default function CurrentUser() {
 
           if (isLoading) return;
           const [deviceId] = await Promise.all([getDeviceId()]);
-          const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userIdentifier) || userIdentifier.includes("@");
+          const isEmail =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userIdentifier) ||
+            userIdentifier.includes("@");
           const payload = isEmail
-            ? { email: userIdentifier.toLowerCase(), passcode, device_id: deviceId }
-            : { phone: userIdentifier, passcode, device_id: deviceId };
-
-          console.log(passcode, "passcode")
+            ? {
+                email: userIdentifier.toLowerCase(),
+                passcode,
+                device_id: deviceId,
+              }
+            : {
+                phone: formatPhoneNumber(userIdentifier),
+                passcode,
+                device_id: deviceId,
+              };
 
           await dispatch(loginUser(payload)).unwrap();
 
           // Save PIN for future biometric logins
-          await AsyncStorage.setItem("userPin", passcode);
+          await Promise.all([
+            AsyncStorage.setItem("userPin", passcode),
+            AsyncStorage.setItem("hasLoggedInBefore", "true"),
+          ]);
           setPasscode("");
 
-          const token = await registerForPushNotificationsAsync();
-          if (token) {
-            const isRegistered = await registerDeviceWithBackend(token);
-            if (isRegistered) {
-              console.log("✅ Push token synced with backend");
-            } else {
-              console.warn(
-                "⚠️ Login succeeded, but push registration failed"
-              );
+          void (async () => {
+            try {
+              const token = await registerForPushNotificationsAsync();
+              if (token) {
+                const isRegistered = await registerDeviceWithBackend(token);
+                if (isRegistered) {
+                  console.log("✅ Push token synced with backend");
+                }
+              }
+            } catch (pushErr) {
+              console.warn("Push token sync error (non-fatal):", pushErr);
             }
-          }
+          })();
         } catch (err: any) {
           setError(true);
           Vibration.vibrate(400);
@@ -228,7 +326,7 @@ export default function CurrentUser() {
       <StatusBar barStyle="light-content" />
       {isRestoring || !user || isCheckingBiometrics ? (
         <View className="flex-1 justify-center items-center">
-          <Loading visible={true} />
+          <ActivityIndicator size="large" color="#D4FF00" />
         </View>
       ) : (
         <>
@@ -255,21 +353,33 @@ export default function CurrentUser() {
             <View className="flex-1 justify-center items-center px-6 pb-12">
               <TouchableOpacity
                 onPress={() => handleBiometricAuth()}
+                disabled={isLoading || isBiometricAuthenticating}
                 activeOpacity={0.8}
                 className="w-28 h-28 rounded-full bg-primary-400 justify-center items-center border-2 border-accent-100/40 mb-6 shadow-lg"
               >
-                <BiometricIcon width={56} height={56} fill="#D4FF00" />
+                {isLoading || isBiometricAuthenticating ? (
+                  <ActivityIndicator size="large" color="#D4FF00" />
+                ) : (
+                  <BiometricIcon width={56} height={56} fill="#D4FF00" />
+                )}
               </TouchableOpacity>
 
               <Text className="text-white text-lg font-semibold text-center mb-1">
-                Log in with {biometricLabel}
+                {isLoading
+                  ? "Logging in..."
+                  : isBiometricAuthenticating
+                    ? `Opening ${biometricLabel}...`
+                    : `Log in with ${biometricLabel}`}
               </Text>
               <Text className="text-white/60 text-sm text-center mb-8">
-                Tap the icon above to trigger {biometricLabel}
+                {isLoading || isBiometricAuthenticating
+                  ? "Please wait while we verify your credentials..."
+                  : `Tap the icon above to trigger ${biometricLabel}`}
               </Text>
 
               <TouchableOpacity
                 onPress={() => setShowPasscode(true)}
+                disabled={isLoading || isBiometricAuthenticating}
                 className="py-3 px-6 bg-primary-300 rounded-full mb-6"
               >
                 <Text className="text-primary-200 font-semibold text-base">
@@ -304,7 +414,9 @@ export default function CurrentUser() {
 
                 {error && (
                   <Text className="text-red-500 text-sm mt-4">
-                    Incorrect passcode. Please try again.
+                    {typeof authError === "string" && authError
+                      ? authError
+                      : "Incorrect passcode. Please try again."}
                   </Text>
                 )}
               </View>
@@ -340,7 +452,24 @@ export default function CurrentUser() {
             </View>
           )}
 
-          <Loading visible={isLoading} />
+          <ErrorModal
+            visible={showErrorModal}
+            title="Login Error"
+            message={
+              customError ||
+              (typeof authError === "string" ? authError : "") ||
+              "We could not complete your login, give it another shot"
+            }
+            onDismiss={handleDismissError}
+          />
+
+          {isLoading && (
+            <View className="absolute inset-0 z-50 bg-black/50 justify-center items-center">
+              <View className="bg-primary-100 rounded-lg p-6">
+                <ActivityIndicator size="large" color="white" />
+              </View>
+            </View>
+          )}
         </>
       )}
     </SafeAreaView>

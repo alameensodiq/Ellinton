@@ -121,6 +121,8 @@ const authSlice = createSlice({
       state.token = action.payload.token;
       state.user = action.payload.user;
       state.isAuthenticated = action.payload.isAuthenticated;
+      state.isLoading = false;
+      state.error = null;
     },
     setUserOnly: (state, action: PayloadAction<{ user: User }>) => {
       state.user = action.payload.user;
@@ -129,6 +131,7 @@ const authSlice = createSlice({
       state.requiresTransactionPinSetup = undefined;
       state.pendingUserId = null;
       state.isAuthenticated = false;
+      state.isLoading = false;
       state.error = null;
     },
     logout: (state) => {
@@ -142,6 +145,7 @@ const authSlice = createSlice({
       state.isRestoring = false;
       state.error = null;
       state.multi = false;
+      state.device = false;
     },
     clearError: (state) => {
       state.error = null;
@@ -437,20 +441,18 @@ const authSlice = createSlice({
      * ----------------------------------------- */
     builder
       .addCase(getUserProfile.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
+        // Background profile sync: do not set global auth.isLoading = true,
+        // which would trigger auth screen loading modals during navigation.
       })
       .addCase(
         getUserProfile.fulfilled,
         (state, action: PayloadAction<{ user: User }>) => {
-          state.isLoading = false;
           state.user = action.payload.user;
-          state.error = null;
         }
       )
-      .addCase(getUserProfile.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
+      .addCase(getUserProfile.rejected, () => {
+        // Background profile sync: do not overwrite auth.error, which would
+        // trigger login error modals or session error redirect loops.
       });
 
     /** -----------------------------------------
@@ -563,9 +565,14 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = null;
       })
-      .addCase(logoutUser.rejected, (state, action) => {
+      .addCase(logoutUser.rejected, (state) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.token = null;
+        state.requiresPasscodeSetup = undefined;
+        state.requiresTransactionPinSetup = undefined;
+        state.pendingUserId = null;
+        state.isAuthenticated = false;
+        state.error = null;
       });
 
     /** -----------------------------------------
