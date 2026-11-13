@@ -2,7 +2,7 @@
   "expo": {
     "name": "Ellington Personal Banking",
     "slug": "ellingtonbank",
-    "version": "2.1.20",
+    "version": "2.1.21",
     "orientation": "portrait",
     "icon": "./app/assets/Logo2.png",
     "scheme": "ellingtonbank",
@@ -47,7 +47,7 @@
           "fetch"
         ]
       },
-      "buildNumber": "401"
+      "buildNumber": "402"
     },
     "android": {
       "package": "com.ellingtonmfb.app",
