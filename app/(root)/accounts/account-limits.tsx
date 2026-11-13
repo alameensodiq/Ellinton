@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import { ONBOARDING_ENDPOINT, SESSIONTOKEN_ENDPOINT } from "@/app/lib/api";
 import { useQoreIdSdk } from "@/app/lib/qoreidShim";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -166,8 +166,7 @@ const getIdentificationNumberMaxLength = (type: GovernmentIdType) => {
 
 const EMPLOYMENT_STATUS_CHIPS = [
   { value: "employed", label: "Employed" },
-  { value: "self_employed", label: "Self-Employed" },
-  { value: "business_owner", label: "Business Owner" },
+  { value: "self-employed", label: "Self-Employed" },
   { value: "student", label: "Student" },
   { value: "unemployed", label: "Unemployed" },
 ];
@@ -182,6 +181,20 @@ const NOK_RELATIONSHIP_CHIPS = [
 
 const getPrereqFieldConfig = (field: string) => {
   switch (field) {
+    case "bvn":
+      return {
+        label: "Tier 1 Verification (BVN)",
+        placeholder: "",
+        icon: "shield-account-outline",
+        keyboardType: "default",
+      };
+    case "nin":
+      return {
+        label: "Tier 2 Verification (NIN)",
+        placeholder: "",
+        icon: "card-account-details-outline",
+        keyboardType: "default",
+      };
     case "address_1":
       return {
         label: "Residential Address",
@@ -455,6 +468,15 @@ export default function AccountLimitsScreen() {
       });
   }, [dispatch]);
 
+  useFocusEffect(
+    useCallback(() => {
+      dispatch(fetchProfileCompletion())
+        .unwrap()
+        .then(setProfileCompletion)
+        .catch(() => {});
+    }, [dispatch])
+  );
+
   useEffect(() => {
     if (prereqModalVisible && user) {
       setPrereqInputs((prev) => ({
@@ -646,6 +668,135 @@ export default function AccountLimitsScreen() {
     const config = getPrereqFieldConfig(field);
     const isSubmitting = submittingPrereqField === field;
     const error = prereqErrors[field];
+
+    if (field === "bvn") {
+      return (
+        <View
+          key={field}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.22)",
+            borderRadius: 14,
+            padding: 14,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.08)",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <MaterialCommunityIcons name="shield-account-outline" size={20} color={C.gold} />
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 13, flex: 1 }}>
+              Tier 1 Verification (BVN)
+            </Text>
+          </View>
+          <Text style={{ color: "#D1D1D1", fontFamily: "Outfit", fontSize: 12, lineHeight: 18, marginBottom: 10 }}>
+            Please complete your Tier 1 verification with your BVN and facial liveness to unlock higher limits.
+          </Text>
+          <Pressable
+            onPress={() => {
+              setPrereqModalVisible(false);
+              handleLaunchBVNLiveness();
+            }}
+            style={{
+              backgroundColor: C.bgDark,
+              borderRadius: 10,
+              paddingVertical: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 12 }}>
+              Complete Tier 1 Verification
+            </Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    if (field === "nin") {
+      return (
+        <View
+          key={field}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.22)",
+            borderRadius: 14,
+            padding: 14,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.08)",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <MaterialCommunityIcons name="card-account-details-outline" size={20} color={C.gold} />
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 13, flex: 1 }}>
+              Tier 2 Verification (NIN)
+            </Text>
+          </View>
+          <Text style={{ color: "#D1D1D1", fontFamily: "Outfit", fontSize: 12, lineHeight: 18, marginBottom: 10 }}>
+            Please complete your Tier 2 verification with your National Identification Number (NIN).
+          </Text>
+          <Pressable
+            onPress={() => {
+              setPrereqModalVisible(false);
+              handleTier2VerificationPress();
+            }}
+            style={{
+              backgroundColor: C.bgDark,
+              borderRadius: 10,
+              paddingVertical: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 12 }}>
+              Complete Tier 2 Verification
+            </Text>
+          </Pressable>
+        </View>
+      );
+    }
+
+    if (field === "transaction_pin") {
+      return (
+        <View
+          key={field}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.22)",
+            borderRadius: 14,
+            padding: 14,
+            marginBottom: 10,
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.08)",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <MaterialCommunityIcons name="shield-key-outline" size={20} color={C.gold} />
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 13, flex: 1 }}>
+              Transaction PIN
+            </Text>
+          </View>
+          <Text style={{ color: "#D1D1D1", fontFamily: "Outfit", fontSize: 12, lineHeight: 18, marginBottom: 10 }}>
+            Set a secure 4-digit transaction PIN to approve your transfers and account transactions.
+          </Text>
+          <Pressable
+            onPress={() => {
+              setPrereqModalVisible(false);
+              router.push("/(root)/accounts/create-transaction-pin" as any);
+            }}
+            style={{
+              backgroundColor: C.bgDark,
+              borderRadius: 10,
+              paddingVertical: 10,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "#FFFFFF", fontFamily: "OutfitBold", fontSize: 12 }}>
+              Create Transaction PIN
+            </Text>
+          </Pressable>
+        </View>
+      );
+    }
 
     if (field === "next_of_kin.name" || field === "next_of_kin_name") {
       return (

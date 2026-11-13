@@ -51,8 +51,7 @@ const MARITAL_STATUS_OPTIONS = [
 
 const EMPLOYMENT_STATUS_OPTIONS = [
   { value: "employed", label: "Employed" },
-  { value: "self_employed", label: "Self-Employed" },
-  { value: "business_owner", label: "Business Owner" },
+  { value: "self-employed", label: "Self-Employed" },
   { value: "student", label: "Student" },
   { value: "unemployed", label: "Unemployed" },
 ];
@@ -63,7 +62,7 @@ const INCOME_RANGE_OPTIONS = [
   { value: "200000", label: "₦100,000 – ₦300,000" },
   { value: "500000", label: "₦300,000 – ₦750,000" },
   { value: "1000000", label: "₦750,000 – ₦2,000,000" },
-  { value: "3000000", label: "Above ₦2,000,000" },
+  { value: "above 2000000", label: "Above ₦2,000,000" },
 ];
 
 const NOK_RELATIONSHIP_OPTIONS = [
@@ -92,6 +91,28 @@ const includeCurrentOption = (
     return options;
   }
   return [{ value: currentValue, label: currentValue }, ...options];
+};
+
+const formatEmploymentDetail = (key: string, value: any) => {
+  if (key === "estimated_monthly_income") {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const clean = raw.replace(/[^0-9.]/g, "");
+    const num = Number(clean);
+    if (!isNaN(num) && clean.length > 0) {
+      const parts = clean.split(".");
+      const formattedInt = Number(parts[0]).toLocaleString("en-US");
+      const formatted = parts.length > 1 && Number(parts[1]) > 0 ? `${formattedInt}.${parts[1]}` : formattedInt;
+      return `₦${formatted}`;
+    }
+    return raw;
+  }
+  if (key === "employment_status") {
+    const raw = String(value ?? "").trim();
+    const match = EMPLOYMENT_STATUS_OPTIONS.find((opt) => opt.value.toLowerCase() === raw.toLowerCase());
+    return match ? match.label : raw.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  }
+  return String(value ?? "");
 };
 
 // ─── Input field helper ───────────────────────────────────────────────────────
@@ -396,7 +417,12 @@ export default function ProfileInfoScreen() {
     const payload: any = { employment_status: employmentStatus };
     if (industry) payload.industry = industry;
     if (employerName.trim()) payload.employer = employerName.trim();
-    if (incomeRange) payload.estimated_monthly_income = Number(incomeRange);
+    if (incomeRange) {
+      const parsedIncome = Number(String(incomeRange).replace(/[^0-9]/g, ""));
+      if (!isNaN(parsedIncome) && parsedIncome > 0) {
+        payload.estimated_monthly_income = parsedIncome;
+      }
+    }
 
     setSavingEmployment(true);
     try {
@@ -888,7 +914,9 @@ export default function ProfileInfoScreen() {
                       style={{ borderBottomWidth: index < arr.length - 1 ? 1 : 0, borderBottomColor: C.cardBorder, paddingVertical: 8 }}
                     >
                       <Text style={{ color: C.textSub, fontFamily: "Outfit", fontSize: 11 }}>{label}</Text>
-                      <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 13, marginTop: 2 }}>{String((fetchedEmployment as any)[key])}</Text>
+                      <Text style={{ color: C.textPrimary, fontFamily: "OutfitMedium", fontSize: 13, marginTop: 2 }}>
+                        {formatEmploymentDetail(key, (fetchedEmployment as any)[key])}
+                      </Text>
                     </View>
                   ))}
                 </View>

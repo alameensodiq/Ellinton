@@ -148,6 +148,7 @@ export default function BeneficiariesAndCardsScreen() {
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    minHeight: 48,
     color: C.textPrimary,
     fontSize: 13,
     fontFamily: "Outfit",
@@ -187,7 +188,21 @@ export default function BeneficiariesAndCardsScreen() {
         <View style={{ flex: 1, paddingHorizontal: 16 }}>
           {/* Search bar */}
           <View
-            style={{ backgroundColor: C.white, borderColor: C.cardBorder, borderWidth: 1, borderRadius: 12, flexDirection: "row", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, marginBottom: 12, shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 4, elevation: 1 }}
+            style={{
+              backgroundColor: C.white,
+              borderColor: C.cardBorder,
+              borderWidth: 1,
+              borderRadius: 14,
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 14,
+              height: 48,
+              marginBottom: 12,
+              shadowColor: "#000",
+              shadowOpacity: 0.04,
+              shadowRadius: 4,
+              elevation: 1,
+            }}
           >
             <Feather name="search" size={18} color={C.textMuted} />
             <TextInput
@@ -195,10 +210,26 @@ export default function BeneficiariesAndCardsScreen() {
               onChangeText={setSearchQuery}
               placeholder="Search by name, bank or account number"
               placeholderTextColor={C.textMuted}
-              style={{ flex: 1, marginLeft: 10, fontSize: 12, color: C.textPrimary, fontFamily: "Outfit" }}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              style={{
+                flex: 1,
+                height: "100%",
+                marginLeft: 10,
+                fontSize: 13,
+                color: C.textPrimary,
+                fontFamily: "Outfit",
+                paddingVertical: 0,
+                textAlignVertical: "center",
+                includeFontPadding: false,
+              }}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")}>
+              <Pressable
+                onPress={() => setSearchQuery("")}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Feather name="x" size={16} color={C.textMuted} />
               </Pressable>
             )}
