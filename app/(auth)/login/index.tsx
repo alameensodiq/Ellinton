@@ -24,7 +24,7 @@ import ErrorModal from "@/app/components/ErrorModal";
 import Loading from "@/app/components/Loading";
 import { SafeAreaView } from "react-native-safe-area-context";
 import InfoText from "@/app/components/InfoText";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useAppDispatch } from "@/app/lib/hooks/useAppDispatch";
 import { useAppSelector } from "@/app/lib/hooks/useAppSelector";
 import CustomText from "@/app/components/CustomText";
@@ -59,6 +59,10 @@ const Login = () => {
   const biometricAuthenticationInProgress = useRef(false);
 
   const router = useRouter();
+  const { phone: signupPhone, newSignup } = useLocalSearchParams<{
+    phone?: string;
+    newSignup?: string;
+  }>();
   const dispatch = useAppDispatch();
 
   const { isLoading, error } = useAppSelector((state) => state.auth);
@@ -76,13 +80,16 @@ const Login = () => {
         AsyncStorage.getItem("loginBiometricEnabled"),
       ]);
 
+      const isFreshSignup = newSignup === "true";
       const returningUser = Boolean(savedPin || loggedInFlag === "true" || userProfile);
       setHasLoggedInBefore(returningUser);
 
       // `userEmail` stores the exact identifier used at the last successful
       // login. Prefer it over the profile email so a phone-number login is
       // prefilled with that phone number when the user returns.
-      if (savedEmail) {
+      if (isFreshSignup && signupPhone) {
+        setEmail(String(signupPhone));
+      } else if (savedEmail) {
         setEmail(savedEmail);
       } else if (userProfile) {
         const parsedUser = JSON.parse(userProfile);
@@ -143,7 +150,7 @@ const Login = () => {
     } finally {
       setIsCheckingStatus(false);
     }
-  }, []);
+  }, [newSignup, signupPhone]);
 
   useEffect(() => {
     checkLoginStatus();
@@ -255,6 +262,7 @@ const Login = () => {
       const parsedProfile = userProfile ? JSON.parse(userProfile) : null;
       const targetIdentifier = (
         email ||
+        (newSignup === "true" ? String(signupPhone || "") : "") ||
         storedEmail ||
         parsedProfile?.email ||
         parsedProfile?.phone ||

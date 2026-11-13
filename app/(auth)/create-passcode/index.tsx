@@ -117,6 +117,7 @@ const CreatePasscodeScreen = () => {
 
       router.push({
         pathname: "/(auth)/login",
+        params: { phone: String(phone || ""), newSignup: "true" },
       });
     } catch (err: any) {
       setError(err || "Setup failed");
